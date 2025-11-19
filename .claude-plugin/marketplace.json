@@ -1,0 +1,136 @@
+{
+  "name": "project-management-pro",
+  "owner": {
+    "name": "Markus",
+    "email": "markus@example.com",
+    "url": "https://github.com/markus"
+  },
+  "metadata": {
+    "description": "Professional development agents for project management, agile workflows, and team coordination with modern best practices",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "agile-scrum",
+      "source": "./",
+      "description": "Agile/Scrum workflow management with sprint planning, backlog refinement, and retrospective facilitation",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "agile",
+        "scrum",
+        "sprint-planning",
+        "backlog",
+        "project-management",
+        "team-coordination"
+      ],
+      "category": "project-management",
+      "strict": false,
+      "commands": [],
+      "agents": []
+    },
+    {
+      "name": "kanban-workflow",
+      "source": "./",
+      "description": "Kanban workflow optimization with WIP limits, flow metrics, and continuous delivery practices",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "kanban",
+        "workflow",
+        "continuous-delivery",
+        "wip-limits",
+        "flow-metrics",
+        "project-management"
+      ],
+      "category": "project-management",
+      "strict": false,
+      "commands": [],
+      "agents": []
+    },
+    {
+      "name": "product-management",
+      "source": "./",
+      "description": "Product management with roadmap planning, feature prioritization, and stakeholder communication",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "product-management",
+        "roadmap",
+        "feature-prioritization",
+        "stakeholder-management",
+        "product-strategy"
+      ],
+      "category": "project-management",
+      "strict": false,
+      "commands": [],
+      "agents": []
+    },
+    {
+      "name": "project-planning",
+      "source": "./",
+      "description": "Project planning and execution with Gantt charts, resource allocation, and risk management",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "project-planning",
+        "gantt-charts",
+        "resource-allocation",
+        "risk-management",
+        "project-execution"
+      ],
+      "category": "project-management",
+      "strict": false,
+      "commands": [],
+      "agents": []
+    },
+    {
+      "name": "team-coordination",
+      "source": "./",
+      "description": "Team coordination and collaboration with meeting facilitation, decision tracking, and communication patterns",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "team-coordination",
+        "collaboration",
+        "meeting-facilitation",
+        "decision-tracking",
+        "communication"
+      ],
+      "category": "project-management",
+      "strict": false,
+      "commands": [],
+      "agents": []
+    }
+  ]
+}
