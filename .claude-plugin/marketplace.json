@@ -32,7 +32,9 @@
       "category": "productivity",
       "strict": false,
       "commands": [],
-      "agents": []
+      "agents": [
+        "./agents/document-analyst.md"
+      ]
     },
     {
       "name": "timeline-planner",
@@ -176,7 +178,9 @@
       "category": "productivity",
       "strict": false,
       "commands": [],
-      "agents": []
+      "agents": [
+        "./agents/document-analyst.md"
+      ]
     }
   ]
 }
