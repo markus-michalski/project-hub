@@ -1,19 +1,19 @@
 {
-  "name": "project-management-pro",
+  "name": "project-assistant-pro",
   "owner": {
     "name": "Markus",
     "email": "markus@example.com",
     "url": "https://github.com/markus"
   },
   "metadata": {
-    "description": "Professional development agents for project management, agile workflows, and team coordination with modern best practices",
+    "description": "Professional project assistant agents for document analysis, timeline planning, meeting preparation, and report generation",
     "version": "1.0.0"
   },
   "plugins": [
     {
-      "name": "agile-scrum",
+      "name": "document-analyst",
       "source": "./",
-      "description": "Agile/Scrum workflow management with sprint planning, backlog refinement, and retrospective facilitation",
+      "description": "Document analysis and summarization specialist. Analyzes project documents, extracts key information, identifies action items, and creates structured summaries.",
       "version": "1.0.0",
       "author": {
         "name": "Markus",
@@ -23,22 +23,21 @@
       "repository": "https://github.com/markus/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
-        "agile",
-        "scrum",
-        "sprint-planning",
-        "backlog",
-        "project-management",
-        "team-coordination"
+        "document-analysis",
+        "summarization",
+        "information-extraction",
+        "action-items",
+        "project-documentation"
       ],
-      "category": "project-management",
+      "category": "productivity",
       "strict": false,
       "commands": [],
       "agents": []
     },
     {
-      "name": "kanban-workflow",
+      "name": "timeline-planner",
       "source": "./",
-      "description": "Kanban workflow optimization with WIP limits, flow metrics, and continuous delivery practices",
+      "description": "Timeline and capacity planning specialist. Creates project timelines, calculates resource capacity, identifies bottlenecks, and manages dependencies.",
       "version": "1.0.0",
       "author": {
         "name": "Markus",
@@ -48,22 +47,21 @@
       "repository": "https://github.com/markus/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
-        "kanban",
-        "workflow",
-        "continuous-delivery",
-        "wip-limits",
-        "flow-metrics",
-        "project-management"
+        "timeline-planning",
+        "capacity-planning",
+        "resource-management",
+        "scheduling",
+        "dependencies"
       ],
-      "category": "project-management",
+      "category": "productivity",
       "strict": false,
       "commands": [],
       "agents": []
     },
     {
-      "name": "product-management",
+      "name": "meeting-facilitator",
       "source": "./",
-      "description": "Product management with roadmap planning, feature prioritization, and stakeholder communication",
+      "description": "Meeting preparation and facilitation specialist. Prepares agendas, creates meeting briefs, generates discussion points, and produces structured meeting notes.",
       "version": "1.0.0",
       "author": {
         "name": "Markus",
@@ -73,21 +71,21 @@
       "repository": "https://github.com/markus/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
-        "product-management",
-        "roadmap",
-        "feature-prioritization",
-        "stakeholder-management",
-        "product-strategy"
+        "meeting-preparation",
+        "agenda-creation",
+        "facilitation",
+        "meeting-notes",
+        "action-tracking"
       ],
-      "category": "project-management",
+      "category": "productivity",
       "strict": false,
       "commands": [],
       "agents": []
     },
     {
-      "name": "project-planning",
+      "name": "report-generator",
       "source": "./",
-      "description": "Project planning and execution with Gantt charts, resource allocation, and risk management",
+      "description": "Report creation and preparation specialist. Generates status reports, executive summaries, stakeholder updates, and project dashboards with data visualization.",
       "version": "1.0.0",
       "author": {
         "name": "Markus",
@@ -97,21 +95,21 @@
       "repository": "https://github.com/markus/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
-        "project-planning",
-        "gantt-charts",
-        "resource-allocation",
-        "risk-management",
-        "project-execution"
+        "report-generation",
+        "status-reports",
+        "executive-summary",
+        "stakeholder-updates",
+        "data-visualization"
       ],
-      "category": "project-management",
+      "category": "productivity",
       "strict": false,
       "commands": [],
       "agents": []
     },
     {
-      "name": "team-coordination",
+      "name": "task-coordinator",
       "source": "./",
-      "description": "Team coordination and collaboration with meeting facilitation, decision tracking, and communication patterns",
+      "description": "Task coordination and follow-up specialist. Tracks action items, manages follow-ups, coordinates cross-team dependencies, and ensures accountability.",
       "version": "1.0.0",
       "author": {
         "name": "Markus",
@@ -121,13 +119,61 @@
       "repository": "https://github.com/markus/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
-        "team-coordination",
-        "collaboration",
-        "meeting-facilitation",
+        "task-coordination",
+        "follow-ups",
+        "action-items",
+        "accountability",
+        "dependency-management"
+      ],
+      "category": "productivity",
+      "strict": false,
+      "commands": [],
+      "agents": []
+    },
+    {
+      "name": "decision-tracker",
+      "source": "./",
+      "description": "Decision documentation and tracking specialist. Documents decisions, tracks decision history, manages decision logs (ADR), and ensures follow-through.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
         "decision-tracking",
-        "communication"
+        "decision-logs",
+        "adr",
+        "decision-documentation",
+        "accountability"
       ],
-      "category": "project-management",
+      "category": "productivity",
+      "strict": false,
+      "commands": [],
+      "agents": []
+    },
+    {
+      "name": "project-assistant-full",
+      "source": "./",
+      "description": "Complete project assistant toolkit combining all specialists: document analysis, timeline planning, meeting facilitation, report generation, task coordination, and decision tracking.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "project-assistant",
+        "productivity",
+        "project-management",
+        "executive-assistant",
+        "all-in-one"
+      ],
+      "category": "productivity",
       "strict": false,
       "commands": [],
       "agents": []
