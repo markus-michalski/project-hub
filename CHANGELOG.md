@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.0.0] - 2025-11-24
+
+### Added
+- Add 5 new project management agents
+- Add Document Analyst agent with comprehensive analysis capabilities
+
+### Changed
+- Reset CHANGELOG to unreleased state
+- Remove release script (belongs in script_collection)
+- Prepare for public release
+- Restructure plugins for project assistant use cases
+- Initialize project management agents repository
+
+### Fixed
+- Correct Unreleased link in CHANGELOG
+
+
 ### Added
 - Initial release with 11 specialized project management agents
 - Core agents:
@@ -27,4 +46,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/claude-agents-project-management
+[Unreleased]: https://github.com/markus-michalski/claude-agents-project-management/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/markus-michalski/claude-agents-project-management/releases/tag/v1.0.0
