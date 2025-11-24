@@ -12,6 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2025-11-24
 
 ### Added
+- Add 5 new project management agents
+- Add Document Analyst agent with comprehensive analysis capabilities
+
+### Changed
+- Prepare for public release
+- Restructure plugins for project assistant use cases
+- Initialize project management agents repository
+
+
+---
+
+## [1.0.0] - 2025-11-24
+
+### Added
 - Initial release with 11 specialized project management agents
 - Core agents:
   - Document Analyst: Analyze and summarize project documents
