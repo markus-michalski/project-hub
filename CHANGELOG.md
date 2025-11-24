@@ -27,4 +27,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/claude-agents-project-management/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/markus-michalski/claude-agents-project-management
