@@ -1,9 +1,9 @@
 {
   "name": "project-assistant-pro",
   "owner": {
-    "name": "Markus",
-    "email": "markus@example.com",
-    "url": "https://github.com/markus"
+    "name": "Markus Michalski",
+    "email": "info@markus-michalski.net",
+    "url": "https://github.com/markus-michalski"
   },
   "metadata": {
     "description": "Professional project assistant agents for document analysis, timeline planning, meeting preparation, and report generation",
@@ -16,11 +16,11 @@
       "description": "Document analysis and summarization specialist. Analyzes project documents, extracts key information, identifies action items, and creates structured summaries.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "document-analysis",
@@ -42,11 +42,11 @@
       "description": "Timeline and capacity planning specialist. Creates project timelines, calculates resource capacity, identifies bottlenecks, and manages dependencies.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "timeline-planning",
@@ -68,11 +68,11 @@
       "description": "Meeting preparation and facilitation specialist. Prepares agendas, creates meeting briefs, generates discussion points, and produces structured meeting notes.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "meeting-preparation",
@@ -94,11 +94,11 @@
       "description": "Report creation and preparation specialist. Generates status reports, executive summaries, stakeholder updates, and project dashboards with data visualization.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "report-generation",
@@ -120,11 +120,11 @@
       "description": "Task coordination and follow-up specialist. Tracks action items, manages follow-ups, coordinates cross-team dependencies, and ensures accountability.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "task-coordination",
@@ -146,11 +146,11 @@
       "description": "Decision documentation and tracking specialist. Documents decisions, tracks decision history, manages decision logs (ADR), and ensures follow-through.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "decision-tracking",
@@ -172,11 +172,11 @@
       "description": "Stakeholder communication specialist. Crafts targeted communication for different stakeholder groups, creates communication plans, and manages stakeholder relationships.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "stakeholder-communication",
@@ -198,11 +198,11 @@
       "description": "Risk management specialist. Identifies, assesses, tracks, and mitigates project risks. Creates risk registers and response plans.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "risk-management",
@@ -224,11 +224,11 @@
       "description": "Budget management specialist. Plans, tracks, forecasts, and optimizes project budgets. Creates cost analysis and variance reports.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "budget-management",
@@ -250,11 +250,11 @@
       "description": "Quality assurance specialist. Defines quality standards, creates testing strategies, builds QA checklists, and tracks quality metrics.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "quality-assurance",
@@ -276,11 +276,11 @@
       "description": "Knowledge management specialist. Captures, organizes, shares, and maintains organizational knowledge. Creates documentation, onboarding guides, and knowledge bases.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "knowledge-management",
@@ -302,11 +302,11 @@
       "description": "Complete project assistant toolkit combining all specialists: document analysis, timeline planning, meeting facilitation, report generation, task coordination, decision tracking, stakeholder communication, risk management, budget tracking, quality assurance, and knowledge management.",
       "version": "1.0.0",
       "author": {
-        "name": "Markus",
-        "url": "https://github.com/markus"
+        "name": "Markus Michalski",
+        "url": "https://github.com/markus-michalski"
       },
-      "homepage": "https://github.com/markus/claude-agents-project-management",
-      "repository": "https://github.com/markus/claude-agents-project-management",
+      "homepage": "https://github.com/markus-michalski/claude-agents-project-management",
+      "repository": "https://github.com/markus-michalski/claude-agents-project-management",
       "license": "MIT",
       "keywords": [
         "project-assistant",
