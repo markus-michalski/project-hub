@@ -58,7 +58,9 @@
       "category": "productivity",
       "strict": false,
       "commands": [],
-      "agents": []
+      "agents": [
+        "./agents/timeline-planner.md"
+      ]
     },
     {
       "name": "meeting-facilitator",
@@ -82,7 +84,9 @@
       "category": "productivity",
       "strict": false,
       "commands": [],
-      "agents": []
+      "agents": [
+        "./agents/meeting-facilitator.md"
+      ]
     },
     {
       "name": "report-generator",
@@ -106,7 +110,9 @@
       "category": "productivity",
       "strict": false,
       "commands": [],
-      "agents": []
+      "agents": [
+        "./agents/report-generator.md"
+      ]
     },
     {
       "name": "task-coordinator",
@@ -130,7 +136,9 @@
       "category": "productivity",
       "strict": false,
       "commands": [],
-      "agents": []
+      "agents": [
+        "./agents/task-coordinator.md"
+      ]
     },
     {
       "name": "decision-tracker",
@@ -154,12 +162,144 @@
       "category": "productivity",
       "strict": false,
       "commands": [],
-      "agents": []
+      "agents": [
+        "./agents/decision-tracker.md"
+      ]
+    },
+    {
+      "name": "stakeholder-communicator",
+      "source": "./",
+      "description": "Stakeholder communication specialist. Crafts targeted communication for different stakeholder groups, creates communication plans, and manages stakeholder relationships.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "stakeholder-communication",
+        "executive-communication",
+        "team-communication",
+        "change-management",
+        "crisis-communication"
+      ],
+      "category": "productivity",
+      "strict": false,
+      "commands": [],
+      "agents": [
+        "./agents/stakeholder-communicator.md"
+      ]
+    },
+    {
+      "name": "risk-manager",
+      "source": "./",
+      "description": "Risk management specialist. Identifies, assesses, tracks, and mitigates project risks. Creates risk registers and response plans.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "risk-management",
+        "risk-assessment",
+        "mitigation-planning",
+        "risk-tracking",
+        "contingency-planning"
+      ],
+      "category": "productivity",
+      "strict": false,
+      "commands": [],
+      "agents": [
+        "./agents/risk-manager.md"
+      ]
+    },
+    {
+      "name": "budget-tracker",
+      "source": "./",
+      "description": "Budget management specialist. Plans, tracks, forecasts, and optimizes project budgets. Creates cost analysis and variance reports.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "budget-management",
+        "cost-tracking",
+        "financial-forecasting",
+        "budget-planning",
+        "cost-analysis"
+      ],
+      "category": "productivity",
+      "strict": false,
+      "commands": [],
+      "agents": [
+        "./agents/budget-tracker.md"
+      ]
+    },
+    {
+      "name": "quality-assurance",
+      "source": "./",
+      "description": "Quality assurance specialist. Defines quality standards, creates testing strategies, builds QA checklists, and tracks quality metrics.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "quality-assurance",
+        "testing-strategy",
+        "qa-checklists",
+        "code-review",
+        "quality-metrics"
+      ],
+      "category": "productivity",
+      "strict": false,
+      "commands": [],
+      "agents": [
+        "./agents/quality-assurance.md"
+      ]
+    },
+    {
+      "name": "knowledge-manager",
+      "source": "./",
+      "description": "Knowledge management specialist. Captures, organizes, shares, and maintains organizational knowledge. Creates documentation, onboarding guides, and knowledge bases.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Markus",
+        "url": "https://github.com/markus"
+      },
+      "homepage": "https://github.com/markus/claude-agents-project-management",
+      "repository": "https://github.com/markus/claude-agents-project-management",
+      "license": "MIT",
+      "keywords": [
+        "knowledge-management",
+        "documentation",
+        "onboarding",
+        "knowledge-base",
+        "process-documentation"
+      ],
+      "category": "productivity",
+      "strict": false,
+      "commands": [],
+      "agents": [
+        "./agents/knowledge-manager.md"
+      ]
     },
     {
       "name": "project-assistant-full",
       "source": "./",
-      "description": "Complete project assistant toolkit combining all specialists: document analysis, timeline planning, meeting facilitation, report generation, task coordination, and decision tracking.",
+      "description": "Complete project assistant toolkit combining all specialists: document analysis, timeline planning, meeting facilitation, report generation, task coordination, decision tracking, stakeholder communication, risk management, budget tracking, quality assurance, and knowledge management.",
       "version": "1.0.0",
       "author": {
         "name": "Markus",
@@ -179,7 +319,17 @@
       "strict": false,
       "commands": [],
       "agents": [
-        "./agents/document-analyst.md"
+        "./agents/document-analyst.md",
+        "./agents/timeline-planner.md",
+        "./agents/meeting-facilitator.md",
+        "./agents/report-generator.md",
+        "./agents/task-coordinator.md",
+        "./agents/decision-tracker.md",
+        "./agents/stakeholder-communicator.md",
+        "./agents/risk-manager.md",
+        "./agents/budget-tracker.md",
+        "./agents/quality-assurance.md",
+        "./agents/knowledge-manager.md"
       ]
     }
   ]

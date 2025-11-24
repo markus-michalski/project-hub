@@ -1,154 +1,227 @@
 # Claude Code Project Assistant Agents
 
-**Status:** 🚧 In Planung / Noch keine Agents
+**Status:** ✅ Ready to Use
 
-Spezialisierte Claude Code Agents, die dich als **persönlicher Projekt-Assistent** unterstützen.
+Specialized Claude Code agents that support you as a **personal project assistant**.
 
-## 📋 Übersicht
+## 📋 Overview
 
-Dieses Repository wird **professionelle** Claude Code Agents enthalten, die dich bei täglichen Projekt-Management-Aufgaben unterstützen - als wäre ein persönlicher Assistent an deiner Seite.
+This repository contains **professional** Claude Code agents that assist you with daily project management tasks - as if you had a personal assistant by your side.
 
-## 🎯 Geplante Agents
+## 🎯 Available Agents
 
 ### 1. Document Analyst
 **Plugin:** `document-analyst`
 
-**Was macht der Agent?**
-- Analysiert Projektdokumente (Requirements, Spezifikationen, Meeting Notes)
-- Extrahiert wichtige Informationen und Key Points
-- Identifiziert Action Items und Verantwortlichkeiten
-- Erstellt strukturierte Zusammenfassungen
-- Vergleicht Dokument-Versionen und zeigt Änderungen
+**What does this agent do?**
+- Analyzes project documents (requirements, specifications, meeting notes)
+- Extracts key information and key points
+- Identifies action items and responsibilities
+- Creates structured summaries
+- Compares document versions and shows changes
 
 **Use Cases:**
-- "Analysiere dieses Requirements-Dokument und fasse die wichtigsten Punkte zusammen"
-- "Extrahiere alle Action Items aus diesen Meeting Notes"
-- "Vergleiche Version 1 und Version 2 der Spezifikation"
+- "Analyze this requirements document and summarize the key points"
+- "Extract all action items from these meeting notes"
+- "Compare version 1 and version 2 of the specification"
 
 ### 2. Timeline Planner
 **Plugin:** `timeline-planner`
 
-**Was macht der Agent?**
-- Erstellt Projekt-Timelines aus Task-Listen
-- Berechnet Ressourcen-Kapazitäten
-- Identifiziert Bottlenecks und kritische Pfade
-- Managed Abhängigkeiten zwischen Tasks
-- Erstellt Gantt-Charts und Roadmaps
+**What does this agent do?**
+- Creates project timelines from task lists
+- Calculates resource capacity
+- Identifies bottlenecks and critical paths
+- Manages dependencies between tasks
+- Creates Gantt charts and roadmaps
 
 **Use Cases:**
-- "Erstelle einen Timeline-Plan für diese 20 Tasks mit 3 Entwicklern"
-- "Berechne die Kapazität für Q1 2025 basierend auf diesen Aufgaben"
-- "Identifiziere Bottlenecks in diesem Projektplan"
+- "Create a timeline plan for these 20 tasks with 3 developers"
+- "Calculate capacity for Q1 2025 based on these tasks"
+- "Identify bottlenecks in this project plan"
 
 ### 3. Meeting Facilitator
 **Plugin:** `meeting-facilitator`
 
-**Was macht der Agent?**
-- Bereitet Meeting-Agendas vor
-- Erstellt Meeting-Briefs mit Context und Zielen
-- Generiert Diskussionspunkte basierend auf Input
-- Produziert strukturierte Meeting-Protokolle
-- Trackt Follow-up Actions aus Meetings
+**What does this agent do?**
+- Prepares meeting agendas
+- Creates meeting briefs with context and objectives
+- Generates discussion points based on input
+- Produces structured meeting notes
+- Tracks follow-up actions from meetings
 
 **Use Cases:**
-- "Bereite eine Agenda für das Sprint Planning Meeting vor"
-- "Erstelle ein Meeting-Brief für das Stakeholder-Update"
-- "Wandle diese Meeting-Notizen in ein strukturiertes Protokoll um"
+- "Prepare an agenda for the sprint planning meeting"
+- "Create a meeting brief for the stakeholder update"
+- "Convert these meeting notes into a structured protocol"
 
 ### 4. Report Generator
 **Plugin:** `report-generator`
 
-**Was macht der Agent?**
-- Generiert Status-Reports (wöchentlich/monatlich)
-- Erstellt Executive Summaries
-- Produziert Stakeholder-Updates
-- Erstellt Project Dashboards
-- Visualisiert Daten (Markdown-Tables, Charts)
+**What does this agent do?**
+- Generates status reports (weekly/monthly)
+- Creates executive summaries
+- Produces stakeholder updates
+- Creates project dashboards
+- Visualizes data (Markdown tables, charts)
 
 **Use Cases:**
-- "Erstelle einen Weekly Status Report basierend auf diesen Daten"
-- "Generiere ein Executive Summary für das Management"
-- "Erstelle ein Stakeholder-Update mit den wichtigsten Achievements"
+- "Create a weekly status report based on this data"
+- "Generate an executive summary for management"
+- "Create a stakeholder update with key achievements"
 
 ### 5. Task Coordinator
 **Plugin:** `task-coordinator`
 
-**Was macht der Agent?**
-- Trackt Action Items über mehrere Projekte
-- Managed Follow-ups und Deadlines
-- Koordiniert cross-team Dependencies
-- Stellt Accountability sicher
-- Priorisiert Tasks nach Dringlichkeit
+**What does this agent do?**
+- Tracks action items across multiple projects
+- Manages follow-ups and deadlines
+- Coordinates cross-team dependencies
+- Ensures accountability
+- Prioritizes tasks by urgency
 
 **Use Cases:**
-- "Zeige mir alle offenen Action Items aus den letzten 3 Meetings"
-- "Erstelle eine Follow-up-Liste für diese Woche"
-- "Priorisiere diese 15 Tasks nach Wichtigkeit und Abhängigkeiten"
+- "Show me all open action items from the last 3 meetings"
+- "Create a follow-up list for this week"
+- "Prioritize these 15 tasks by importance and dependencies"
 
 ### 6. Decision Tracker
 **Plugin:** `decision-tracker`
 
-**Was macht der Agent?**
-- Dokumentiert Entscheidungen strukturiert
-- Trackt Decision History über Zeit
-- Managed Decision Logs (ADR - Architecture Decision Records)
-- Stellt Follow-through sicher
-- Identifiziert offene Entscheidungen
+**What does this agent do?**
+- Documents decisions in structured format
+- Tracks decision history over time
+- Manages decision logs (ADR - Architecture Decision Records)
+- Ensures follow-through
+- Identifies open decisions
 
 **Use Cases:**
-- "Dokumentiere diese Entscheidung als ADR"
-- "Zeige alle Entscheidungen zum Thema 'API-Design'"
-- "Welche Entscheidungen sind noch offen?"
+- "Document this decision as an ADR"
+- "Show all decisions related to 'API design'"
+- "Which decisions are still open?"
 
-### 7. Project Assistant (All-in-One)
+### 7. Stakeholder Communicator
+**Plugin:** `stakeholder-communicator`
+
+**What does this agent do?**
+- Crafts targeted communication for different stakeholder groups
+- Creates stakeholder communication plans
+- Manages executive, technical, and customer communication
+- Handles crisis and change communication
+- Develops stakeholder matrices and engagement strategies
+
+**Use Cases:**
+- "Create an executive brief for the CEO about project status"
+- "Draft a technical update email for the development team"
+- "Prepare a customer communication about upcoming changes"
+
+### 8. Risk Manager
+**Plugin:** `risk-manager`
+
+**What does this agent do?**
+- Identifies and assesses project risks
+- Creates risk registers and response plans
+- Develops mitigation and contingency strategies
+- Tracks risk indicators and triggers
+- Manages risk monitoring and reporting
+
+**Use Cases:**
+- "Create initial risk assessment for cloud migration project"
+- "Analyze these risks and prioritize by severity"
+- "Develop mitigation plan for integration failure risk"
+
+### 9. Budget Tracker
+**Plugin:** `budget-tracker`
+
+**What does this agent do?**
+- Plans and tracks project budgets
+- Forecasts costs and identifies variances
+- Analyzes spending trends and burn rates
+- Creates budget reports and dashboards
+- Manages contingency reserves
+
+**Use Cases:**
+- "Create budget plan for 6-month project with 5 developers"
+- "Analyze current spending and forecast completion cost"
+- "Generate monthly budget status report"
+
+### 10. Quality Assurance
+**Plugin:** `quality-assurance`
+
+**What does this agent do?**
+- Defines quality standards and acceptance criteria
+- Creates testing strategies and QA checklists
+- Develops code review processes
+- Tracks quality metrics and defect rates
+- Builds pre-release and deployment checklists
+
+**Use Cases:**
+- "Create Definition of Done for our project"
+- "Design testing strategy for new feature"
+- "Generate pre-release quality checklist"
+
+### 11. Knowledge Manager
+**Plugin:** `knowledge-manager`
+
+**What does this agent do?**
+- Captures and organizes organizational knowledge
+- Creates onboarding guides and documentation
+- Builds knowledge bases and FAQs
+- Develops runbooks and playbooks
+- Manages documentation maintenance
+
+**Use Cases:**
+- "Create 30-day onboarding guide for new developers"
+- "Document our deployment process as a runbook"
+- "Build FAQ for common development issues"
+
+### 12. Project Assistant (All-in-One)
 **Plugin:** `project-assistant-full`
 
-Lädt alle oben genannten Agents für vollständige Assistenz.
+Loads all 11 agents above for complete project assistance.
 
-## 📁 Repository-Struktur
+## 📁 Repository Structure
 
 ```
 claude-agents-project-management/
 ├── .claude-plugin/
-│   └── marketplace.json    # Plugin-Konfiguration (fertig)
+│   └── marketplace.json    # Plugin configuration
 ├── agents/
-│   ├── document-analyst.md           # (noch zu erstellen)
-│   ├── timeline-planner.md           # (noch zu erstellen)
-│   ├── meeting-facilitator.md        # (noch zu erstellen)
-│   ├── report-generator.md           # (noch zu erstellen)
-│   ├── task-coordinator.md           # (noch zu erstellen)
-│   └── decision-tracker.md           # (noch zu erstellen)
+│   ├── document-analyst.md
+│   ├── timeline-planner.md
+│   ├── meeting-facilitator.md
+│   ├── report-generator.md
+│   ├── task-coordinator.md
+│   └── decision-tracker.md
 └── README.md
 ```
 
-## 🚀 Installation (Future)
+## 🚀 Installation
 
-Sobald die Agents erstellt sind:
-
-### Variante 1: Als Claude Code Marketplace Plugin
+### Option 1: Via Claude Code Marketplace Plugin
 
 ```bash
 # In Claude Code
 /add marketplace https://github.com/markus-michalski/claude-agents-project-management
 ```
 
-### Variante 2: Manuelle Installation
+### Option 2: Manual Installation
 
 ```bash
-# 1. Plugin-Verzeichnis erstellen
+# 1. Create plugin directory
 mkdir -p ~/.claude/plugins/marketplaces/project-assistant-pro/.claude-plugin
 mkdir -p ~/.claude/plugins/marketplaces/project-assistant-pro/agents
 
-# 2. Plugin-Dateien kopieren
-cp /home/markus/projekte/claude/claude-agents-project-management/.claude-plugin/marketplace.json \
+# 2. Copy plugin files
+cp /path/to/claude-agents-project-management/.claude-plugin/marketplace.json \
    ~/.claude/plugins/marketplaces/project-assistant-pro/.claude-plugin/
-cp /home/markus/projekte/claude/claude-agents-project-management/agents/*.md \
+cp /path/to/claude-agents-project-management/agents/*.md \
    ~/.claude/plugins/marketplaces/project-assistant-pro/agents/
 
-# 3. Plugin in settings.json aktivieren
+# 3. Enable plugin in settings.json
 ```
 
-Füge folgendes in `~/.claude/settings.json` ein:
+Add this to `~/.claude/settings.json`:
 
 ```json
 {
@@ -159,164 +232,216 @@ Füge folgendes in `~/.claude/settings.json` ein:
     "report-generator@project-assistant-pro": true,
     "task-coordinator@project-assistant-pro": true,
     "decision-tracker@project-assistant-pro": true,
+    "stakeholder-communicator@project-assistant-pro": true,
+    "risk-manager@project-assistant-pro": true,
+    "budget-tracker@project-assistant-pro": true,
+    "quality-assurance@project-assistant-pro": true,
+    "knowledge-manager@project-assistant-pro": true,
     "project-assistant-full@project-assistant-pro": true
   }
 }
 ```
 
-## 📖 Verwendung (Future)
+## 📖 Usage
 
-### Mit Task-Tool
+### With Task Tool
 
 ```typescript
 // Document Analyst
 Task({
-  subagent_type: "document-analyst:document-analyst-pro",
-  prompt: "Analysiere diese Requirements und extrahiere alle Action Items",
+  subagent_type: "document-analyst:document-analyst",
+  prompt: "Analyze these requirements and extract all action items",
   description: "Analyze requirements document"
 })
 
 // Timeline Planner
 Task({
-  subagent_type: "timeline-planner:timeline-planner-pro",
-  prompt: "Erstelle einen Timeline-Plan für diese 15 Tasks",
+  subagent_type: "timeline-planner:timeline-planner",
+  prompt: "Create a timeline plan for these 15 tasks",
   description: "Create timeline plan"
 })
 
 // Meeting Facilitator
 Task({
-  subagent_type: "meeting-facilitator:meeting-facilitator-pro",
-  prompt: "Bereite eine Agenda für das Sprint Planning vor",
+  subagent_type: "meeting-facilitator:meeting-facilitator",
+  prompt: "Prepare an agenda for sprint planning",
   description: "Prepare meeting agenda"
+})
+
+// Report Generator
+Task({
+  subagent_type: "report-generator:report-generator",
+  prompt: "Generate a weekly status report",
+  description: "Generate status report"
+})
+
+// Task Coordinator
+Task({
+  subagent_type: "task-coordinator:task-coordinator",
+  prompt: "Show all open action items from last week",
+  description: "Track action items"
+})
+
+// Decision Tracker
+Task({
+  subagent_type: "decision-tracker:decision-tracker",
+  prompt: "Document this architecture decision as ADR",
+  description: "Create decision record"
+})
+
+// Stakeholder Communicator
+Task({
+  subagent_type: "stakeholder-communicator:stakeholder-communicator",
+  prompt: "Create executive brief for CEO about cloud migration project status",
+  description: "Create executive communication"
+})
+
+// Risk Manager
+Task({
+  subagent_type: "risk-manager:risk-manager",
+  prompt: "Create risk assessment for 6-month cloud migration with 5-person team",
+  description: "Assess project risks"
+})
+
+// Budget Tracker
+Task({
+  subagent_type: "budget-tracker:budget-tracker",
+  prompt: "Analyze current spending and forecast total project cost",
+  description: "Track budget status"
+})
+
+// Quality Assurance
+Task({
+  subagent_type: "quality-assurance:quality-assurance",
+  prompt: "Create Definition of Done and testing strategy for new feature",
+  description: "Define quality standards"
+})
+
+// Knowledge Manager
+Task({
+  subagent_type: "knowledge-manager:knowledge-manager",
+  prompt: "Create 30-day onboarding guide for new backend developers",
+  description: "Build onboarding guide"
+})
+
+// All-in-One Assistant
+Task({
+  subagent_type: "project-assistant-full:project-assistant",
+  prompt: "Analyze this meeting transcript and create action items, decisions, and a summary",
+  description: "Full project assistance"
 })
 ```
 
-## 🎯 Agent-Entwicklung - Nächste Schritte
+## 🔧 marketplace.json Structure
 
-### Phase 1: Research & Content-Sammlung
+The `marketplace.json` contains 12 plugins:
 
-Für jeden Agent muss folgendes recherchiert werden:
+1. **`document-analyst`** - Document analysis
+2. **`timeline-planner`** - Timeline & capacity planning
+3. **`meeting-facilitator`** - Meeting preparation
+4. **`report-generator`** - Report creation
+5. **`task-coordinator`** - Task coordination
+6. **`decision-tracker`** - Decision documentation
+7. **`stakeholder-communicator`** - Stakeholder communication
+8. **`risk-manager`** - Risk management
+9. **`budget-tracker`** - Budget tracking
+10. **`quality-assurance`** - Quality assurance
+11. **`knowledge-manager`** - Knowledge management
+12. **`project-assistant-full`** - All agents combined
 
-#### Document Analyst
-- Document Analysis Frameworks
-- Information Extraction Techniques
-- Summarization Best Practices
-- Action Item Identification Patterns
-- Markdown Formatting Standards
+**Advantage:** You can activate individual agents or use all of them together!
 
-#### Timeline Planner
-- Project Scheduling Methodologies (CPM, PERT)
-- Resource Capacity Planning Formulas
-- Dependency Management Patterns
-- Gantt Chart Best Practices
-- Markdown Timeline Formats (Mermaid Gantt)
+## 🎯 Agent Capabilities
 
-#### Meeting Facilitator
-- Agenda Templates (verschiedene Meeting-Typen)
-- Meeting Brief Structures
-- Protocol Standards
-- Action Item Tracking Patterns
-- Timeboxing Techniques
+### Document Analyst
+- BLUF (Bottom Line Up Front) summaries
+- Executive summaries
+- Action item extraction
+- Stakeholder identification
+- Risk and dependency analysis
+- Version comparison
 
-#### Report Generator
-- Status Report Templates
-- Executive Summary Formats
-- Stakeholder Communication Patterns
-- Data Visualization in Markdown
-- KPI Dashboard Designs
+### Timeline Planner
+- Critical Path Method (CPM)
+- Resource capacity planning
+- Dependency management
+- Mermaid Gantt charts
+- Milestone tracking
+- Bottleneck identification
 
-#### Task Coordinator
-- Task Management Frameworks (GTD, Eisenhower Matrix)
-- Follow-up Tracking Systems
-- Dependency Coordination Patterns
-- Priority Frameworks (MoSCoW, RICE)
-- Accountability Patterns (RACI)
+### Meeting Facilitator
+- Meeting agenda templates (Sprint Planning, Retrospective, Stakeholder Updates, etc.)
+- Meeting briefs with context and objectives
+- Structured meeting notes
+- Action item tracking
+- Decision documentation
+- Follow-up management
 
-#### Decision Tracker
-- ADR (Architecture Decision Records) Format
-- Decision Log Templates
-- Decision Matrix Frameworks
-- Follow-through Tracking
-- Historical Context Documentation
+### Report Generator
+- Weekly/monthly status reports
+- Executive summaries
+- Stakeholder updates
+- KPI dashboards
+- Risk reports
+- Progress visualization
 
-### Phase 2: Agent-Erstellung
+### Task Coordinator
+- GTD (Getting Things Done) framework
+- Eisenhower Matrix prioritization
+- RACI matrix accountability
+- Dependency coordination
+- Follow-up tracking
+- Multi-project overview
 
-Jeder Agent sollte enthalten:
+### Decision Tracker
+- Architecture Decision Records (ADR)
+- Decision logs
+- Decision matrices
+- Historical context
+- Follow-through tracking
+- Open decision management
 
-```markdown
-# [Agent Name]
+### Stakeholder Communicator
+- Executive communication templates
+- Technical team communication
+- Customer communication
+- Crisis and change communication
+- Stakeholder analysis and matrices
+- Multi-channel communication plans
 
-## Role & Expertise
-[Was kann der Agent? Welche Rolle nimmt er ein?]
+### Risk Manager
+- Risk identification and assessment
+- Risk registers and matrices
+- Mitigation and contingency planning
+- Risk monitoring and tracking
+- Monte Carlo simulation
+- Risk burndown charts
 
-## Core Capabilities
-[Hauptfähigkeiten des Agents]
+### Budget Tracker
+- Budget planning and baseline
+- Cost tracking and forecasting
+- Earned Value Management (EVM)
+- Burn rate analysis
+- Variance reporting
+- Contingency management
 
-## Document Templates
-[Vorlagen für verschiedene Output-Formate]
+### Quality Assurance
+- Definition of Done (DoD)
+- Code quality standards
+- Testing strategy (pyramid model)
+- QA checklists (code review, pre-release, accessibility)
+- Quality metrics and dashboards
+- Bug triage and severity classification
 
-## Best Practices
-[Best Practices für die jeweilige Aufgabe]
+### Knowledge Manager
+- Knowledge base structure
+- Architecture Decision Records (ADR)
+- Onboarding guides
+- Runbooks and playbooks
+- FAQ creation
+- Documentation maintenance
 
-## Workflow Patterns
-[Typische Workflows und Prozesse]
-
-## Output Formats
-[Standard-Formate für Output (Markdown, Tables, etc.)]
-
-## Examples
-[Real-World Beispiele mit Input/Output]
-
-## Common Pitfalls
-[Was sollte vermieden werden?]
-
-## Integration Points
-[Wie arbeitet der Agent mit anderen Agents zusammen?]
-```
-
-### Phase 3: Testing & Iteration
-
-1. **Real-World Testing**
-   - Teste jeden Agent mit echten Projekt-Daten
-   - Sammle Feedback zu Output-Qualität
-   - Iteriere basierend auf Erfahrungen
-
-2. **Cross-Agent Integration**
-   - Teste Zusammenarbeit zwischen Agents
-   - z.B. Meeting Facilitator → Task Coordinator → Timeline Planner
-
-3. **Template Refinement**
-   - Verbessere Templates basierend auf Usage
-   - Füge neue Templates hinzu
-
-## 🔧 marketplace.json Struktur
-
-Die `marketplace.json` ist vorbereitet mit 7 Plugins:
-
-1. **`document-analyst`** - Dokumentenanalyse
-2. **`timeline-planner`** - Timeline & Kapazitätsplanung
-3. **`meeting-facilitator`** - Meeting-Vorbereitung
-4. **`report-generator`** - Report-Erstellung
-5. **`task-coordinator`** - Task-Koordination
-6. **`decision-tracker`** - Entscheidungsdokumentation
-7. **`project-assistant-full`** - Alle Agents kombiniert
-
-**Vorteil:** Du kannst einzelne Agents aktivieren oder alle zusammen nutzen!
-
-## 📝 TODO
-
-- [ ] Document Analyst Agent erstellen (`agents/document-analyst.md`)
-- [ ] Timeline Planner Agent erstellen (`agents/timeline-planner.md`)
-- [ ] Meeting Facilitator Agent erstellen (`agents/meeting-facilitator.md`)
-- [ ] Report Generator Agent erstellen (`agents/report-generator.md`)
-- [ ] Task Coordinator Agent erstellen (`agents/task-coordinator.md`)
-- [ ] Decision Tracker Agent erstellen (`agents/decision-tracker.md`)
-- [ ] marketplace.json mit Agent-Pfaden aktualisieren
-- [ ] Agents mit realen Projekt-Daten testen
-- [ ] Templates für verschiedene Use Cases erstellen
-- [ ] Integration zwischen Agents testen
-
-## 📚 Inspiration & Ressourcen
+## 📚 Inspiration & Resources
 
 ### Document Analysis
 - [Information Extraction Best Practices](https://en.wikipedia.org/wiki/Information_extraction)
@@ -348,24 +473,88 @@ Die `marketplace.json` ist vorbereitet mit 7 Plugins:
 - [Decision Log Examples](https://www.projectmanager.com/templates/decision-log-template)
 - Decision Matrix Methods
 
-## 💡 Mögliche Erweiterungen (Future)
 
-- **Stakeholder Communicator** - Stakeholder-spezifische Kommunikation
-- **Risk Manager** - Risiko-Identifikation und -Management
-- **Budget Tracker** - Budget-Planung und -Tracking
-- **Quality Assurance** - QA-Checklisten und Reviews
-- **Knowledge Manager** - Wissens-Dokumentation und -Verteilung
+## 🤖 Real-World Use Cases
 
-## 📄 Lizenz
+### Use Case 1: Sprint Planning
+```typescript
+// 1. Analyze last sprint's retrospective notes
+Task({
+  subagent_type: "document-analyst:document-analyst",
+  prompt: "Analyze these retrospective notes and extract learnings",
+  description: "Analyze retrospective"
+})
 
-MIT License (geplant)
+// 2. Create meeting agenda for sprint planning
+Task({
+  subagent_type: "meeting-facilitator:meeting-facilitator",
+  prompt: "Prepare sprint planning agenda based on backlog",
+  description: "Prepare sprint planning"
+})
 
-## 🤝 Beitragen
+// 3. Create timeline for sprint
+Task({
+  subagent_type: "timeline-planner:timeline-planner",
+  prompt: "Create 2-week sprint timeline for these 20 tasks",
+  description: "Create sprint timeline"
+})
+```
 
-Nach Fertigstellung und Testing wird das Repository öffentlich gemacht.
+### Use Case 2: Stakeholder Update
+```typescript
+// 1. Generate status report
+Task({
+  subagent_type: "report-generator:report-generator",
+  prompt: "Create weekly status report from these updates",
+  description: "Generate status report"
+})
+
+// 2. Extract decisions made this week
+Task({
+  subagent_type: "decision-tracker:decision-tracker",
+  prompt: "Document all decisions from this week's meetings",
+  description: "Track decisions"
+})
+
+// 3. Identify open action items
+Task({
+  subagent_type: "task-coordinator:task-coordinator",
+  prompt: "Show all open action items and their status",
+  description: "Track action items"
+})
+```
+
+### Use Case 3: Project Kickoff
+```typescript
+// All-in-One approach
+Task({
+  subagent_type: "project-assistant-full:project-assistant",
+  prompt: "Analyze requirements doc, create timeline, prepare kickoff meeting agenda",
+  description: "Complete project kickoff"
+})
+```
+
+## 📄 License
+
+MIT License
+
+## 🤝 Contributing
+
+This repository is open for contributions. Feel free to:
+- Report issues
+- Suggest improvements
+- Add new agent capabilities
+- Share real-world use cases
+
+## 🔄 Version History
+
+- **v1.0.0** (November 2025) - Initial release with 11 specialized agents + all-in-one assistant
+  - Core agents: Document Analyst, Timeline Planner, Meeting Facilitator, Report Generator, Task Coordinator, Decision Tracker
+  - Extended agents: Stakeholder Communicator, Risk Manager, Budget Tracker, Quality Assurance, Knowledge Manager
 
 ---
 
-**Erstellt:** November 2025
-**Status:** 🚧 Plugin-Struktur vorbereitet, Agents noch zu erstellen
-**Nächster Schritt:** Agent-Entwicklung basierend auf realen Use Cases
+**Created:** November 2025
+**Status:** ✅ Production Ready
+**Author:** Markus Michalski
+**Repository:** https://github.com/markus-michalski/claude-agents-project-management
