@@ -7,7 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
----
+### Added
+- Nothing yet
+
+### Changed
+- Nothing yet
+
+### Deprecated
+- Nothing yet
+
+### Removed
+- Nothing yet
+
+### Fixed
+- Nothing yet
+
+### Security
+- Nothing yet
+
+## [1.1.0] - 2026-04-13
+
+### Added
+- add config.yaml support for docs_root, db_path, user and language
+- add /setup skill for first-time installation
+
+### Changed
+- add marketplace.json for /add marketplace installer
+- feat!: rebuild as project-hub plugin with MCP server and skills
+- Revise CHANGELOG for version 1.0.0 release
 
 ## [1.0.0] - 2025-11-24
 
@@ -41,5 +68,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/claude-agents-project-management/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v1.1.0...HEAD
 [1.0.0]: https://github.com/markus-michalski/claude-agents-project-management/releases/tag/v1.0.0
+[1.1.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.1.0
