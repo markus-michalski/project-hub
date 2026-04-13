@@ -1,6 +1,6 @@
 ---
 name: setup
-description: "First-time setup for project-hub. Creates venv, installs dependencies, initializes database. Use when: (1) Plugin just installed, (2) MCP server not responding, (3) User says 'setup' or 'einrichten'."
+description: "First-time setup for project-hub. Creates venv, installs dependencies, copies config, initializes database. Use when: (1) Plugin just installed, (2) MCP server not responding, (3) User says 'setup' or 'einrichten'."
 model: claude-sonnet-4-6
 user-invocable: true
 ---
@@ -17,8 +17,11 @@ First-time setup and repair for the project-hub plugin.
 # Check venv
 test -d ~/.project-hub/venv && echo "venv: OK" || echo "venv: MISSING"
 
+# Check config
+test -f ~/.project-hub/config.yaml && echo "config: OK" || echo "config: MISSING"
+
 # Check dependencies
-~/.project-hub/venv/bin/python3 -c "import mcp; import fastmcp" 2>/dev/null && echo "deps: OK" || echo "deps: MISSING"
+~/.project-hub/venv/bin/python3 -c "import mcp; import fastmcp; import yaml" 2>/dev/null && echo "deps: OK" || echo "deps: MISSING"
 
 # Check data directory
 test -d ~/.project-hub && echo "data-dir: OK" || echo "data-dir: MISSING"
@@ -42,7 +45,19 @@ python3 -m venv ~/.project-hub/venv
 ~/.project-hub/venv/bin/pip install -r ${CLAUDE_PLUGIN_ROOT}/requirements.txt
 ```
 
-### Step 5: Verify MCP Server
+### Step 5: Copy Config (if missing)
+
+```bash
+cp ${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml ~/.project-hub/config.yaml
+```
+
+Then tell the user: "Die Config wurde nach `~/.project-hub/config.yaml` kopiert.
+Du kannst folgende Einstellungen anpassen:
+- `docs_root` — Wo Projekt-Dokumente gespeichert werden (Standard: `~/.project-hub/projects`)
+- `user.name` / `user.email` — Deine Daten für Kommunikations-Drafts
+- `default_language` — Sprache für generierte Texte (`en` oder `de`)"
+
+### Step 6: Verify MCP Server + Init DB
 
 ```bash
 ~/.project-hub/venv/bin/python3 -c "
@@ -54,20 +69,21 @@ print('DB: OK')
 "
 ```
 
-### Step 6: Report
+### Step 7: Report
 
 ```
 ## Project Hub Setup
 
-- Daten-Verzeichnis: OK / ERSTELLT (~/.project-hub)
-- Venv:             OK / ERSTELLT (~/.project-hub/venv)
+- Daten-Verzeichnis: OK / ERSTELLT  (~/.project-hub)
+- Venv:             OK / ERSTELLT  (~/.project-hub/venv)
 - Dependencies:     OK / INSTALLIERT
+- Config:           OK / ERSTELLT  (~/.project-hub/config.yaml)
 - Datenbank:        OK / INITIALISIERT
 
 Starte Claude Code neu, damit der MCP Server geladen wird.
 Danach kannst du loslegen:
 - `/new-project` — Erstes Projekt anlegen
-- `/help` — Alle Skills anzeigen
+- `/help`        — Alle Skills anzeigen
 ```
 
 ## Error Handling

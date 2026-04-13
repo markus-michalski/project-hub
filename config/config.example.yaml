@@ -1,0 +1,29 @@
+# Project Hub Configuration
+# Copy to ~/.project-hub/config.yaml and adjust to your needs
+
+# Directory where project docs folders are stored
+# Each project gets a subfolder: {docs_root}/{project-slug}/docs/
+docs_root: ~/Documents/project-hub
+
+# Database location (SQLite)
+# Default: ~/.project-hub/project-hub.db
+# db_path: ~/.project-hub/project-hub.db
+
+# Your identity (used in communication drafts as sender context)
+user:
+  name: "Your Name"
+  email: "you@example.com"
+  organization: "Your Organization"
+
+# Default language for generated communications
+# Options: de (German), en (English)
+default_language: en
+
+# Communication preferences
+communication:
+  # Default sign-off for emails
+  email_signature: |
+    Best regards,
+    {user.name}
+  # Preferred tone: professional | friendly | formal
+  default_tone: professional

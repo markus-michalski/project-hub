@@ -1,20 +1,16 @@
 """Database initialization and connection management."""
 from __future__ import annotations
 
-import os
 import sqlite3
 from pathlib import Path
 
-
-def get_data_dir() -> Path:
-    """Return the project-hub data directory, creating it if needed."""
-    data_dir = Path(os.environ.get("PROJECT_HUB_DATA_DIR", Path.home() / ".project-hub"))
-    data_dir.mkdir(parents=True, exist_ok=True)
-    return data_dir
+from .config import get_db_path_from_config
 
 
 def get_db_path() -> Path:
-    return get_data_dir() / "project-hub.db"
+    path = get_db_path_from_config()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def get_connection() -> sqlite3.Connection:

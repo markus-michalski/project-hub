@@ -5,7 +5,8 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from .db import get_connection, get_data_dir
+from .db import get_connection
+from .config import get_docs_root
 
 
 def _slugify(name: str) -> str:
@@ -20,7 +21,7 @@ def _row_to_dict(row) -> dict:
 
 
 def _ensure_docs_path(slug: str) -> str:
-    docs_path = get_data_dir() / "projects" / slug / "docs"
+    docs_path = get_docs_root() / slug / "docs"
     docs_path.mkdir(parents=True, exist_ok=True)
     # Create standard subdirectories
     for sub in ["emails", "meeting-notes", "misc"]:
