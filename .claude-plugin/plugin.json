@@ -1,0 +1,23 @@
+{
+  "name": "project-hub",
+  "version": "1.0.0",
+  "description": "Personal project management hub — create projects, store contacts, log notes, generate summaries and communications, all within persistent project context",
+  "author": {
+    "name": "Markus Michalski"
+  },
+  "license": "MIT",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "keywords": [
+    "project-management",
+    "onboarding",
+    "stakeholder-coordination",
+    "communication",
+    "meeting-summaries",
+    "email-drafting",
+    "contacts",
+    "merchant-onboarding",
+    "consulting",
+    "productivity"
+  ]
+}

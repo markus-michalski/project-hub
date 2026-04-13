@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "project-hub-mcp": {
+      "type": "stdio",
+      "command": "${HOME}/.project-hub/venv/bin/python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/servers/project-hub-server/run.py"]
+    }
+  }
+}
