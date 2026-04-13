@@ -1,0 +1,14 @@
+{
+  "name": "project-hub",
+  "owner": {
+    "name": "markus-michalski"
+  },
+  "plugins": [
+    {
+      "name": "project-hub",
+      "description": "Personal project management hub — create projects, store contacts, log notes, generate summaries and draft communications within persistent project context",
+      "version": "1.0.0",
+      "source": "./"
+    }
+  ]
+}
