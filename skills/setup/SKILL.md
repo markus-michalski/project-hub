@@ -59,16 +59,47 @@ Du kannst folgende Einstellungen anpassen:
 
 ### Step 5b: Install Knowledge Templates (if missing)
 
-```bash
-# Check if knowledge templates already exist
-test -d ~/.project-hub/knowledge/merchant-onboarding && echo "knowledge: OK" || echo "knowledge: MISSING"
-```
-
-If missing:
+Note: `${CLAUDE_PLUGIN_ROOT}` is NOT available as a shell variable. Use Python to derive
+the plugin root from the MCP server script location:
 
 ```bash
-mkdir -p ~/.project-hub/knowledge/merchant-onboarding
-cp ${CLAUDE_PLUGIN_ROOT}/knowledge/merchant-onboarding/*.md ~/.project-hub/knowledge/merchant-onboarding/
+~/.project-hub/venv/bin/python3 -c "
+import shutil, sys
+from pathlib import Path
+
+# Derive plugin root: run.py is at <plugin_root>/servers/project-hub-server/run.py
+run_py = Path('$HOME/.project-hub/venv').parent.parent
+# Find the actual plugin root via the MCP server path in sys path or via known relative location
+# The server is installed at <plugin_root>/servers/project-hub-server/
+# We need to find it — check common locations
+candidates = [
+    Path.home() / '.claude' / 'plugins' / 'project-hub',
+    Path.home() / 'projekte' / 'project-hub',
+]
+plugin_root = None
+for c in candidates:
+    if (c / 'knowledge' / 'merchant-onboarding').exists():
+        plugin_root = c
+        break
+
+if plugin_root is None:
+    print('knowledge: PLUGIN_ROOT_NOT_FOUND')
+    sys.exit(0)
+
+src = plugin_root / 'knowledge' / 'merchant-onboarding'
+dst = Path.home() / '.project-hub' / 'knowledge' / 'merchant-onboarding'
+dst.mkdir(parents=True, exist_ok=True)
+copied = 0
+for f in src.glob('*.md'):
+    target = dst / f.name
+    if not target.exists():
+        shutil.copy2(f, target)
+        copied += 1
+if copied:
+    print(f'knowledge: COPIED {copied} templates')
+else:
+    print('knowledge: OK (already exists)')
+"
 ```
 
 Tell user: "Knowledge-Templates für `merchant-onboarding` nach `~/.project-hub/knowledge/merchant-onboarding/` kopiert.
