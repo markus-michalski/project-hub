@@ -57,53 +57,71 @@ Du kannst folgende Einstellungen anpassen:
 - `user.name` / `user.email` — Deine Daten für Kommunikations-Drafts
 - `default_language` — Sprache für generierte Texte (`en` oder `de`)"
 
-### Step 5b: Install Knowledge Templates (if missing)
+### Step 5b: Install Knowledge Templates
 
 Note: `${CLAUDE_PLUGIN_ROOT}` is NOT available as a shell variable. Use Python to derive
-the plugin root from the MCP server script location:
+the plugin root by checking known installation locations:
 
 ```bash
 ~/.project-hub/venv/bin/python3 -c "
 import shutil, sys
 from pathlib import Path
 
-# Derive plugin root: run.py is at <plugin_root>/servers/project-hub-server/run.py
-run_py = Path('$HOME/.project-hub/venv').parent.parent
-# Find the actual plugin root via the MCP server path in sys path or via known relative location
-# The server is installed at <plugin_root>/servers/project-hub-server/
-# We need to find it — check common locations
+# Find plugin root — check known locations
 candidates = [
+    Path.home() / '.claude' / 'plugins' / 'marketplaces' / 'project-hub',
     Path.home() / '.claude' / 'plugins' / 'project-hub',
     Path.home() / 'projekte' / 'project-hub',
 ]
 plugin_root = None
 for c in candidates:
-    if (c / 'knowledge' / 'merchant-onboarding').exists():
+    if (c / 'knowledge').exists():
         plugin_root = c
         break
 
 if plugin_root is None:
-    print('knowledge: PLUGIN_ROOT_NOT_FOUND')
+    print('knowledge: PLUGIN_ROOT_NOT_FOUND — skipping template install')
     sys.exit(0)
 
-src = plugin_root / 'knowledge' / 'merchant-onboarding'
-dst = Path.home() / '.project-hub' / 'knowledge' / 'merchant-onboarding'
-dst.mkdir(parents=True, exist_ok=True)
-copied = 0
-for f in src.glob('*.md'):
-    target = dst / f.name
-    if not target.exists():
-        shutil.copy2(f, target)
-        copied += 1
-if copied:
-    print(f'knowledge: COPIED {copied} templates')
-else:
-    print('knowledge: OK (already exists)')
+knowledge_src = plugin_root / 'knowledge'
+knowledge_dst = Path.home() / '.project-hub' / 'knowledge'
+total_copied = 0
+
+for type_dir in sorted(knowledge_src.iterdir()):
+    if not type_dir.is_dir():
+        continue
+    dst = knowledge_dst / type_dir.name
+    dst.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for f in type_dir.glob('*.md'):
+        target = dst / f.name
+        if not target.exists():
+            shutil.copy2(f, target)
+            copied += 1
+    total_copied += copied
+    status = f'COPIED {copied}' if copied else 'OK (exists)'
+    print(f'  {type_dir.name}: {status}')
+
+print(f'knowledge: {total_copied} templates installed total')
 "
 ```
 
-Tell user: "Knowledge-Templates für `merchant-onboarding` nach `~/.project-hub/knowledge/merchant-onboarding/` kopiert.
-Ersetze die Platzhalter mit euren echten Inhalten oder nutze `/knowledge update governance` um sie mit deinen Dokumenten zu befüllen."
+**Ask the user which project types they want to install templates for.**
+Present the available types and let them choose (all / specific ones / skip).
+
+Available types: `merchant-onboarding`, `it-project`, `consulting`, `marketing`, `event`, `generic`
+
+If user selects specific types: run the Python script above but filter `type_dir.name` to only
+the selected types.
+
+If user selects all: run as-is.
+
+If user skips: skip this step entirely.
+
+After install, tell user:
+"Knowledge-Templates installiert nach `~/.project-hub/knowledge/`.
+Öffne die Dateien und ersetze die Platzhalter mit deinen echten Inhalten,
+oder nutze `/knowledge update <topic>` um sie interaktiv zu befüllen."
 
 ### Step 6: Verify MCP Server + Init DB
 
@@ -126,7 +144,7 @@ print('DB: OK')
 - Venv:             OK / ERSTELLT  (~/.project-hub/venv)
 - Dependencies:     OK / INSTALLIERT
 - Config:           OK / ERSTELLT  (~/.project-hub/config.yaml)
-- Knowledge:        OK / ERSTELLT  (~/.project-hub/knowledge/merchant-onboarding/)
+- Knowledge:        OK / INSTALLIERT (~/.project-hub/knowledge/[gewählte Types])
 - Datenbank:        OK / INITIALISIERT
 
 Starte Claude Code neu, damit der MCP Server geladen wird.
