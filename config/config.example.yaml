@@ -9,6 +9,10 @@ docs_root: ~/Documents/project-hub
 # Default: ~/.project-hub/project-hub.db
 # db_path: ~/.project-hub/project-hub.db
 
+# Knowledge base root (governance docs, process SOPs, role matrices per project type)
+# Default: ~/.project-hub/knowledge/
+# knowledge_root: ~/.project-hub/knowledge
+
 # Your identity (used in communication drafts as sender context)
 user:
   name: "Your Name"

@@ -18,6 +18,13 @@ from tools.projects import (
 from tools.contacts import list_contacts, add_contact, update_contact, delete_contact
 from tools.notes import list_notes, get_note, add_note, delete_note
 from tools.session import get_session, set_session, clear_session
+from tools.knowledge import (
+    list_knowledge,
+    get_knowledge,
+    get_all_knowledge,
+    save_knowledge,
+    delete_knowledge,
+)
 
 # Initialize DB on startup
 init_db()
@@ -221,3 +228,54 @@ def tool_add_note(
 def tool_delete_note(note_id: int) -> bool:
     """Delete a note by ID."""
     return delete_note(note_id)
+
+
+# ---------------------------------------------------------------------------
+# Knowledge
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def tool_list_knowledge(project_type: str) -> list[dict]:
+    """List all knowledge topics available for a given project type.
+
+    Returns topic name, title (from H1), file path, and size.
+    project_type examples: merchant-onboarding, it-project, generic
+    """
+    return list_knowledge(project_type)
+
+
+@mcp.tool()
+def tool_get_knowledge(project_type: str, topic: str) -> dict | None:
+    """Read a knowledge file by project type and topic name.
+
+    Returns full content as Markdown string plus metadata.
+    Returns None if not found.
+    """
+    return get_knowledge(project_type, topic)
+
+
+@mcp.tool()
+def tool_get_all_knowledge(project_type: str) -> list[dict]:
+    """Load ALL knowledge files for a project type in one call.
+
+    Used by /resume to auto-load governance, process, and role knowledge
+    when switching to a merchant-onboarding project.
+    """
+    return get_all_knowledge(project_type)
+
+
+@mcp.tool()
+def tool_save_knowledge(project_type: str, topic: str, content: str) -> dict:
+    """Write or overwrite a knowledge file.
+
+    content: full Markdown content (start with # Title)
+    topic: filename without extension (e.g. 'governance', 'process', 'roles')
+    Returns the saved knowledge entry with metadata.
+    """
+    return save_knowledge(project_type, topic, content)
+
+
+@mcp.tool()
+def tool_delete_knowledge(project_type: str, topic: str) -> bool:
+    """Delete a knowledge file. Returns True if deleted, False if not found."""
+    return delete_knowledge(project_type, topic)

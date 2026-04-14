@@ -56,6 +56,13 @@ def get_db_path_from_config() -> Path:
     return Path(get_config()["db_path"])
 
 
+def get_knowledge_root() -> Path:
+    """Return the local knowledge base root directory."""
+    cfg = get_config()
+    raw = cfg.get("knowledge_root", str(Path.home() / ".project-hub" / "knowledge"))
+    return Path(raw).expanduser()
+
+
 def _deep_merge(base: dict, override: dict) -> None:
     """Recursively merge override into base (in-place)."""
     for key, value in override.items():

@@ -57,6 +57,23 @@ Du kannst folgende Einstellungen anpassen:
 - `user.name` / `user.email` — Deine Daten für Kommunikations-Drafts
 - `default_language` — Sprache für generierte Texte (`en` oder `de`)"
 
+### Step 5b: Install Knowledge Templates (if missing)
+
+```bash
+# Check if knowledge templates already exist
+test -d ~/.project-hub/knowledge/merchant-onboarding && echo "knowledge: OK" || echo "knowledge: MISSING"
+```
+
+If missing:
+
+```bash
+mkdir -p ~/.project-hub/knowledge/merchant-onboarding
+cp ${CLAUDE_PLUGIN_ROOT}/knowledge/merchant-onboarding/*.md ~/.project-hub/knowledge/merchant-onboarding/
+```
+
+Tell user: "Knowledge-Templates für `merchant-onboarding` nach `~/.project-hub/knowledge/merchant-onboarding/` kopiert.
+Ersetze die Platzhalter mit euren echten Inhalten oder nutze `/knowledge update governance` um sie mit deinen Dokumenten zu befüllen."
+
 ### Step 6: Verify MCP Server + Init DB
 
 ```bash
@@ -78,12 +95,14 @@ print('DB: OK')
 - Venv:             OK / ERSTELLT  (~/.project-hub/venv)
 - Dependencies:     OK / INSTALLIERT
 - Config:           OK / ERSTELLT  (~/.project-hub/config.yaml)
+- Knowledge:        OK / ERSTELLT  (~/.project-hub/knowledge/merchant-onboarding/)
 - Datenbank:        OK / INITIALISIERT
 
 Starte Claude Code neu, damit der MCP Server geladen wird.
 Danach kannst du loslegen:
-- `/new-project` — Erstes Projekt anlegen
-- `/help`        — Alle Skills anzeigen
+- `/new-project`  — Erstes Projekt anlegen
+- `/knowledge`    — Knowledge-Templates mit echten Inhalten befüllen
+- `/help`         — Alle Skills anzeigen
 ```
 
 ## Error Handling

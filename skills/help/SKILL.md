@@ -47,6 +47,14 @@ Use MCP `tool_get_session()` to show active project (if any).
 | `/summarize [note-id]` | Summary aus E-Mail oder Meeting-Notizen erstellen |
 | `/compose [email\|slack\|teams]` | E-Mail, Slack- oder Teams-Nachricht verfassen |
 
+### Knowledge Base
+| Skill | Beschreibung |
+|-------|-------------|
+| `/knowledge` | Alle Knowledge-Dokumente anzeigen |
+| `/knowledge show <topic>` | Governance / Prozess / Rollen anzeigen |
+| `/knowledge update <topic>` | Dokument mit neuen Inhalten aktualisieren |
+| `/knowledge export <topic>` | Confluence-fertigen Export erstellen |
+
 ---
 
 ### Note-Typen für `/add-note`
