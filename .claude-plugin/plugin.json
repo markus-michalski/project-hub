@@ -1,6 +1,6 @@
 {
   "name": "project-hub",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Personal project management hub — create projects, store contacts, log notes, generate summaries and communications, all within persistent project context",
   "author": {
     "name": "Markus Michalski"
