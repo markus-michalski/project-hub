@@ -16,7 +16,7 @@ from tools.projects import (
     list_docs,
 )
 from tools.contacts import list_contacts, add_contact, update_contact, delete_contact
-from tools.notes import list_notes, get_note, add_note, delete_note
+from tools.notes import list_notes, get_note, add_note, update_note, delete_note
 from tools.session import get_session, set_session, clear_session
 from tools.knowledge import (
     list_knowledge,
@@ -25,6 +25,7 @@ from tools.knowledge import (
     save_knowledge,
     delete_knowledge,
 )
+from tools.search import search_notes, search_contacts
 
 # Initialize DB on startup
 init_db()
@@ -139,9 +140,9 @@ def tool_list_docs(project_id: int) -> dict:
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
-def tool_list_contacts(project_id: int, contact_type: str = "") -> list[dict]:
-    """List contacts for a project. contact_type: internal | external (empty = all)."""
-    return list_contacts(project_id, contact_type)
+def tool_list_contacts(project_id: int, contact_type: str = "", limit: int = 0) -> list[dict]:
+    """List contacts for a project. contact_type: internal | external (empty = all). limit: max results (0 = all)."""
+    return list_contacts(project_id, contact_type, limit)
 
 
 @mcp.tool()
@@ -193,12 +194,13 @@ def tool_delete_contact(contact_id: int) -> bool:
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
-def tool_list_notes(project_id: int, note_type: str = "") -> list[dict]:
+def tool_list_notes(project_id: int, note_type: str = "", limit: int = 0) -> list[dict]:
     """List notes for a project.
 
     note_type: note | meeting-notes | email | decision | action-item (empty = all)
+    limit: max number of notes to return, newest first (0 = all)
     """
-    return list_notes(project_id, note_type)
+    return list_notes(project_id, note_type, limit)
 
 
 @mcp.tool()
@@ -225,9 +227,48 @@ def tool_add_note(
 
 
 @mcp.tool()
+def tool_update_note(
+    note_id: int,
+    title: str = "",
+    content: str = "",
+    note_type: str = "",
+    agenda: str = "",
+) -> dict | None:
+    """Update an existing note. Only non-empty values are changed.
+
+    note_type: note | meeting-notes | email | decision | action-item
+    """
+    return update_note(note_id, title, content, note_type, agenda)
+
+
+@mcp.tool()
 def tool_delete_note(note_id: int) -> bool:
     """Delete a note by ID."""
     return delete_note(note_id)
+
+
+# ---------------------------------------------------------------------------
+# Search
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def tool_search_notes(query: str, project_id: int = 0) -> list[dict]:
+    """Search notes by title or content (case-insensitive).
+
+    project_id: limit to a specific project (0 = search all projects).
+    Returns matches ordered newest first, including project_name for cross-project results.
+    """
+    return search_notes(query, project_id)
+
+
+@mcp.tool()
+def tool_search_contacts(query: str, project_id: int = 0) -> list[dict]:
+    """Search contacts by name, role, email, or company (case-insensitive).
+
+    project_id: limit to a specific project (0 = search all projects).
+    Returns matches ordered by name, including project_name for cross-project results.
+    """
+    return search_contacts(query, project_id)
 
 
 # ---------------------------------------------------------------------------

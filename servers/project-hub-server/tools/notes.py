@@ -3,31 +3,32 @@ from __future__ import annotations
 
 from typing import Optional
 
-from .db import get_connection
+from .db import db_connection
 
 
-def list_notes(project_id: int, note_type: str = "") -> list[dict]:
-    """List notes for a project, optionally filtered by type."""
-    conn = get_connection()
-    if note_type:
-        rows = conn.execute(
-            "SELECT * FROM notes WHERE project_id = ? AND type = ? ORDER BY created_at DESC",
-            (project_id, note_type),
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT * FROM notes WHERE project_id = ? ORDER BY created_at DESC",
-            (project_id,),
-        ).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
+def list_notes(project_id: int, note_type: str = "", limit: int = 0) -> list[dict]:
+    """List notes for a project, optionally filtered by type.
+
+    limit: max number of notes to return (0 = all), ordered newest first.
+    """
+    with db_connection() as conn:
+        base = "SELECT * FROM notes WHERE project_id = ?"
+        params: list = [project_id]
+        if note_type:
+            base += " AND type = ?"
+            params.append(note_type)
+        base += " ORDER BY created_at DESC, id DESC"
+        if limit > 0:
+            base += " LIMIT ?"
+            params.append(limit)
+        rows = conn.execute(base, params).fetchall()
+        return [dict(r) for r in rows]
 
 
 def get_note(note_id: int) -> Optional[dict]:
-    conn = get_connection()
-    row = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
-    conn.close()
-    return dict(row) if row else None
+    with db_connection() as conn:
+        row = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
+        return dict(row) if row else None
 
 
 def add_note(
@@ -42,21 +43,42 @@ def add_note(
     note_type options: note, meeting-notes, email, decision, action-item
     agenda: optional agenda text to compare against during meeting-notes summarization
     """
-    conn = get_connection()
-    with conn:
-        cursor = conn.execute(
-            "INSERT INTO notes (project_id, title, type, content, agenda) VALUES (?, ?, ?, ?, ?)",
-            (project_id, title, note_type, content, agenda),
-        )
-        note_id = cursor.lastrowid
-    row = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
-    conn.close()
-    return dict(row)
+    with db_connection() as conn:
+        with conn:
+            cursor = conn.execute(
+                "INSERT INTO notes (project_id, title, type, content, agenda) VALUES (?, ?, ?, ?, ?)",
+                (project_id, title, note_type, content, agenda),
+            )
+            note_id = cursor.lastrowid
+        row = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
+        return dict(row)
+
+
+def update_note(
+    note_id: int,
+    title: str = "",
+    content: str = "",
+    note_type: str = "",
+    agenda: str = "",
+) -> Optional[dict]:
+    """Update an existing note. Only non-empty values are updated."""
+    allowed = {"title": title, "type": note_type, "content": content, "agenda": agenda}
+    updates = {k: v for k, v in allowed.items() if v}
+    if not updates:
+        return get_note(note_id)
+
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    values = list(updates.values()) + [note_id]
+
+    with db_connection() as conn:
+        with conn:
+            conn.execute(f"UPDATE notes SET {set_clause} WHERE id = ?", values)
+        row = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
+        return dict(row) if row else None
 
 
 def delete_note(note_id: int) -> bool:
-    conn = get_connection()
-    with conn:
-        result = conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
-    conn.close()
-    return result.rowcount > 0
+    with db_connection() as conn:
+        with conn:
+            result = conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+        return result.rowcount > 0

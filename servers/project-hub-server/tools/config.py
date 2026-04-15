@@ -1,6 +1,7 @@
 """Configuration loader for project-hub."""
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 _config_cache: dict | None = None
@@ -34,8 +35,8 @@ def get_config() -> dict:
             with open(config_path) as f:
                 user_config = yaml.safe_load(f) or {}
             _deep_merge(defaults, user_config)
-        except Exception:
-            pass  # Fall back to defaults silently
+        except Exception as e:
+            print(f"[project-hub] WARNING: Failed to load config from {config_path}: {e}", file=sys.stderr)
 
     # Expand ~ in paths
     for key in ("docs_root", "db_path"):

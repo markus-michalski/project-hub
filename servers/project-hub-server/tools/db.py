@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Generator
 
 from .config import get_db_path_from_config
 
@@ -19,6 +21,16 @@ def get_connection() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
+
+
+@contextmanager
+def db_connection() -> Generator[sqlite3.Connection, None, None]:
+    """Context manager that ensures the connection is always closed."""
+    conn = get_connection()
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 def init_db() -> None:

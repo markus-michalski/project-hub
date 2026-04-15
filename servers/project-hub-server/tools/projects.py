@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from .db import get_connection
+from .db import db_connection
 from .config import get_docs_root
 
 
@@ -31,35 +31,32 @@ def _ensure_docs_path(slug: str) -> str:
 
 def list_projects(status: str = "") -> list[dict]:
     """List all projects, optionally filtered by status."""
-    conn = get_connection()
-    if status:
-        rows = conn.execute(
-            "SELECT * FROM projects WHERE status = ? ORDER BY updated_at DESC", (status,)
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT * FROM projects ORDER BY updated_at DESC"
-        ).fetchall()
-    conn.close()
-    return [_row_to_dict(r) for r in rows]
+    with db_connection() as conn:
+        if status:
+            rows = conn.execute(
+                "SELECT * FROM projects WHERE status = ? ORDER BY updated_at DESC", (status,)
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM projects ORDER BY updated_at DESC"
+            ).fetchall()
+        return [_row_to_dict(r) for r in rows]
 
 
 def get_project(identifier: str) -> Optional[dict]:
     """Get a project by slug or name (case-insensitive)."""
-    conn = get_connection()
-    row = conn.execute(
-        "SELECT * FROM projects WHERE slug = ? OR LOWER(name) = LOWER(?)",
-        (identifier, identifier),
-    ).fetchone()
-    conn.close()
-    return _row_to_dict(row) if row else None
+    with db_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM projects WHERE slug = ? OR LOWER(name) = LOWER(?)",
+            (identifier, identifier),
+        ).fetchone()
+        return _row_to_dict(row) if row else None
 
 
 def get_project_by_id(project_id: int) -> Optional[dict]:
-    conn = get_connection()
-    row = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
-    conn.close()
-    return _row_to_dict(row) if row else None
+    with db_connection() as conn:
+        row = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+        return _row_to_dict(row) if row else None
 
 
 def create_project(
@@ -77,17 +74,16 @@ def create_project(
     slug = _slugify(name)
     docs_path = _ensure_docs_path(slug)
 
-    conn = get_connection()
-    with conn:
-        conn.execute(
-            """INSERT INTO projects
-               (slug, name, type, description, market, products, phase, go_live, budget, notes, docs_path)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (slug, name, project_type, description, market, products, phase, go_live, budget, notes, docs_path),
-        )
-    row = conn.execute("SELECT * FROM projects WHERE slug = ?", (slug,)).fetchone()
-    conn.close()
-    return _row_to_dict(row)
+    with db_connection() as conn:
+        with conn:
+            conn.execute(
+                """INSERT INTO projects
+                   (slug, name, type, description, market, products, phase, go_live, budget, notes, docs_path)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (slug, name, project_type, description, market, products, phase, go_live, budget, notes, docs_path),
+            )
+        row = conn.execute("SELECT * FROM projects WHERE slug = ?", (slug,)).fetchone()
+        return _row_to_dict(row)
 
 
 def update_project(identifier: str, **fields) -> Optional[dict]:
@@ -100,25 +96,19 @@ def update_project(identifier: str, **fields) -> Optional[dict]:
     if not updates:
         return get_project(identifier)
 
-    updates["updated_at"] = "datetime('now')"
-    set_clause = ", ".join(
-        f"{k} = datetime('now')" if k == "updated_at" else f"{k} = ?"
-        for k in updates
-    )
-    values = [v for k, v in updates.items() if k != "updated_at"]
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    values = list(updates.values())
     values.append(identifier)
     values.append(identifier)
 
-    conn = get_connection()
-    with conn:
-        conn.execute(
-            f"UPDATE projects SET {set_clause}, updated_at = datetime('now') "
-            f"WHERE slug = ? OR LOWER(name) = LOWER(?)",
-            values,
-        )
-    project = get_project(identifier)
-    conn.close()
-    return project
+    with db_connection() as conn:
+        with conn:
+            conn.execute(
+                f"UPDATE projects SET {set_clause}, updated_at = datetime('now') "
+                f"WHERE slug = ? OR LOWER(name) = LOWER(?)",
+                values,
+            )
+        return get_project(identifier)
 
 
 def list_docs(project_id: int) -> dict:

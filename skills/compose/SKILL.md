@@ -74,7 +74,7 @@ Ask clarifying questions only if necessary:
 
 **merchant-onboarding:**
 - External (merchant): professional, welcoming, clear — they are a partner, not a subordinate
-- Internal (Riverty): direct, concise, action-oriented
+- Internal: direct, concise, action-oriented
 - Escalations: factual, non-emotional, solution-focused
 
 **consulting:**
