@@ -1,7 +1,5 @@
 """Tests for project CRUD operations."""
-import pytest
-
-from tools.projects import create_project, get_project, get_project_by_id, list_projects, update_project
+from tools.projects import create_project, get_project, list_projects, update_project
 
 
 def test_create_project_basic(tmp_path, monkeypatch):
