@@ -1,8 +1,13 @@
 ---
 name: dashboard
 description: |
-  Show an overview of all projects with their status and key info.
-  Use when: user wants a project overview, says "dashboard", "alle Projekte", "Übersicht".
+  Show an overview of all CLIENT/HUB projects in the project-hub registry. Use ONLY for hub
+  client/contact projects — NOT for code dashboards (mm-dev-toolkit), book dashboards
+  (storyforge), or video dashboards (vidcraft).
+  Use when: (1) User says "Hub-Dashboard", "Kunden-Dashboard", "alle Hub-Projekte",
+  "Hub-Übersicht", (2) User explicitly invokes `/project-hub:dashboard`,
+  (3) Context is clearly hub/client tracking.
+  Do NOT trigger on bare "Dashboard" / "Übersicht" without hub/client context — defer.
 model: claude-sonnet-4-6
 user-invocable: true
 ---

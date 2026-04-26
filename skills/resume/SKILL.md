@@ -1,9 +1,14 @@
 ---
 name: resume
 description: |
-  Resume or switch to an existing project. Loads full project context.
-  Use when: user says "resume", "weiter", "fortsetzen", mentions a project name,
-  or wants to switch between projects.
+  Resume or switch to an existing CLIENT/HUB project in the project-hub registry. Loads full
+  project context (contacts, notes, decisions). Use ONLY for hub-tracked client projects —
+  NOT for code repos (mm-dev-toolkit), book projects (storyforge), or video projects (vidcraft).
+  Use when: (1) User says "Hub-Projekt {name}", "Wechsle zu Hub-Projekt {name}",
+  "Lade Hub-Projekt {name}", (2) User explicitly invokes `/project-hub:resume`,
+  (3) The mentioned project name is known to be a hub/client project (verify via
+  `tool_list_projects` first if uncertain).
+  Do NOT trigger on bare project-name mentions without hub context — defer.
 model: claude-sonnet-4-6
 user-invocable: true
 argument-hint: "<project-name>"

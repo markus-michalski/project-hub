@@ -1,8 +1,12 @@
 ---
 name: help
 description: |
-  Show all available project-hub skills and how to use them.
-  Use when: user asks for help, says "was kann ich machen", "welche Skills gibt es", "help".
+  Show all available PROJECT-HUB skills and how to use them. Use ONLY for project-hub-specific
+  help — multiple plugins have help skills.
+  Use when: (1) User says "Hub-Hilfe", "project-hub help", "welche Hub-Skills gibt es",
+  (2) User explicitly invokes `/project-hub:help`,
+  (3) Context is clearly about the project-hub plugin.
+  Do NOT trigger on bare "Hilfe" / "Help" — defer.
 model: claude-sonnet-4-6
 user-invocable: true
 ---

@@ -1,8 +1,14 @@
 ---
 name: new-project
 description: |
-  Create a new project in the project hub.
-  Use when: user wants to start a new project, says "neues Projekt", "create project", "Projekt anlegen".
+  Create a new CLIENT/HUB project in the project-hub registry (for tracking contacts, notes,
+  meetings, decisions, deliverables). Use ONLY for client-facing or hub-tracked projects —
+  NOT for code/dev projects (use mm-dev-toolkit), book projects (use storyforge), or video
+  projects (use vidcraft).
+  Use when: (1) User says "Hub-Projekt anlegen", "Kunden-Projekt anlegen", "Projekt im Hub anlegen",
+  "neuer Client im Hub", (2) User explicitly invokes `/project-hub:new-project`,
+  (3) Context is clearly a client/contact-tracking project (CRM-like, not a code repo or creative work).
+  Do NOT trigger on bare "neues Projekt" / "Projekt anlegen" without hub/client context — defer.
 model: claude-sonnet-4-6
 user-invocable: true
 argument-hint: "<project-name>"

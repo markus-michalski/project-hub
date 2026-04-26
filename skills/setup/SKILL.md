@@ -1,6 +1,6 @@
 ---
 name: setup
-description: "First-time setup for project-hub. Creates venv, installs dependencies, copies config, initializes database. Use when: (1) Plugin just installed, (2) MCP server not responding, (3) User says 'setup' or 'einrichten'."
+description: "First-time setup for the PROJECT-HUB plugin specifically. Creates venv, installs dependencies, copies config, initializes database. Use ONLY when: (1) project-hub plugin just installed, (2) project-hub MCP server not responding, (3) User says 'setup project-hub' / 'project-hub einrichten' or explicitly invokes `/project-hub:setup`. Do NOT trigger on bare 'setup' / 'einrichten' — multiple plugins have setup skills; defer if the target plugin is unclear."
 model: claude-sonnet-4-6
 user-invocable: true
 ---

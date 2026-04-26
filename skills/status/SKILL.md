@@ -1,9 +1,13 @@
 ---
 name: status
 description: |
-  Show or update the status of the active project.
-  Use when: user wants to see project details, update phase, change status,
-  says "Status", "was ist der Stand", "update Phase".
+  Show or update the status of the active CLIENT/HUB project. Use ONLY for hub-tracked
+  client projects — NOT for code projects (mm-dev-toolkit), book status (storyforge), or
+  video status (vidcraft).
+  Use when: (1) User says "Hub-Status", "Status des Hub-Projekts", "Phase im Hub-Projekt
+  ändern", (2) User explicitly invokes `/project-hub:status`,
+  (3) An active hub project is loaded and the user wants its status/phase.
+  Do NOT trigger on bare "Status" / "Stand" without hub/client context — defer.
 model: claude-sonnet-4-6
 user-invocable: true
 ---
