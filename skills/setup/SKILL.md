@@ -54,8 +54,40 @@ cp ${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml ~/.project-hub/config.yaml
 Then tell the user: "Die Config wurde nach `~/.project-hub/config.yaml` kopiert.
 Du kannst folgende Einstellungen anpassen:
 - `docs_root` — Wo Projekt-Dokumente gespeichert werden (Standard: `~/.project-hub/projects`)
+- `db_path` — SQLite-Datenbankpfad (Standard: lokal; für Team-Nutzung: Netzwerk-Share eintragen)
 - `user.name` / `user.email` — Deine Daten für Kommunikations-Drafts
 - `default_language` — Sprache für generierte Texte (`en` oder `de`)"
+
+After copying the config, check whether the user's existing config already has a `db_path`
+set to a network path:
+
+```bash
+~/.project-hub/venv/bin/python3 -c "
+import yaml
+from pathlib import Path
+cfg_path = Path.home() / '.project-hub' / 'config.yaml'
+if not cfg_path.exists():
+    exit(0)
+cfg = yaml.safe_load(cfg_path.read_text()) or {}
+db_path = cfg.get('db_path', '')
+network_hints = ['/mnt/', '/media/', 'Dropbox', 'OneDrive', 'Google Drive', '/Volumes/', '/net/']
+if any(h in str(db_path) for h in network_hints):
+    print('NETWORK_SHARE:' + str(db_path))
+else:
+    print('LOCAL')
+"
+```
+
+If the output starts with `NETWORK_SHARE:`, show:
+```
+⚠️  Netzwerk-Pfad erkannt: {db_path}
+Hinweise für Team-Nutzung:
+- WAL-Modus ist aktiv (mehrere gleichzeitige Leser möglich).
+- Schreib-Konflikte werden automatisch mit Retry behandelt.
+- Alle Team-Mitglieder müssen denselben Pfad in ihrer config.yaml eintragen.
+- Echtzeit-Synchronisation / Konflikt-Erkennung: NICHT in Phase 1.
+- Hohe Latenz auf dem Share? Schreib-Timeouts können vorkommen.
+```
 
 ### Step 5b: Install Knowledge Templates
 

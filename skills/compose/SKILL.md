@@ -25,8 +25,12 @@ Project context ensures the right tone, correct names/roles, and relevant phase 
 
 ### 2. Determine Channel
 
-If argument provided: use it (email / slack / teams).
-If not: ask — "Für welchen Kanal? E-Mail, Slack oder Teams?"
+If argument provided: use it (email / slack / teams / export).
+If not: ask — "Für welchen Kanal? E-Mail, Slack, Teams — oder Projekt für Kollegen exportieren?"
+
+Options: email | slack | teams | **Projekt exportieren (für Kollegen)**
+
+If user picks **Projekt exportieren**: jump to [Step 8 — Export Project](#8-export-project).
 
 ### 3. Collect Input
 
@@ -100,6 +104,46 @@ After drafting, ask:
 
 "Möchtest du diese Kommunikation als Notiz im Projekt speichern?"
 If yes → MCP `tool_add_note(project_id, title, content, note_type="email")`.
+
+### 8. Export Project
+
+Export the active project as a JSON file to share with a colleague.
+
+**Workflow:**
+
+1. Confirm the active project: show name + ID
+2. Ask for optional destination path:
+   "Ziel-Pfad (optional, Enter für Standard `~/.project-hub/exports/{slug}-{date}.json`):"
+3. Call MCP `tool_export_project(project_id, output_path)` (output_path = "" for default)
+4. Show result:
+
+```
+## Projekt exportiert
+
+**Projekt:** [project name]
+**Datei:** [path]
+**Kontakte:** [n]
+**Notizen:** [n]
+
+Anhänge sind in Phase 1 NICHT enthalten.
+
+Schicke die Datei an den Kollegen — er kann sie mit `/project-hub:compose` → "Projekt importieren"
+oder direkt via `tool_import_project` einlesen.
+```
+
+5. Offer to also export the import instructions:
+   "Soll ich auch eine kurze Anleitung zum Import mitschicken?"
+   If yes, show:
+   ```
+   ## Import-Anleitung für [project name]
+
+   1. Datei [filename] auf deinen Rechner kopieren
+   2. Claude Code öffnen
+   3. Skill starten: `/project-hub:compose`
+   4. Option wählen: "Projekt importieren"
+   5. Pfad zur Datei angeben
+   6. Merge-Strategie wählen (skip / rename / overwrite)
+   ```
 
 ## Context Usage
 
