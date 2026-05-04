@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% if report_type == "all-projects" %}Alle Projekte — Übersicht{% else %}{{ project.name }} — Projektbericht{% endif %}</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f9fa; --surface: #ffffff; --border: #e1e4e8;
+    --text: #24292e; --muted: #586069; --accent: #0366d6;
+    --green: #28a745; --yellow: #ffc107; --red: #dc3545; --purple: #6f42c1;
+    --orange: #fd7e14;
+    --badge-active: #e6f4ea; --badge-active-text: #1e7e34;
+    --badge-paused: #fff8e1; --badge-paused-text: #856404;
+    --badge-completed: #f0f0f0; --badge-completed-text: #555;
+    --badge-cancelled: #fde8e8; --badge-cancelled-text: #721c24;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6; font-size: 15px; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+  /* Header */
+  .report-header { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 28px 32px; margin-bottom: 24px; }
+  .report-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+  .report-meta { display: flex; flex-wrap: wrap; gap: 20px; color: var(--muted); font-size: 13px; margin-top: 12px; }
+  .report-meta span strong { color: var(--text); }
+  /* Status badges */
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .badge-active { background: var(--badge-active); color: var(--badge-active-text); }
+  .badge-paused { background: var(--badge-paused); color: var(--badge-paused-text); }
+  .badge-completed { background: var(--badge-completed); color: var(--badge-completed-text); }
+  .badge-cancelled { background: var(--badge-cancelled); color: var(--badge-cancelled-text); }
+  /* Note type badges */
+  .note-badge { display: inline-block; padding: 1px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; margin-left: 6px; }
+  .note-badge-note { background: #e8f4fd; color: #0366d6; }
+  .note-badge-meeting-notes { background: #e6f4ea; color: #1e7e34; }
+  .note-badge-email { background: #fff3cd; color: #856404; }
+  .note-badge-decision { background: #f3e8fd; color: #5a32a3; }
+  .note-badge-action-item { background: #fde8e8; color: #721c24; }
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; margin-bottom: 24px; overflow: hidden; }
+  .card-header { padding: 16px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; }
+  .card-header h2 { font-size: 16px; font-weight: 600; }
+  .card-header .count { background: var(--bg); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1px 10px; font-size: 12px; color: var(--muted); }
+  .card-body { padding: 24px; }
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px;
+    border-bottom: 2px solid var(--border); background: var(--bg); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+  /* Notes timeline */
+  .note-item { padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .note-item:last-child { border-bottom: none; }
+  .note-item-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; gap: 12px; }
+  .note-item-title { font-weight: 600; font-size: 14px; }
+  .note-item-date { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .note-item-content { color: var(--muted); font-size: 13px; white-space: pre-wrap; word-break: break-word; }
+  /* Action items highlight */
+  .action-item-row td { background: #fffdf0; }
+  .action-item-row:hover td { background: #fffae0; }
+  /* Charts grid */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 640px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-box { position: relative; height: 240px; }
+  /* Contact group */
+  .contact-group-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--muted); padding: 6px 12px;
+    background: var(--bg); border-bottom: 1px solid var(--border); }
+  /* All-projects table */
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .dot-active { background: var(--green); }
+  .dot-paused { background: var(--yellow); }
+  .dot-completed { background: #aaa; }
+  .dot-cancelled { background: var(--red); }
+  /* Footer */
+  .report-footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); }
+  /* Empty state */
+  .empty { color: var(--muted); font-style: italic; padding: 16px 0; font-size: 13px; }
+  /* Description */
+  .project-description { color: var(--muted); margin-top: 8px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+{# ========== FULL REPORT ========== #}
+{% if report_type == "full" or report_type == "summary" %}
+
+<div class="report-header">
+  <h1>{{ project.name }}</h1>
+  {% if project.description %}<p class="project-description">{{ project.description }}</p>{% endif %}
+  <div class="report-meta">
+    <span>
+      <strong>Status:</strong>
+      <span class="badge badge-{{ project.status }}">{{ status_labels[project.status] }}</span>
+    </span>
+    {% if project.type %}<span><strong>Typ:</strong> {{ project.type }}</span>{% endif %}
+    {% if project.phase %}<span><strong>Phase:</strong> {{ project.phase }}</span>{% endif %}
+    {% if project.go_live %}<span><strong>Go-Live:</strong> {{ project.go_live }}</span>{% endif %}
+    {% if project.budget %}<span><strong>Budget:</strong> {{ project.budget }}</span>{% endif %}
+    {% if project.market %}<span><strong>Markt:</strong> {{ project.market }}</span>{% endif %}
+    <span><strong>Erstellt:</strong> {{ project.created_at[:10] }}</span>
+    <span><strong>Bericht erstellt:</strong> {{ generated_at }}</span>
+  </div>
+</div>
+
+{% if report_type == "full" %}
+
+{# ---- Contacts ---- #}
+<div class="card">
+  <div class="card-header">
+    <h2>Kontakte</h2>
+    <span class="count">{{ contacts | length }}</span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    {% if contacts %}
+      {% set internal = contacts | selectattr("type", "equalto", "internal") | list %}
+      {% set external = contacts | selectattr("type", "equalto", "external") | list %}
+      {% if internal %}
+      <div class="contact-group-label">Intern ({{ internal | length }})</div>
+      <table>
+        <thead><tr><th>Name</th><th>Rolle</th><th>E-Mail</th><th>Telefon</th><th>Notizen</th></tr></thead>
+        <tbody>
+          {% for c in internal %}
+          <tr>
+            <td><strong>{{ c.name }}</strong></td>
+            <td>{{ c.role or "—" }}</td>
+            <td>{% if c.email %}<a href="mailto:{{ c.email }}">{{ c.email }}</a>{% else %}—{% endif %}</td>
+            <td>{{ c.phone or "—" }}</td>
+            <td>{{ c.notes or "—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      {% if external %}
+      <div class="contact-group-label">Extern ({{ external | length }})</div>
+      <table>
+        <thead><tr><th>Name</th><th>Rolle</th><th>Firma</th><th>E-Mail</th><th>Telefon</th></tr></thead>
+        <tbody>
+          {% for c in external %}
+          <tr>
+            <td><strong>{{ c.name }}</strong></td>
+            <td>{{ c.role or "—" }}</td>
+            <td>{{ c.company or "—" }}</td>
+            <td>{% if c.email %}<a href="mailto:{{ c.email }}">{{ c.email }}</a>{% else %}—{% endif %}</td>
+            <td>{{ c.phone or "—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    {% else %}
+      <p class="empty" style="padding: 16px 24px;">Keine Kontakte erfasst.</p>
+    {% endif %}
+  </div>
+</div>
+
+{# ---- Charts ---- #}
+{% if notes %}
+<div class="card">
+  <div class="card-header"><h2>Statistik</h2></div>
+  <div class="card-body">
+    <div class="charts-grid">
+      <div>
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--muted);">Notizen nach Typ</h3>
+        <div class="chart-box"><canvas id="noteTypeChart"></canvas></div>
+      </div>
+      <div>
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--muted);">Kontakte intern / extern</h3>
+        <div class="chart-box"><canvas id="contactChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{# ---- Open Action Items ---- #}
+{% set action_items = notes | selectattr("type", "equalto", "action-item") | list %}
+{% if action_items %}
+<div class="card">
+  <div class="card-header">
+    <h2>Offene Aufgaben</h2>
+    <span class="count">{{ action_items | length }}</span>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <table>
+      <thead><tr><th>Aufgabe</th><th>Datum</th><th>Inhalt</th></tr></thead>
+      <tbody>
+        {% for n in action_items | sort(attribute="created_at") %}
+        <tr class="action-item-row">
+          <td><strong>{{ n.title }}</strong></td>
+          <td style="white-space:nowrap;">{{ n.created_at[:10] }}</td>
+          <td>{{ n.content[:200] }}{% if n.content | length > 200 %}…{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{# ---- Full Notes Timeline ---- #}
+<div class="card">
+  <div class="card-header">
+    <h2>Notizen & Verlauf</h2>
+    <span class="count">{{ notes | length }}</span>
+  </div>
+  <div class="card-body">
+    {% if notes %}
+      {% for n in notes | sort(attribute="created_at", reverse=True) %}
+      <div class="note-item">
+        <div class="note-item-header">
+          <span class="note-item-title">
+            {{ n.title }}
+            <span class="note-badge note-badge-{{ n.type }}">{{ note_type_labels[n.type] }}</span>
+          </span>
+          <span class="note-item-date">{{ n.created_at[:10] }}</span>
+        </div>
+        {% if n.content %}<div class="note-item-content">{{ n.content }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="empty">Keine Notizen vorhanden.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endif %}{# end report_type == "full" #}
+
+{# ---- Summary: recent notes + action items only ---- #}
+{% if report_type == "summary" %}
+{% set action_items = notes | selectattr("type", "equalto", "action-item") | list %}
+{% if action_items %}
+<div class="card">
+  <div class="card-header"><h2>Offene Aufgaben</h2><span class="count">{{ action_items | length }}</span></div>
+  <div class="card-body" style="padding:0;">
+    <table>
+      <thead><tr><th>Aufgabe</th><th>Datum</th></tr></thead>
+      <tbody>
+        {% for n in action_items | sort(attribute="created_at") %}
+        <tr class="action-item-row">
+          <td><strong>{{ n.title }}</strong></td>
+          <td style="white-space:nowrap;">{{ n.created_at[:10] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+<div class="card">
+  <div class="card-header"><h2>Letzte Aktivitäten</h2></div>
+  <div class="card-body">
+    {% set recent = notes | sort(attribute="created_at", reverse=True) | list %}
+    {% for n in recent[:5] %}
+    <div class="note-item">
+      <div class="note-item-header">
+        <span class="note-item-title">{{ n.title }}<span class="note-badge note-badge-{{ n.type }}">{{ note_type_labels[n.type] }}</span></span>
+        <span class="note-item-date">{{ n.created_at[:10] }}</span>
+      </div>
+    </div>
+    {% endfor %}
+    {% if not recent %}<p class="empty">Keine Notizen vorhanden.</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% endif %}{# end full/summary #}
+
+{# ========== ALL-PROJECTS REPORT ========== #}
+{% if report_type == "all-projects" %}
+
+<div class="report-header">
+  <h1>Alle Projekte — Übersicht</h1>
+  <div class="report-meta">
+    <span><strong>Projekte gesamt:</strong> {{ projects | length }}</span>
+    <span><strong>Bericht erstellt:</strong> {{ generated_at }}</span>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Statistik</h2>
+  </div>
+  <div class="card-body">
+    <div class="charts-grid">
+      <div>
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--muted);">Status-Verteilung</h3>
+        <div class="chart-box"><canvas id="statusChart"></canvas></div>
+      </div>
+      <div>
+        <h3 style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--muted);">Projekte nach Typ</h3>
+        <div class="chart-box"><canvas id="typeChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Projektliste</h2>
+    <span class="count">{{ projects | length }}</span>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if projects %}
+    <table>
+      <thead><tr><th>Projekt</th><th>Typ</th><th>Status</th><th>Phase</th><th>Go-Live</th><th>Kontakte</th><th>Notizen</th></tr></thead>
+      <tbody>
+        {% for p in projects | sort(attribute="name") %}
+        <tr>
+          <td><strong>{{ p.name }}</strong>{% if p.description %}<br><small style="color:var(--muted);">{{ p.description[:80] }}{% if p.description|length > 80 %}…{% endif %}</small>{% endif %}</td>
+          <td>{{ p.type or "—" }}</td>
+          <td><span class="badge badge-{{ p.status }}">{{ status_labels[p.status] }}</span></td>
+          <td>{{ p.phase or "—" }}</td>
+          <td>{{ p.go_live or "—" }}</td>
+          <td style="text-align:center;">{{ p.contact_count }}</td>
+          <td style="text-align:center;">{{ p.note_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="empty" style="padding:16px 24px;">Keine Projekte vorhanden.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endif %}
+
+<div class="report-footer">
+  Erstellt von Project Hub &bull; {{ generated_at }}
+</div>
+
+</div>{# /container #}
+
+{# ========== CHARTS JS ========== #}
+<script>
+{% if report_type == "full" and notes %}
+(function() {
+  const noteTypeCounts = {{ note_type_counts | tojson }};
+  const noteTypeLabels = Object.keys(noteTypeCounts).map(k => ({ "note": "Notiz", "meeting-notes": "Meeting", "email": "E-Mail", "decision": "Entscheidung", "action-item": "Aufgabe" }[k] || k));
+  const noteTypeValues = Object.values(noteTypeCounts);
+  const noteColors = ["#0366d6","#28a745","#ffc107","#6f42c1","#dc3545"];
+  new Chart(document.getElementById("noteTypeChart"), {
+    type: "pie",
+    data: { labels: noteTypeLabels, datasets: [{ data: noteTypeValues, backgroundColor: noteColors }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { font: { size: 12 } } } } }
+  });
+  const intCount = {{ contacts | selectattr("type", "equalto", "internal") | list | length }};
+  const extCount = {{ contacts | selectattr("type", "equalto", "external") | list | length }};
+  new Chart(document.getElementById("contactChart"), {
+    type: "doughnut",
+    data: { labels: ["Intern", "Extern"], datasets: [{ data: [intCount, extCount], backgroundColor: ["#0366d6","#28a745"] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { font: { size: 12 } } } } }
+  });
+})();
+{% endif %}
+
+{% if report_type == "all-projects" and projects %}
+(function() {
+  const statusCounts = {{ status_counts | tojson }};
+  const statusLabels = Object.keys(statusCounts).map(k => ({ "active": "Aktiv", "paused": "Pausiert", "completed": "Abgeschlossen", "cancelled": "Abgebrochen" }[k] || k));
+  const statusValues = Object.values(statusCounts);
+  const statusColors = ["#28a745","#ffc107","#aaa","#dc3545"];
+  new Chart(document.getElementById("statusChart"), {
+    type: "doughnut",
+    data: { labels: statusLabels, datasets: [{ data: statusValues, backgroundColor: statusColors }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { font: { size: 12 } } } } }
+  });
+  const typeCounts = {{ type_counts | tojson }};
+  const typeLabels = Object.keys(typeCounts);
+  const typeValues = Object.values(typeCounts);
+  const typeColors = ["#0366d6","#28a745","#ffc107","#6f42c1","#dc3545","#fd7e14","#17a2b8","#e83e8c"];
+  new Chart(document.getElementById("typeChart"), {
+    type: "bar",
+    data: { labels: typeLabels, datasets: [{ data: typeValues, backgroundColor: typeColors.slice(0, typeLabels.length), borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  });
+})();
+{% endif %}
+</script>
+
+</body>
+</html>
