@@ -41,7 +41,7 @@ def get_config() -> dict:
     # Expand ~ in paths
     for key in ("docs_root", "db_path"):
         if key in defaults:
-            defaults[key] = str(Path(defaults[key]).expanduser())
+            defaults[key] = str(Path(str(defaults[key])).expanduser())
 
     _config_cache = defaults
     return _config_cache
