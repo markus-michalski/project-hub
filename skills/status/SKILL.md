@@ -8,7 +8,7 @@ description: |
   ändern", (2) User explicitly invokes `/project-hub:status`,
   (3) An active hub project is loaded and the user wants its status/phase.
   Do NOT trigger on bare "Status" / "Stand" without hub/client context — defer.
-model: claude-sonnet-4-6
+model: claude-haiku-4-5
 user-invocable: true
 ---
 

@@ -7,7 +7,7 @@ description: |
   (2) User explicitly invokes `/project-hub:help`,
   (3) Context is clearly about the project-hub plugin.
   Do NOT trigger on bare "Hilfe" / "Help" — defer.
-model: claude-sonnet-4-6
+model: claude-haiku-4-5
 user-invocable: true
 ---
 
