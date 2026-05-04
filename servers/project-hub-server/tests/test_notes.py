@@ -39,15 +39,18 @@ def test_get_note_not_found():
 
 
 def test_list_notes_empty(project):
-    assert list_notes(project["id"]) == []
+    result = list_notes(project["id"])
+    assert result["items"] == []
+    assert result["total"] == 0
 
 
 def test_list_notes(project):
     add_note(project["id"], "Note 1", "A")
     add_note(project["id"], "Note 2", "B")
 
-    notes = list_notes(project["id"])
-    assert len(notes) == 2
+    result = list_notes(project["id"])
+    assert len(result["items"]) == 2
+    assert result["total"] == 2
 
 
 def test_list_notes_filter_by_type(project):
@@ -55,25 +58,38 @@ def test_list_notes_filter_by_type(project):
     add_note(project["id"], "Decision", "...", note_type="decision")
 
     meetings = list_notes(project["id"], note_type="meeting-notes")
-    assert len(meetings) == 1
-    assert meetings[0]["type"] == "meeting-notes"
+    assert len(meetings["items"]) == 1
+    assert meetings["total"] == 1
+    assert meetings["items"][0]["type"] == "meeting-notes"
 
 
 def test_list_notes_limit(project):
     for i in range(5):
         add_note(project["id"], f"Note {i}", "content")
 
-    limited = list_notes(project["id"], limit=3)
-    assert len(limited) == 3
+    result = list_notes(project["id"], limit=3)
+    assert len(result["items"]) == 3
+    assert result["total"] == 5
+
+
+def test_list_notes_pagination(project):
+    for i in range(5):
+        add_note(project["id"], f"Note {i}", "content")
+
+    page1 = list_notes(project["id"], limit=3, offset=0)
+    page2 = list_notes(project["id"], limit=3, offset=3)
+
+    assert len(page1["items"]) == 3
+    assert len(page2["items"]) == 2
+    assert page1["total"] == 5
 
 
 def test_list_notes_ordered_newest_first(project):
     add_note(project["id"], "First", "a")
     add_note(project["id"], "Second", "b")
 
-    notes = list_notes(project["id"])
-    # Most recently created comes first
-    assert notes[0]["title"] == "Second"
+    result = list_notes(project["id"])
+    assert result["items"][0]["title"] == "Second"
 
 
 def test_update_note_title(project):
@@ -145,5 +161,5 @@ def test_update_note_sets_updated_at(project):
 
 def test_list_notes_includes_updated_at(project):
     add_note(project["id"], "Note A", "Content A")
-    notes = list_notes(project["id"])
-    assert "updated_at" in notes[0]
+    result = list_notes(project["id"])
+    assert "updated_at" in result["items"][0]

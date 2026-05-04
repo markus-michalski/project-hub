@@ -36,8 +36,9 @@ def test_list_contacts_all(project):
     add_contact(project["id"], name="Internal One", contact_type="internal")
     add_contact(project["id"], name="External One", contact_type="external")
 
-    contacts = list_contacts(project["id"])
-    assert len(contacts) == 2
+    result = list_contacts(project["id"])
+    assert len(result["items"]) == 2
+    assert result["total"] == 2
 
 
 def test_list_contacts_filter_by_type(project):
@@ -48,20 +49,36 @@ def test_list_contacts_filter_by_type(project):
     internals = list_contacts(project["id"], contact_type="internal")
     externals = list_contacts(project["id"], contact_type="external")
 
-    assert len(internals) == 2
-    assert len(externals) == 1
+    assert len(internals["items"]) == 2
+    assert internals["total"] == 2
+    assert len(externals["items"]) == 1
 
 
 def test_list_contacts_limit(project):
     for i in range(5):
         add_contact(project["id"], name=f"Contact {i}")
 
-    limited = list_contacts(project["id"], limit=3)
-    assert len(limited) == 3
+    result = list_contacts(project["id"], limit=3)
+    assert len(result["items"]) == 3
+    assert result["total"] == 5
+
+
+def test_list_contacts_pagination(project):
+    for i in range(5):
+        add_contact(project["id"], name=f"Contact {i:02d}")
+
+    page1 = list_contacts(project["id"], limit=3, offset=0)
+    page2 = list_contacts(project["id"], limit=3, offset=3)
+
+    assert len(page1["items"]) == 3
+    assert len(page2["items"]) == 2
+    assert page1["total"] == 5
 
 
 def test_list_contacts_empty(project):
-    assert list_contacts(project["id"]) == []
+    result = list_contacts(project["id"])
+    assert result["items"] == []
+    assert result["total"] == 0
 
 
 def test_update_contact_patches_only_provided_fields(project):
@@ -90,7 +107,7 @@ def test_delete_contact_removes_it(project):
     result = delete_contact(c["id"])
 
     assert result is True
-    assert list_contacts(project["id"]) == []
+    assert list_contacts(project["id"])["items"] == []
 
 
 def test_delete_contact_not_found_returns_false(project):
@@ -104,5 +121,5 @@ def test_contacts_isolated_per_project(tmp_path, monkeypatch):
 
     add_contact(p1["id"], name="Alpha Contact")
 
-    assert list_contacts(p1["id"]) != []
-    assert list_contacts(p2["id"]) == []
+    assert list_contacts(p1["id"])["total"] == 1
+    assert list_contacts(p2["id"])["total"] == 0

@@ -1,0 +1,91 @@
+name: Bug Report
+description: Report something that isn't working correctly
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue. Fill out the sections below so the bug can be reproduced and fixed.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: What part of the plugin is affected?
+      options:
+        - Skill (slash command)
+        - MCP Server / MCP Tool
+        - Knowledge Templates
+        - Project Types
+        - Configuration / Setup
+        - CLAUDE.md Instructions
+    validations:
+      required: true
+
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Which skill? (if applicable)
+      options:
+        - /project-hub:new-project
+        - /project-hub:resume
+        - /project-hub:dashboard
+        - /project-hub:status
+        - /project-hub:add-contact
+        - /project-hub:add-note
+        - /project-hub:edit-note
+        - /project-hub:compose
+        - /project-hub:summarize
+        - /project-hub:search
+        - /project-hub:knowledge
+        - /project-hub:session-start
+        - /project-hub:next-step
+        - /project-hub:configure
+        - /project-hub:help
+        - /project-hub:setup
+        - Other (specify in description)
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the issue
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run /project-hub:resume with project "Acme"
+        2. Observe that contacts are not loaded
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Version from `.claude-plugin/plugin.json`
+      placeholder: "2.0.0"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or conversation excerpts
+      render: text
+    validations:
+      required: false

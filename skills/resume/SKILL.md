@@ -23,7 +23,7 @@ Load a project and restore its full context for the current session.
 ### 1. Find Project
 
 If argument provided: Use MCP `tool_get_project(identifier)`.
-If no argument: Use MCP `tool_list_projects()` and show numbered list, ask user to choose.
+If no argument: Use MCP `tool_list_projects()` → iterate `result["items"]` and show numbered list, ask user to choose.
 
 If no projects exist → suggest `/new-project`.
 
@@ -31,8 +31,8 @@ If no projects exist → suggest `/new-project`.
 
 Load all relevant context in parallel:
 - MCP `tool_get_project_by_id(project_id)` — full project details
-- MCP `tool_list_contacts(project_id)` — all contacts
-- MCP `tool_list_notes(project_id)` — recent notes (latest 5)
+- MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — all contacts
+- MCP `tool_list_notes(project_id)` → iterate `result["items"]` — recent notes (latest 5)
 - If `project_type` is NOT `generic`: MCP `tool_list_knowledge(project_type)` — check for knowledge files
 
 ### 3. Set Session

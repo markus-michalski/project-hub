@@ -48,7 +48,8 @@ def test_contact_create_list_update_delete():
     assert contact["name"] == "Alice Tester"
 
     contacts = list_contacts(pid)
-    assert len(contacts) == 1
+    assert contacts["total"] == 1
+    assert len(contacts["items"]) == 1
 
     updated = update_contact(contact["id"], role="Tech Lead")
     assert updated["role"] == "Tech Lead"
@@ -56,7 +57,7 @@ def test_contact_create_list_update_delete():
     result = delete_contact(contact["id"])
     assert result is True
 
-    assert list_contacts(pid) == []
+    assert list_contacts(pid)["total"] == 0
 
 
 # ---------------------------------------------------------------------------
@@ -79,11 +80,11 @@ def test_note_create_read_update_delete():
     assert updated["title"] == "Updated Note"
 
     result_notes = list_notes(pid)
-    assert len(result_notes) == 1
+    assert result_notes["total"] == 1
 
     from tools.notes import delete_note as _delete
     assert _delete(note["id"]) is True
-    assert list_notes(pid) == []
+    assert list_notes(pid)["total"] == 0
 
 
 # ---------------------------------------------------------------------------

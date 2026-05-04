@@ -36,7 +36,7 @@ Setup unvollständig. Bitte `/project-hub:setup` ausführen und danach Claude Co
 
 ### 2. Load Active Projects
 
-Use MCP `tool_list_projects(status="active")`.
+Use MCP `tool_list_projects(status="active")` → iterate `result["items"]`.
 
 If no active projects exist → suggest:
 ```
@@ -56,8 +56,8 @@ On "Neues Projekt anlegen" → hand off to `/project-hub:new-project` and STOP.
 
 Load all context in parallel:
 - MCP `tool_get_project(identifier)` — full project details
-- MCP `tool_list_contacts(project_id)` — all contacts
-- MCP `tool_list_notes(project_id, limit=5)` — most recent 5 notes
+- MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — all contacts
+- MCP `tool_list_notes(project_id, limit=5)` → iterate `result["items"]` — most recent 5 notes
 - If `project_type` is NOT `generic`: MCP `tool_get_all_knowledge(project_type)` — domain knowledge
 
 ### 5. Set Session

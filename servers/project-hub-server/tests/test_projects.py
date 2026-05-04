@@ -59,7 +59,9 @@ def test_get_project_not_found():
 
 
 def test_list_projects_empty():
-    assert list_projects() == []
+    result = list_projects()
+    assert result["items"] == []
+    assert result["total"] == 0
 
 
 def test_list_projects(tmp_path, monkeypatch):
@@ -68,8 +70,9 @@ def test_list_projects(tmp_path, monkeypatch):
     create_project("Alpha")
     create_project("Beta")
 
-    projects = list_projects()
-    assert len(projects) == 2
+    result = list_projects()
+    assert len(result["items"]) == 2
+    assert result["total"] == 2
 
 
 def test_list_projects_filter_by_status(tmp_path, monkeypatch):
@@ -82,8 +85,24 @@ def test_list_projects_filter_by_status(tmp_path, monkeypatch):
     active = list_projects(status="active")
     paused = list_projects(status="paused")
 
-    assert len(active) == 1
-    assert len(paused) == 1
+    assert len(active["items"]) == 1
+    assert active["total"] == 1
+    assert len(paused["items"]) == 1
+
+
+def test_list_projects_pagination(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    for i in range(5):
+        create_project(f"Project {i}")
+
+    page1 = list_projects(limit=3, offset=0)
+    page2 = list_projects(limit=3, offset=3)
+
+    assert len(page1["items"]) == 3
+    assert page1["total"] == 5
+    assert len(page2["items"]) == 2
+    assert page2["offset"] == 3
 
 
 def test_update_project(tmp_path, monkeypatch):

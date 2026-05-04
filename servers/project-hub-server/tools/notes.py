@@ -7,23 +7,33 @@ from typing import Optional
 from .db import db_connection
 
 
-def list_notes(project_id: int, note_type: str = "", limit: int = 0) -> list[dict]:
-    """List notes for a project, optionally filtered by type.
+def list_notes(project_id: int, note_type: str = "", limit: int = 50, offset: int = 0) -> dict:
+    """List notes for a project with pagination.
 
-    limit: max number of notes to return (0 = all), ordered newest first.
+    Returns {"items": [...], "total": N, "limit": L, "offset": O}, newest first.
     """
     with db_connection() as conn:
-        base = "SELECT * FROM notes WHERE project_id = ?"
+        where = "WHERE project_id = ?"
         params: list = [project_id]
         if note_type:
-            base += " AND type = ?"
+            where += " AND type = ?"
             params.append(note_type)
-        base += " ORDER BY updated_at DESC, created_at DESC, id DESC"
-        if limit > 0:
-            base += " LIMIT ?"
-            params.append(limit)
-        rows = conn.execute(base, params).fetchall()
-        return [dict(r) for r in rows]
+
+        total: int = conn.execute(
+            f"SELECT COUNT(*) FROM notes {where}", params
+        ).fetchone()[0]
+
+        rows = conn.execute(
+            f"SELECT * FROM notes {where} ORDER BY updated_at DESC, created_at DESC, id DESC"
+            f" LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        ).fetchall()
+        return {
+            "items": [dict(r) for r in rows],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
 
 
 def get_note(note_id: int) -> Optional[dict]:

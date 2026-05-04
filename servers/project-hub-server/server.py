@@ -60,9 +60,13 @@ def tool_clear_session() -> dict:
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
-def tool_list_projects(status: str = "") -> list[dict]:
-    """List all projects. Optionally filter by status: active, paused, completed."""
-    return list_projects(status)
+def tool_list_projects(status: str = "", limit: int = 50, offset: int = 0) -> dict:
+    """List projects with pagination.
+
+    status: active | paused | completed (empty = all)
+    Returns {"items": [...], "total": N, "limit": L, "offset": O}.
+    """
+    return list_projects(status, limit, offset)
 
 
 @mcp.tool()
@@ -140,9 +144,15 @@ def tool_list_docs(project_id: int) -> dict:
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
-def tool_list_contacts(project_id: int, contact_type: str = "", limit: int = 0) -> list[dict]:
-    """List contacts for a project. contact_type: internal | external (empty = all). limit: max results (0 = all)."""
-    return list_contacts(project_id, contact_type, limit)
+def tool_list_contacts(
+    project_id: int, contact_type: str = "", limit: int = 50, offset: int = 0
+) -> dict:
+    """List contacts for a project with pagination.
+
+    contact_type: internal | external (empty = all)
+    Returns {"items": [...], "total": N, "limit": L, "offset": O}.
+    """
+    return list_contacts(project_id, contact_type, limit, offset)
 
 
 @mcp.tool()
@@ -194,13 +204,15 @@ def tool_delete_contact(contact_id: int) -> bool:
 # ---------------------------------------------------------------------------
 
 @mcp.tool()
-def tool_list_notes(project_id: int, note_type: str = "", limit: int = 0) -> list[dict]:
-    """List notes for a project.
+def tool_list_notes(
+    project_id: int, note_type: str = "", limit: int = 50, offset: int = 0
+) -> dict:
+    """List notes for a project with pagination.
 
     note_type: note | meeting-notes | email | decision | action-item (empty = all)
-    limit: max number of notes to return, newest first (0 = all)
+    Returns {"items": [...], "total": N, "limit": L, "offset": O}, newest first.
     """
-    return list_notes(project_id, note_type, limit)
+    return list_notes(project_id, note_type, limit, offset)
 
 
 @mcp.tool()

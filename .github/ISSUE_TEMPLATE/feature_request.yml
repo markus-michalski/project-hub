@@ -1,0 +1,58 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Open issues for discussion before investing time in a PR.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What type of enhancement is this?
+      options:
+        - New Skill (slash command)
+        - Skill Enhancement
+        - New MCP Tool
+        - MCP Tool Enhancement
+        - New Project Type
+        - New Knowledge Template
+        - Workflow Improvement
+        - Configuration / Setup
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What problem does this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would this work?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Tried other approaches? Why don't they work?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd be willing to submit a PR for this feature
+        - label: I can help test if someone else implements it

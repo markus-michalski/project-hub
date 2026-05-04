@@ -20,7 +20,7 @@ Show an overview of all projects.
 
 ### 1. Load Projects
 
-Use MCP `tool_list_projects()` to get all projects.
+Use MCP `tool_list_projects()` → iterate `result["items"]` to get all projects.
 
 ### 2. Load Session
 
