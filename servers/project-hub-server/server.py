@@ -33,6 +33,7 @@ from tools.projects import (
 )
 from tools.search import search_contacts, search_notes
 from tools.session import clear_session, get_session, set_session
+from tools.transfer import export_project, import_project
 
 # Initialize DB on startup
 init_db()
@@ -428,6 +429,37 @@ def tool_delete_project_type(type_name: str) -> dict:
     Returns {"deleted": True, "name": ...} on success or {"error": ...} on failure.
     """
     return delete_project_type(type_name)
+
+
+# ---------------------------------------------------------------------------
+# Export / Import  (multi-user / shared-DB handoff)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def tool_export_project(project_id: int, output_path: str = "") -> dict:
+    """Export a project with all contacts and notes as a portable JSON file.
+
+    Useful for sharing with a colleague or moving to a different DB.
+    Attachments are NOT included in Phase 1.
+
+    output_path: optional destination; defaults to ~/.project-hub/exports/{slug}-{date}.json
+    Returns {"path": str, "project": str, "contacts": int, "notes": int}.
+    """
+    return export_project(project_id, output_path)
+
+
+@mcp.tool()
+def tool_import_project(json_path: str, merge_strategy: str = "skip") -> dict:
+    """Import a project from a JSON file created by tool_export_project.
+
+    merge_strategy controls what happens when a project with the same slug exists:
+      skip      — abort and return {"imported": False} (safe default)
+      rename    — insert with a unique slug suffix
+      overwrite — replace the existing project (destructive!)
+
+    Returns a summary with project name, slug, and counts.
+    """
+    return import_project(json_path, merge_strategy)
 
 
 @mcp.tool()

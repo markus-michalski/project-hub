@@ -7,6 +7,22 @@ docs_root: ~/Documents/project-hub
 
 # Database location (SQLite)
 # Default: ~/.project-hub/project-hub.db
+#
+# SHARED / TEAM USE: Point multiple users to the same file on a network share,
+# NFS mount, Samba share, or cloud-synced folder (Dropbox, NAS, etc.).
+# WAL mode supports concurrent reads; write conflicts are handled with
+# automatic retries. Low-concurrency teams (2-5 users) work reliably.
+#
+# Examples:
+#   db_path: ~/.project-hub/project-hub.db            # default (local)
+#   db_path: /mnt/nas/team-hub/project-hub.db         # NFS / NAS
+#   db_path: ~/Dropbox/project-hub/project-hub.db     # Dropbox
+#   db_path: /mnt/smb/shared/project-hub/project-hub.db  # Samba
+#
+# WARNING: Real-time conflict detection is NOT supported in Phase 1.
+#   Two simultaneous writes may produce SQLITE_BUSY — the plugin retries
+#   automatically, but avoid heavy concurrent writes.
+#
 # db_path: ~/.project-hub/project-hub.db
 
 # Knowledge base root (governance docs, process SOPs, role matrices per project type)

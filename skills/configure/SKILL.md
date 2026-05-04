@@ -59,6 +59,7 @@ Use `AskUserQuestion` to pick which setting to update. Offer these options:
 - **E-Mail** — Deine E-Mail-Adresse
 - **Organisation** — Deine Firma / Organisation
 - **Docs-Pfad** — Wo Projekt-Dokumente gespeichert werden (`docs_root`)
+- **Datenbank-Pfad** — SQLite-Datei (lokal oder Netzwerk-Share für Team-Nutzung) (`db_path`)
 - **Sprache** — Standard-Sprache für generierte Texte (de / en)
 - **E-Mail-Signatur** — Signatur für E-Mail-Drafts
 - **E-Mail-Ton** — Ton für E-Mail-Drafts (professional / friendly / formal)
@@ -76,6 +77,16 @@ Neuer Wert:
 **Validation:**
 - `user.email`: must contain `@`
 - `docs_root`: accept `~`-paths, do NOT expand them (keep as-is in YAML)
+- `db_path`: accept any path including `~` and network paths; do NOT expand `~` in YAML.
+  After saving, show a warning if the path looks like a network share
+  (contains `/mnt/`, `/media/`, `Dropbox`, `OneDrive`, `Google Drive`, `/Volumes/`, `/net/`):
+  ```
+  ⚠️  Netzwerk-Pfad erkannt. Hinweise für Team-Nutzung:
+  - WAL-Modus ist aktiv (unterstützt mehrere gleichzeitige Leser).
+  - Schreib-Konflikte werden automatisch mit Retry behandelt.
+  - Alle Team-Mitglieder müssen denselben Pfad in ihrer config.yaml eintragen.
+  - Echtzeit-Synchronisation und Konflikt-Erkennung sind in Phase 1 NICHT enthalten.
+  ```
 - `default_language`: only `de` or `en` are valid
 - `communication.default_tone`: only `professional`, `friendly`, or `formal`
 
@@ -167,6 +178,7 @@ Use `AskUserQuestion`:
 | `user.email` | E-Mail | string | must contain `@` |
 | `user.organization` | Organisation | string | any |
 | `docs_root` | Docs-Pfad | path | any (keep `~` as-is) |
+| `db_path` | Datenbank-Pfad | path | any (keep `~` as-is); network paths trigger team-use warning |
 | `default_language` | Sprache | enum | `de`, `en` |
 | `communication.default_tone` | E-Mail-Ton | enum | `professional`, `friendly`, `formal` |
 | `communication.email_signature` | E-Mail-Signatur | multiline string | any |

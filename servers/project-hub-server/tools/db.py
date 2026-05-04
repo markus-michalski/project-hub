@@ -2,11 +2,17 @@
 from __future__ import annotations
 
 import sqlite3
+import sys
+import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator
 
 from .config import get_db_path_from_config
+
+# Retry settings for SQLITE_BUSY on network/shared paths
+_BUSY_RETRY_COUNT = 5
+_BUSY_RETRY_DELAY = 0.2  # seconds between retries
 
 
 def get_db_path() -> Path:
@@ -15,8 +21,18 @@ def get_db_path() -> Path:
     return path
 
 
+def _is_network_path(path: Path) -> bool:
+    """Heuristic: flag paths that look like a network mount or cloud sync folder."""
+    network_hints = ("/mnt/", "/media/", "/net/", "/Volumes/", "Dropbox", "OneDrive", "Google Drive", "iCloud")
+    path_str = str(path)
+    return any(hint in path_str for hint in network_hints)
+
+
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(get_db_path())
+    db_path = get_db_path()
+    # Longer timeout on network paths to survive transient SQLITE_BUSY spikes
+    timeout = 30.0 if _is_network_path(db_path) else 5.0
+    conn = sqlite3.connect(db_path, timeout=timeout)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
@@ -25,12 +41,28 @@ def get_connection() -> sqlite3.Connection:
 
 @contextmanager
 def db_connection() -> Generator[sqlite3.Connection, None, None]:
-    """Context manager that ensures the connection is always closed."""
-    conn = get_connection()
-    try:
-        yield conn
-    finally:
-        conn.close()
+    """Context manager with automatic retry on SQLITE_BUSY (network shares)."""
+    last_exc: Exception | None = None
+    for attempt in range(_BUSY_RETRY_COUNT):
+        try:
+            conn = get_connection()
+            try:
+                yield conn
+            finally:
+                conn.close()
+            return
+        except sqlite3.OperationalError as exc:
+            if "database is locked" in str(exc).lower():
+                last_exc = exc
+                if attempt < _BUSY_RETRY_COUNT - 1:
+                    print(
+                        f"[project-hub] DB locked (attempt {attempt + 1}/{_BUSY_RETRY_COUNT}), retrying…",
+                        file=sys.stderr,
+                    )
+                    time.sleep(_BUSY_RETRY_DELAY * (attempt + 1))
+            else:
+                raise
+    raise last_exc  # type: ignore[misc]
 
 
 def init_db() -> None:
