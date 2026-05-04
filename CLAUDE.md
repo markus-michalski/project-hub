@@ -42,6 +42,7 @@ Never read the SQLite file directly — always go through MCP tools.
 | "neuen Projekttyp anlegen" / "eigenen Typ erstellen" / "custom project type" / `/project-hub:type-creator` | `/project-hub:type-creator` |
 | "Hub-Hilfe" / "project-hub help" / "welche Hub-Skills gibt es" / `/project-hub:help` | `/project-hub:help` |
 | "project-hub einrichten" / "setup project-hub" / `/project-hub:setup` | `/project-hub:setup` |
+| "Report erstellen" / "HTML-Report" / "Bericht exportieren" / "Projektbericht" / "all-projects report" / `/project-hub:report` | `/project-hub:report [full\|summary\|all-projects]` |
 
 ## Anti-Patterns
 

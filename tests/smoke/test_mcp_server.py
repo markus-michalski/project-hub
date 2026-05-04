@@ -36,6 +36,8 @@ EXPECTED_TOOLS = {
     "tool_get_all_knowledge",
     "tool_save_knowledge",
     "tool_delete_knowledge",
+    # Reports
+    "tool_generate_report",
 }
 
 

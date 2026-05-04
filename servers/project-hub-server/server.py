@@ -33,6 +33,7 @@ from tools.projects import (
 )
 from tools.search import search_contacts, search_notes
 from tools.session import clear_session, get_session, set_session
+from tools.report import generate_report
 from tools.transfer import export_project, import_project
 
 # Initialize DB on startup
@@ -429,6 +430,33 @@ def tool_delete_project_type(type_name: str) -> dict:
     Returns {"deleted": True, "name": ...} on success or {"error": ...} on failure.
     """
     return delete_project_type(type_name)
+
+
+# ---------------------------------------------------------------------------
+# Reports  (static HTML export, issue #26)
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def tool_generate_report(
+    project_id: int | None = None,
+    report_type: str = "full",
+    output_path: str = "",
+    offline: bool = False,
+) -> dict:
+    """Generate a static, self-contained HTML report for a project or all projects.
+
+    project_id: numeric project ID (use tool_get_project to find it); None for all-projects
+    report_type: "full" | "summary" | "all-projects"
+      full          — all sections: header, contacts, charts, action items, full notes timeline
+      summary       — header, open action items, last 5 activities (1-page executive view)
+      all-projects  — cross-project table with status/type charts (project_id ignored)
+    output_path: destination file path; defaults to ~/.project-hub/reports/{slug}-{date}.html
+    offline: reserved for future offline CDN-inlining support (currently ignored)
+
+    Returns {"path": str, "project": str}.
+    Open the returned path in a browser; use Print → Save as PDF for PDF export.
+    """
+    return generate_report(project_id, report_type, output_path, offline)
 
 
 # ---------------------------------------------------------------------------
