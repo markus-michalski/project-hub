@@ -1,14 +1,5 @@
-"""Smoke test configuration — isolated in-memory DB, server dir on sys.path."""
-import sys
-from pathlib import Path
-
+"""Smoke test configuration — isolated in-memory DB, server dir via pyproject.toml pythonpath."""
 import pytest
-
-SERVER_DIR = Path(__file__).parent.parent.parent / "servers" / "project-hub-server"
-REPO_ROOT = Path(__file__).parent.parent.parent
-
-if str(SERVER_DIR) not in sys.path:
-    sys.path.insert(0, str(SERVER_DIR))
 
 
 @pytest.fixture(autouse=True)
