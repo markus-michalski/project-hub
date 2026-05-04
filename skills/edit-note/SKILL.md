@@ -26,7 +26,7 @@ If no active project → "Kein aktives Projekt. Bitte zuerst `/resume`."
 Use MCP `tool_get_note(note_id)` to load the note directly.
 
 **If no argument:**
-Use MCP `tool_list_notes(project_id)` and show a numbered list so the user can pick:
+Use MCP `tool_list_notes(project_id)` → iterate `result["items"]` and show a numbered list so the user can pick:
 
 ```
 Welche Notiz möchtest du bearbeiten?

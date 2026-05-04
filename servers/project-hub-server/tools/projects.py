@@ -29,18 +29,26 @@ def _ensure_docs_path(slug: str) -> str:
     return str(docs_path)
 
 
-def list_projects(status: str = "") -> list[dict]:
-    """List all projects, optionally filtered by status."""
+def list_projects(status: str = "", limit: int = 50, offset: int = 0) -> dict:
+    """List projects with pagination, optionally filtered by status.
+
+    Returns {"items": [...], "total": N, "limit": L, "offset": O}.
+    """
     with db_connection() as conn:
-        if status:
-            rows = conn.execute(
-                "SELECT * FROM projects WHERE status = ? ORDER BY updated_at DESC", (status,)
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT * FROM projects ORDER BY updated_at DESC"
-            ).fetchall()
-        return [_row_to_dict(r) for r in rows]
+        where = "WHERE status = ?" if status else ""
+        count_params: list = [status] if status else []
+        total: int = conn.execute(
+            f"SELECT COUNT(*) FROM projects {where}", count_params
+        ).fetchone()[0]
+
+        query = f"SELECT * FROM projects {where} ORDER BY updated_at DESC LIMIT ? OFFSET ?"
+        rows = conn.execute(query, count_params + [limit, offset]).fetchall()
+        return {
+            "items": [_row_to_dict(r) for r in rows],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
 
 
 def get_project(identifier: str) -> Optional[dict]:

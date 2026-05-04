@@ -27,8 +27,8 @@ If no active project → "Kein aktives Projekt. Bitte zuerst `/resume`."
 
 In parallel:
 - MCP `tool_get_project_by_id(project_id)` — project details
-- MCP `tool_list_contacts(project_id)` — contacts
-- MCP `tool_list_notes(project_id)` — recent notes (latest 3)
+- MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — contacts
+- MCP `tool_list_notes(project_id)` → iterate `result["items"]` — recent notes (latest 3)
 - MCP `tool_list_docs(project_id)` — documents
 
 ### 3. Display Status

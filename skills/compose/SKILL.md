@@ -19,7 +19,7 @@ Draft professional communications — emails, Slack messages, or Teams messages 
 
 Use MCP `tool_get_session()` and load project context:
 - MCP `tool_get_project_by_id(project_id)`
-- MCP `tool_list_contacts(project_id)`
+- MCP `tool_list_contacts(project_id)` → iterate `result["items"]`
 
 Project context ensures the right tone, correct names/roles, and relevant phase info.
 

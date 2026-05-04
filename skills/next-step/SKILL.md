@@ -37,8 +37,8 @@ Bitte zuerst ein Projekt laden:
 
 Load in parallel:
 - MCP `tool_get_project_by_id(project_id)` — full project details (phase, go-live, status)
-- MCP `tool_list_notes(project_id, limit=20)` — recent notes to scan for action items
-- MCP `tool_list_contacts(project_id)` — contacts for communication suggestions
+- MCP `tool_list_notes(project_id, limit=20)` → iterate `result["items"]` — recent notes to scan for action items
+- MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — contacts for communication suggestions
 
 ### 3. Analyze
 

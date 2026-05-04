@@ -6,23 +6,34 @@ from typing import Optional
 from .db import db_connection
 
 
-def list_contacts(project_id: int, contact_type: str = "", limit: int = 0) -> list[dict]:
-    """List contacts for a project, optionally filtered by type (internal/external).
+def list_contacts(
+    project_id: int, contact_type: str = "", limit: int = 50, offset: int = 0
+) -> dict:
+    """List contacts for a project with pagination.
 
-    limit: max number of contacts to return (0 = all).
+    Returns {"items": [...], "total": N, "limit": L, "offset": O}.
     """
     with db_connection() as conn:
-        base = "SELECT * FROM contacts WHERE project_id = ?"
+        where = "WHERE project_id = ?"
         params: list = [project_id]
         if contact_type:
-            base += " AND type = ?"
+            where += " AND type = ?"
             params.append(contact_type)
-        base += " ORDER BY type, name"
-        if limit > 0:
-            base += " LIMIT ?"
-            params.append(limit)
-        rows = conn.execute(base, params).fetchall()
-        return [dict(r) for r in rows]
+
+        total: int = conn.execute(
+            f"SELECT COUNT(*) FROM contacts {where}", params
+        ).fetchone()[0]
+
+        rows = conn.execute(
+            f"SELECT * FROM contacts {where} ORDER BY type, name LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        ).fetchall()
+        return {
+            "items": [dict(r) for r in rows],
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+        }
 
 
 def add_contact(
