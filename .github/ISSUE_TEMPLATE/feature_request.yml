@@ -6,7 +6,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for suggesting an improvement. Open issues for discussion before investing time in a PR.
+        Thanks for suggesting an improvement. This helps make the plugin better for everyone.
+
+        Remember: Project Hub is released under the **PolyForm Noncommercial License 1.0.0**. Proposals must be compatible with non-commercial use cases.
 
   - type: dropdown
     id: category
@@ -18,18 +20,46 @@ body:
         - Skill Enhancement
         - New MCP Tool
         - MCP Tool Enhancement
-        - New Project Type
-        - New Knowledge Template
+        - New Project Type / Knowledge Template
         - Workflow Improvement
         - Configuration / Setup
+        - Documentation
     validations:
       required: true
+
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Which skill? (if enhancing existing)
+      description: If this enhances a specific skill, which one?
+      options:
+        - /project-hub:new-project
+        - /project-hub:resume
+        - /project-hub:dashboard
+        - /project-hub:status
+        - /project-hub:add-contact
+        - /project-hub:add-note
+        - /project-hub:edit-note
+        - /project-hub:compose
+        - /project-hub:summarize
+        - /project-hub:search
+        - /project-hub:knowledge
+        - /project-hub:session-start
+        - /project-hub:next-step
+        - /project-hub:configure
+        - /project-hub:type-creator
+        - /project-hub:report
+        - N/A — this is for a new skill
+    validations:
+      required: false
 
   - type: textarea
     id: problem
     attributes:
       label: Problem or use case
-      description: What problem does this solve?
+      description: What problem does this solve? Why do you need it?
+      placeholder: |
+        When tracking multiple contacts per project I want to bulk-import them from a CSV so I don't have to add them one by one.
     validations:
       required: true
 
@@ -53,6 +83,16 @@ body:
     id: contribution
     attributes:
       label: Contribution
+      description: Are you willing to help implement this?
       options:
-        - label: I'd be willing to submit a PR for this feature
+        - label: I'd be willing to submit a PR for this feature (requires signing the CLA)
         - label: I can help test if someone else implements it
+        - label: I can provide more detailed requirements if needed
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Examples, mockups, related issues, or anything else
+    validations:
+      required: false

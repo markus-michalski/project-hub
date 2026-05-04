@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report an issue. Fill out the sections below so the bug can be reproduced and fixed.
+        Thanks for taking the time to report an issue. Fill out the sections below so this can be reproduced and fixed.
 
   - type: dropdown
     id: component
@@ -16,8 +16,8 @@ body:
       options:
         - Skill (slash command)
         - MCP Server / MCP Tool
-        - Knowledge Templates
-        - Project Types
+        - Project Type / Knowledge Template
+        - Python Tool (db, projects, contacts, notes, session)
         - Configuration / Setup
         - CLAUDE.md Instructions
     validations:
@@ -27,6 +27,7 @@ body:
     id: skill
     attributes:
       label: Which skill? (if applicable)
+      description: If this involves a specific skill, which one?
       options:
         - /project-hub:new-project
         - /project-hub:resume
@@ -42,6 +43,8 @@ body:
         - /project-hub:session-start
         - /project-hub:next-step
         - /project-hub:configure
+        - /project-hub:type-creator
+        - /project-hub:report
         - /project-hub:help
         - /project-hub:setup
         - Other (specify in description)
@@ -53,6 +56,7 @@ body:
     attributes:
       label: What happened?
       description: Clear description of the issue
+      placeholder: When adding a contact, the MCP tool returns an error...
     validations:
       required: true
 
@@ -60,6 +64,7 @@ body:
     id: expected
     attributes:
       label: Expected behavior
+      description: What should have happened?
     validations:
       required: true
 
@@ -67,18 +72,29 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
+      description: How can this be reproduced?
       placeholder: |
-        1. Run /project-hub:resume with project "Acme"
-        2. Observe that contacts are not loaded
+        1. Load a project with /project-hub:resume
+        2. Run /project-hub:add-contact
+        3. Observe error
     validations:
       required: true
+
+  - type: input
+    id: claude-model
+    attributes:
+      label: Claude model
+      description: Which Claude model were you using?
+      placeholder: claude-sonnet-4-6
+    validations:
+      required: false
 
   - type: input
     id: plugin-version
     attributes:
       label: Plugin version
-      description: Version from `.claude-plugin/plugin.json`
-      placeholder: "2.0.0"
+      description: Version from `.claude-plugin/plugin.json` or `git rev-parse --short HEAD`
+      placeholder: 2.1.0 or abc1234
     validations:
       required: false
 
@@ -86,6 +102,15 @@ body:
     id: logs
     attributes:
       label: Relevant logs or conversation excerpts
+      description: Paste any error messages or relevant Claude conversation
       render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Any other context that might help
     validations:
       required: false

@@ -4,49 +4,97 @@
 
 **Do not open public issues for security vulnerabilities.**
 
-Use GitHub's [Private Vulnerability Reporting](https://github.com/markus-michalski/project-hub/security/advisories/new) to report security issues privately. You will receive an acknowledgement within 72 hours.
+Use GitHub's [Private Vulnerability Reporting](https://github.com/markus-michalski/project-hub/security/advisories/new) feature to report security issues privately. You will receive an acknowledgement within 72 hours.
+
+For non-sensitive security questions, open a regular issue.
 
 ## Supported Versions
 
-| Version | Supported |
-|---------|-----------|
-| 2.x | ✅ |
-| 1.x | ✅ patch fixes only |
-| < 1.0 | ❌ |
+| Version | Supported          |
+| ------- | ------------------ |
+| 2.x     | :white_check_mark: |
+| < 2.0   | :x:                |
 
-## Security Considerations
+Security fixes are released as patch versions on the latest minor.
 
-### Local Data
+## Code Review Requirements
 
-Project Hub stores all data locally in `~/.project-hub/`. This includes:
+### Workflow Files (`.github/workflows/*`)
 
-- `project-hub.db` — SQLite database with projects, contacts, and notes
-- `config.yaml` — local configuration
-- `knowledge/` — your knowledge templates
+**Workflow files execute code in CI/CD and require strict security review.**
 
-**Keep `~/.project-hub/` private.** It may contain sensitive client information.
+Requirements for workflow changes:
+- Must be reviewed and approved by @markus-michalski
+- Manual security audit required (no automated approval)
+- Changes must be explained in the PR description
+- Do not include executable code in PR descriptions or issue comments
 
-### MCP Server
+Security considerations:
+- Workflows run with `GITHUB_TOKEN` access
+- Can read repository contents
+- Can create releases and tags
+- Can access repository secrets (if configured)
 
-The MCP server runs locally via stdio transport. It does not expose any network ports or accept remote connections. All communication goes through Claude Code.
+### Plugin Manifest Files
 
-### Path Traversal Protection
+Changes to `.claude-plugin/plugin.json`:
+- Trigger version recognition in plugin marketplaces
+- Must be reviewed by the maintainer
+- Version bumps must match `CHANGELOG.md`
 
-The knowledge tool validates topic names to prevent path traversal attacks. Do not modify this validation.
+### AI-Assisted Development
 
-### Secrets and Credentials
+This project uses Claude Code (AI pair programming). When contributing:
 
-**Never commit secrets to this repository.** This includes API keys, tokens, passwords, or `.env` files. User configuration lives at `~/.project-hub/config.yaml` — outside this repository.
+**DO:**
+- Review all code changes carefully before submitting
+- Use Conventional Commits format
+- Follow existing code patterns
+- Test changes locally before opening a PR
+
+**DO NOT:**
+- Include prompts or instructions for AI in code comments or docstrings
+- Attempt to manipulate AI review via PR descriptions
+- Include executable commands or scripts in PR descriptions
+- Assume AI-reviewed code is automatically safe
+
+## Secrets and Credentials
+
+**Never commit secrets to this repository.** This includes:
+- API keys (Anthropic, etc.)
+- Access tokens (GitHub PATs, etc.)
+- Private keys (`.pem`, `.key` files)
+- Credentials (passwords, service accounts)
+- Environment files (`.env`, `config.local.yaml`)
+
+User-specific configuration lives at `~/.project-hub/config.yaml` — outside this repository.
 
 If you accidentally commit a secret:
 1. Immediately revoke or rotate the credential
 2. Contact the maintainer via Private Vulnerability Reporting
+3. Do NOT just delete the commit — it remains in git history
 
-### AI-Assisted Development
+## Dependencies
 
-This project uses Claude Code (AI pair programming). All AI-generated code is reviewed by the maintainer before merging.
+Python dependencies are pinned in `requirements.txt`. Dependabot scans weekly and opens PRs for updates. When adding dependencies:
+- Prefer well-maintained, popular packages
+- Check for known vulnerabilities (e.g. via `pip-audit`)
+- Pin to specific versions for reproducibility
 
-**When contributing:**
-- Review all code changes carefully before submitting
-- Do not include executable commands or scripts in PR descriptions
-- Do not attempt to manipulate AI review via PR descriptions
+## Security Best Practices for Users
+
+If you're using this plugin:
+
+1. **Keep your config secure**: `~/.project-hub/config.yaml` may contain sensitive information
+2. **Database privacy**: `~/.project-hub/project-hub.db` contains your project data — keep it private
+3. **Review generated content**: Always review AI-generated communications before sending
+4. **Separate repos**: Keep this plugin (public) separate from your actual project data (private)
+
+## Attribution
+
+This project uses AI assistance (Claude Code) for development. Commits include the co-author line:
+```
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```
+
+This is for transparency. All AI-generated code is reviewed by the maintainer before merging.

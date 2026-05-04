@@ -4,35 +4,46 @@
 
 ## Type of Change
 
-- [ ] `feat`: New feature (minor version bump)
-- [ ] `fix`: Bug fix (patch version bump)
-- [ ] `docs`: Documentation only (no version bump)
-- [ ] `chore`: Maintenance (no version bump)
-- [ ] `refactor`: Code refactoring without behavior change
-- [ ] Breaking change (major version bump — add `!` suffix: `feat!`)
+- [ ] feat: New feature (minor version bump)
+- [ ] fix: Bug fix (patch version bump)
+- [ ] docs: Documentation only
+- [ ] chore: Maintenance (no version bump)
+- [ ] refactor: Code refactoring without behavior change
+- [ ] BREAKING CHANGE (major version bump)
 
 ## Checklist
 
 ### Before Submitting
 
+- [ ] I have read the [CONTRIBUTING.md](../CONTRIBUTING.md) guidelines
+- [ ] I have signed the [Contributor License Agreement (CLA)](../CLA.md) via cla-assistant
 - [ ] My commits follow [Conventional Commits](https://conventionalcommits.org/)
+- [ ] I included the co-author line when applicable: `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
 - [ ] All tests pass locally (`pytest`)
-- [ ] `ruff check servers/` passes
-- [ ] `mypy servers/project-hub-server/` passes (no new errors)
+- [ ] `ruff check .` passes
+- [ ] I have updated `CHANGELOG.md` under the `[Unreleased]` section
+
+### Version Updates (release PRs only)
+
+- [ ] I have updated `.claude-plugin/plugin.json` version
+- [ ] Version matches the `CHANGELOG.md` release heading
 
 ### Documentation
 
-- [ ] I have updated `CLAUDE.md` if routing or workflow rules changed
+- [ ] I have updated `CLAUDE.md` if workflow rules changed
 - [ ] I have updated `README.md` if user-facing behavior changed
 - [ ] I have added/updated `SKILL.md` if a skill was added or changed
 
 ### Testing
 
-- [ ] I have added tests for new MCP tools or Python functions
-- [ ] Smoke tests pass (`pytest tests/smoke/ -q`)
+**Automated CI checks (run automatically):**
+- pytest
+- ruff lint
+- JSON validation (`.claude-plugin/plugin.json`, `.mcp.json`)
+- SKILL.md frontmatter validation
 
-**Manual testing performed:**
-<!-- Describe what you tested manually, if applicable. -->
+**Manual testing details:**
+<!-- Describe manual testing performed, if applicable. -->
 
 ## Related Issues
 

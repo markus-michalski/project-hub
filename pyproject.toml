@@ -1,3 +1,6 @@
+[project]
+license = { file = "LICENSE.md" }
+
 [tool.pytest.ini_options]
 testpaths = ["tests", "servers/project-hub-server/tests"]
 pythonpath = ["servers/project-hub-server"]

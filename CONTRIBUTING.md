@@ -9,9 +9,11 @@ Project Hub follows a **Benevolent Dictator For Life (BDFL)** model.
 
 ## License
 
-This project is licensed under the **[MIT License](LICENSE)**. Contributions you submit are also licensed under MIT.
+This project is licensed under the **[PolyForm Noncommercial License 1.0.0](LICENSE.md)** — source-available, personal and non-commercial use only. Not OSI Open Source.
 
-> **Note:** When this plugin is published to the Claude Code Plugin Marketplace, a Contributor License Agreement (CLA) will be introduced. At that point, all contributors will need to sign the CLA before their PRs can be merged. This document will be updated accordingly.
+## Contributor License Agreement (CLA)
+
+Before your first PR can be merged, you must sign the [Contributor License Agreement](CLA.md). Signing is automated via [cla-assistant.io](https://cla-assistant.io/) — a bot will comment on your PR with a one-click signing link. You only need to sign once.
 
 ## Branch Model
 

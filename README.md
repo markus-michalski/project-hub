@@ -1,6 +1,7 @@
 # Project Hub — Claude Code Plugin
 
-**Status:** 🚧 In Development
+![GitHub Tag](https://img.shields.io/github/v/tag/markus-michalski/project-hub?sort=semver&style=for-the-badge)
+![License: PolyForm NC 1.0.0](https://img.shields.io/badge/license-PolyForm%20NC%201.0.0-red.svg?style=for-the-badge)
 
 A personal project management hub for Claude Code. Create projects, store contacts, log meeting notes and emails, generate summaries, and draft communications — all within persistent project context.
 
@@ -122,4 +123,4 @@ claude-agents-project-management/
 
 ## License
 
-MIT License — Markus Michalski
+[PolyForm Noncommercial License 1.0.0](LICENSE.md) — source-available, personal and non-commercial use only. Not OSI Open Source. Commercial use requires explicit permission; contact the maintainer.
