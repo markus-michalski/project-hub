@@ -10,6 +10,8 @@ def search_notes(query: str, project_id: int = 0) -> list[dict]:
     project_id: limit to a specific project (0 = all projects).
     Returns matching notes ordered by created_at DESC.
     """
+    if not query.strip():
+        return []
     pattern = f"%{query}%"
     with db_connection() as conn:
         if project_id:
@@ -40,6 +42,8 @@ def search_contacts(query: str, project_id: int = 0) -> list[dict]:
     project_id: limit to a specific project (0 = all projects).
     Returns matching contacts ordered by name.
     """
+    if not query.strip():
+        return []
     pattern = f"%{query}%"
     with db_connection() as conn:
         if project_id:

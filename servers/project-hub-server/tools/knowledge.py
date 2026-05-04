@@ -17,6 +17,14 @@ def _knowledge_dir(project_type: str) -> Path:
     return d
 
 
+def _resolve_topic_path(knowledge_dir: Path, topic: str) -> Path:
+    """Return the resolved .md path for topic, raising ValueError on path traversal."""
+    candidate = (knowledge_dir / f"{topic}.md").resolve()
+    if not candidate.is_relative_to(knowledge_dir.resolve()):
+        raise ValueError(f"Invalid topic: {topic!r}")
+    return candidate
+
+
 def list_knowledge(project_type: str) -> list[dict]:
     """List all knowledge topics available for a project type."""
     d = _knowledge_dir(project_type)
@@ -42,7 +50,7 @@ def list_knowledge(project_type: str) -> list[dict]:
 def get_knowledge(project_type: str, topic: str) -> Optional[dict]:
     """Read a knowledge file. Returns None if not found."""
     d = _knowledge_dir(project_type)
-    f = d / f"{topic}.md"
+    f = _resolve_topic_path(d, topic)
     if not f.exists():
         return None
     content = f.read_text(encoding="utf-8")
@@ -62,15 +70,17 @@ def get_knowledge(project_type: str, topic: str) -> Optional[dict]:
 def save_knowledge(project_type: str, topic: str, content: str) -> dict:
     """Write or overwrite a knowledge file."""
     d = _knowledge_dir(project_type)
-    f = d / f"{topic}.md"
+    f = _resolve_topic_path(d, topic)
     f.write_text(content, encoding="utf-8")
-    return get_knowledge(project_type, topic)
+    result = get_knowledge(project_type, topic)
+    assert result is not None
+    return result
 
 
 def delete_knowledge(project_type: str, topic: str) -> bool:
     """Delete a knowledge file. Returns True if deleted, False if not found."""
     d = _knowledge_dir(project_type)
-    f = d / f"{topic}.md"
+    f = _resolve_topic_path(d, topic)
     if f.exists():
         f.unlink()
         return True

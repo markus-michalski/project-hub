@@ -27,6 +27,9 @@ jobs:
       - name: Lint (ruff)
         run: ruff check servers/
 
+      - name: Type check (mypy)
+        run: mypy servers/project-hub-server/tools/ servers/project-hub-server/server.py
+
       - name: Run smoke tests
         run: pytest tests/smoke/ -v
 
