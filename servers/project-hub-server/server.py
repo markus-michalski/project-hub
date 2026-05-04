@@ -5,6 +5,7 @@ Provides persistent project management: projects, contacts, notes, and session t
 from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
+from tools.attachments import attach_file, list_attachments, remove_attachment
 from tools.contacts import add_contact, delete_contact, list_contacts, update_contact
 from tools.db import init_db
 from tools.knowledge import (
@@ -15,7 +16,6 @@ from tools.knowledge import (
     save_knowledge,
     sync_knowledge_templates,
 )
-from tools.attachments import attach_file, list_attachments, remove_attachment
 from tools.notes import add_note, delete_note, get_note, list_notes, update_note
 from tools.project_types import (
     create_project_type,

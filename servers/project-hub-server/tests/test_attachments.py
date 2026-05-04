@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from tools.attachments import attach_file, list_attachments, remove_attachment
 from tools.notes import add_note, get_note
 from tools.projects import create_project
