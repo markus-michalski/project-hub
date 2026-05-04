@@ -36,6 +36,9 @@ Never read the SQLite file directly — always go through MCP tools.
 | "fasse zusammen" / "Summary erstellen" / "summarize" / "Meeting zusammenfassen" / `/project-hub:summarize` | `/project-hub:summarize` |
 | "suche" / "finde" / "search" / "wo steht" / "wer ist zuständig für" / "gibt es eine Notiz" / `/project-hub:search` | `/project-hub:search` |
 | "Governance aktualisieren" / "Prozess zeigen" / "Wissen laden" / "knowledge" / `/project-hub:knowledge` | `/project-hub:knowledge` |
+| "Hub-Session starten" / "Hub-Projekt laden" / "welches Hub-Projekt soll ich laden" / "starte Hub-Session" / `/project-hub:session-start` | `/project-hub:session-start` |
+| "Was steht an" / "What's next" / "nächster Schritt Hub" / "offene Aufgaben Hub" / "next step" / `/project-hub:next-step` | `/project-hub:next-step` |
+| "Hub konfigurieren" / "Hub-Einstellungen" / "project-hub config" / "meinen Namen im Hub" / "Sprache im Hub" / `/project-hub:configure` | `/project-hub:configure` |
 | "Hub-Hilfe" / "project-hub help" / "welche Hub-Skills gibt es" / `/project-hub:help` | `/project-hub:help` |
 | "project-hub einrichten" / "setup project-hub" / `/project-hub:setup` | `/project-hub:setup` |
 
@@ -48,6 +51,12 @@ Never read the SQLite file directly — always go through MCP tools.
   talking about a code repo, book, or video project — defer to the appropriate plugin.
 - **NEVER** activate `/project-hub:resume` on bare "weitermachen" / "resume" without a confirmed
   hub project context. Verify via `tool_list_projects` if uncertain.
+- **NEVER** activate `/project-hub:session-start` on bare "start" / "starten" — multiple plugins
+  have session-start skills; only trigger with explicit hub context or direct invocation.
+- **NEVER** activate `/project-hub:next-step` on bare "Was soll ich tun" / "next" without hub/
+  client context — mm-dev-toolkit and other plugins have their own next-step skills.
+- **NEVER** activate `/project-hub:configure` on bare "konfigurieren" / "Einstellungen" without
+  explicit project-hub context — defer to the appropriate plugin.
 - **NEVER** activate `/project-hub:help` on bare "Hilfe" / "Help" — only on explicit hub context
   or direct invocation.
 - **NEVER** activate `/project-hub:setup` on bare "setup" / "einrichten" — only when target is
