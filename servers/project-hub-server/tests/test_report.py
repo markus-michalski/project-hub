@@ -21,8 +21,14 @@ def populated_project(tmp_path, monkeypatch):
         go_live="2026-07-01",
         budget="50.000 EUR",
     )
-    add_contact(p["id"], "Alice Muster", role="Projektleiterin", contact_type="internal", email="alice@example.com", phone="+49 123 456")
-    add_contact(p["id"], "Bob Extern", role="Berater", contact_type="external", company="Beratungshaus AG", email="bob@beratungshaus.de")
+    add_contact(
+        p["id"], "Alice Muster", role="Projektleiterin",
+        contact_type="internal", email="alice@example.com", phone="+49 123 456",
+    )
+    add_contact(
+        p["id"], "Bob Extern", role="Berater",
+        contact_type="external", company="Beratungshaus AG", email="bob@beratungshaus.de",
+    )
     add_note(p["id"], "Kickoff-Meeting", "Wir haben Meilensteine besprochen.", note_type="meeting-notes")
     add_note(p["id"], "Entscheidung Go-Live", "Go-Live wurde auf Q3 gesetzt.", note_type="decision")
     add_note(p["id"], "Aufgabe: Anforderungen sammeln", "Bis Ende Mai.", note_type="action-item")

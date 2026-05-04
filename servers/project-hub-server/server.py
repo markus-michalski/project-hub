@@ -31,9 +31,9 @@ from tools.projects import (
     list_projects,
     update_project,
 )
+from tools.report import generate_report
 from tools.search import search_contacts, search_notes
 from tools.session import clear_session, get_session, set_session
-from tools.report import generate_report
 from tools.transfer import export_project, import_project
 
 # Initialize DB on startup
