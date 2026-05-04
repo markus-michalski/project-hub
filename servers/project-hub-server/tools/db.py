@@ -76,7 +76,8 @@ def init_db() -> None:
                 type        TEXT    NOT NULL DEFAULT 'note',
                 content     TEXT    NOT NULL DEFAULT '',
                 agenda      TEXT    NOT NULL DEFAULT '',
-                created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+                created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+                updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
             );
 
             CREATE TABLE IF NOT EXISTS session (
@@ -88,4 +89,12 @@ def init_db() -> None:
 
             INSERT OR IGNORE INTO session (id) VALUES (1);
         """)
+        # Safe migration: no-op if column already exists
+        try:
+            conn.execute(
+                "ALTER TABLE notes ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))"
+            )
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass
     conn.close()

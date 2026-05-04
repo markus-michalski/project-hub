@@ -96,7 +96,7 @@ def test_session_roundtrip():
     assert initial.get("project_id") is None
 
     p = create_project("Session Project")
-    set_session(p["id"], last_skill="resume")
+    set_session(p["slug"], last_skill="resume")
 
     session = get_session()
     assert session["project_id"] == p["id"]

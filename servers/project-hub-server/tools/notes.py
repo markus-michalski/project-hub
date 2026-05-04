@@ -1,6 +1,7 @@
 """Notes CRUD operations."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Optional
 
 from .db import db_connection
@@ -17,7 +18,7 @@ def list_notes(project_id: int, note_type: str = "", limit: int = 0) -> list[dic
         if note_type:
             base += " AND type = ?"
             params.append(note_type)
-        base += " ORDER BY created_at DESC, id DESC"
+        base += " ORDER BY updated_at DESC, created_at DESC, id DESC"
         if limit > 0:
             base += " LIMIT ?"
             params.append(limit)
@@ -67,6 +68,7 @@ def update_note(
     if not updates:
         return get_note(note_id)
 
+    updates["updated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     set_clause = ", ".join(f"{k} = ?" for k in updates)
     values = list(updates.values()) + [note_id]
 

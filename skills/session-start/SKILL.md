@@ -62,7 +62,7 @@ Load all context in parallel:
 
 ### 5. Set Session
 
-Use MCP `tool_set_session(project_id, last_skill="session-start")`.
+Use MCP `tool_set_session(identifier, last_skill="session-start")`.
 
 ### 6. Output Session Header
 

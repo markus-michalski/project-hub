@@ -43,9 +43,9 @@ def tool_get_session() -> dict:
 
 
 @mcp.tool()
-def tool_set_session(project_id: int, last_skill: str = "") -> dict:
-    """Set the active project for this session."""
-    return set_session(project_id, last_skill)
+def tool_set_session(identifier: str, last_skill: str = "") -> dict:
+    """Set the active project for this session by slug or name."""
+    return set_session(identifier, last_skill)
 
 
 @mcp.tool()

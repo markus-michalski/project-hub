@@ -124,3 +124,26 @@ def test_delete_note(project):
 
 def test_delete_note_not_found():
     assert delete_note(99999) is False
+
+
+def test_note_has_updated_at(project):
+    note = add_note(project["id"], "Timestamped", "Content")
+    assert "updated_at" in note
+    assert note["updated_at"] is not None
+
+
+def test_update_note_sets_updated_at(project):
+    note = add_note(project["id"], "Track Me", "Initial")
+    original_updated_at = note["updated_at"]
+
+    import time
+    time.sleep(0.01)
+
+    updated = update_note(note["id"], content="Changed")
+    assert updated["updated_at"] >= original_updated_at
+
+
+def test_list_notes_includes_updated_at(project):
+    add_note(project["id"], "Note A", "Content A")
+    notes = list_notes(project["id"])
+    assert "updated_at" in notes[0]

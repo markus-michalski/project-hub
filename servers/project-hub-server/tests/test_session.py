@@ -15,16 +15,29 @@ def test_initial_session_has_no_project():
     assert session["project_id"] is None
 
 
-def test_set_session(project):
-    session = set_session(project["id"], last_skill="resume")
+def test_set_session_by_name(project):
+    session = set_session("Session Test Project", last_skill="resume")
 
     assert session["project_id"] == project["id"]
     assert session["last_skill"] == "resume"
     assert session["project_name"] == "Session Test Project"
 
 
+def test_set_session_by_slug(project):
+    session = set_session(project["slug"], last_skill="resume")
+
+    assert session["project_id"] == project["id"]
+
+
+def test_set_session_not_found():
+    result = set_session("nonexistent-project")
+
+    assert "error" in result
+    assert "nonexistent-project" in result["error"]
+
+
 def test_clear_session(project):
-    set_session(project["id"])
+    set_session("Session Test Project")
     session = clear_session()
 
     assert session["project_id"] is None
@@ -32,7 +45,7 @@ def test_clear_session(project):
 
 
 def test_session_includes_project_details(project):
-    session = set_session(project["id"])
+    session = set_session("Session Test Project")
 
     assert session["project_name"] == "Session Test Project"
     assert session["project_type"] == "generic"

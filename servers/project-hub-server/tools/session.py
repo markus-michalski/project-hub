@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from .db import db_connection
+from .projects import get_project
 
 
 def get_session() -> dict:
@@ -19,15 +20,18 @@ def get_session() -> dict:
         return dict(row) if row else {}
 
 
-def set_session(project_id: int, last_skill: str = "") -> dict:
-    """Set the active project in the session."""
+def set_session(identifier: str, last_skill: str = "") -> dict:
+    """Set the active project in the session by slug or name."""
+    project = get_project(identifier)
+    if not project:
+        return {"error": f"Project not found: {identifier}"}
     with db_connection() as conn:
         with conn:
             conn.execute(
                 """UPDATE session
                    SET project_id = ?, last_skill = ?, updated_at = datetime('now')
                    WHERE id = 1""",
-                (project_id, last_skill),
+                (project["id"], last_skill),
             )
     return get_session()
 
