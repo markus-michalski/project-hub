@@ -24,6 +24,12 @@ from tools.projects import (
     list_projects,
     update_project,
 )
+from tools.project_types import (
+    create_project_type,
+    delete_project_type,
+    get_project_type,
+    list_project_types,
+)
 from tools.search import search_contacts, search_notes
 from tools.session import clear_session, get_session, set_session
 
@@ -95,7 +101,7 @@ def tool_create_project(
 ) -> dict:
     """Create a new project and its docs folder structure.
 
-    project_type: merchant-onboarding | it-project | marketing | consulting | event | generic
+    project_type: any built-in or custom type name (use tool_list_project_types to discover available types)
     market: relevant market/country (e.g. DE, NL, SE — mainly for merchant-onboarding)
     products: integrated products (e.g. BNPL 30d, Pay in 3 — mainly for merchant-onboarding)
     phase: current project phase
@@ -332,6 +338,59 @@ def tool_save_knowledge(project_type: str, topic: str, content: str) -> dict:
 def tool_delete_knowledge(project_type: str, topic: str) -> bool:
     """Delete a knowledge file. Returns True if deleted, False if not found."""
     return delete_knowledge(project_type, topic)
+
+
+# ---------------------------------------------------------------------------
+# Project Types
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def tool_list_project_types() -> list[dict]:
+    """List all available project types: built-in and user-defined custom types.
+
+    Each entry includes: name, label, description, source (built-in | custom), path.
+    Custom types override built-ins when names collide.
+    """
+    return list_project_types()
+
+
+@mcp.tool()
+def tool_get_project_type(type_name: str) -> dict | None:
+    """Get project type details by name.
+
+    Checks user-defined types in ~/.project-hub/project-types/ first,
+    then falls back to built-in types shipped with the plugin.
+    Returns readme content plus metadata, or None if not found.
+    """
+    return get_project_type(type_name)
+
+
+@mcp.tool()
+def tool_create_project_type(
+    name: str,
+    description: str = "",
+    phases: list[str] | None = None,
+    contacts: list[str] | None = None,
+) -> dict:
+    """Create a custom project type scaffold in ~/.project-hub/project-types/{name}/.
+
+    name: display name (will be slugified, e.g. "HR Onboarding" → "hr-onboarding")
+    description: one-line description of this project type
+    phases: optional list of standard phase names
+    contacts: optional list of typical contact roles
+    Returns error dict if the type already exists.
+    """
+    return create_project_type(name, description, phases, contacts)
+
+
+@mcp.tool()
+def tool_delete_project_type(type_name: str) -> dict:
+    """Delete a custom project type.
+
+    Built-in types shipped with the plugin cannot be deleted.
+    Returns {"deleted": True, "name": ...} on success or {"error": ...} on failure.
+    """
+    return delete_project_type(type_name)
 
 
 @mcp.tool()

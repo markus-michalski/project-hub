@@ -62,6 +62,7 @@ Use `AskUserQuestion` to pick which setting to update. Offer these options:
 - **Sprache** — Standard-Sprache für generierte Texte (de / en)
 - **E-Mail-Signatur** — Signatur für E-Mail-Drafts
 - **E-Mail-Ton** — Ton für E-Mail-Drafts (professional / friendly / formal)
+- **Projekttypen verwalten** — Eigene Projekttypen ansehen, erstellen oder löschen
 
 ### 4. Collect New Value
 
@@ -118,7 +119,39 @@ print('OK')
 Weitere Einstellung ändern? `/project-hub:configure`
 ```
 
-### 7. Offer Another Change
+### 7. Handle "Projekttypen verwalten"
+
+If the user selected **Projekttypen verwalten**:
+
+**7a. Load and display types**
+
+Call `tool_list_project_types()` and show a table:
+
+```
+## Projekttypen
+
+| Typ | Quelle | Beschreibung |
+|-----|--------|-------------|
+| consulting | built-in | Client consulting project |
+| hr-onboarding | custom | Employee HR processes |
+```
+
+**7b. Ask what to do**
+
+Use `AskUserQuestion`:
+- **Neuen Typ erstellen** → invoke `/project-hub:type-creator`
+- **Typ löschen** → proceed to 7c
+- **Zurück** → back to step 3
+
+**7c. Delete a custom type**
+
+- Ask user: "Welchen Typ möchtest du löschen?" (free text)
+- Check: call `tool_get_project_type(name)` — if `source == "built-in"`, show error "Built-in Typen können nicht gelöscht werden" and offer to pick again
+- Confirm deletion: "Typ '{name}' wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
+  - Use `AskUserQuestion`: **Ja, löschen** / **Abbrechen**
+- Call `tool_delete_project_type(name)` and confirm result
+
+### 8. Offer Another Change
 
 After confirming, offer to change another setting:
 

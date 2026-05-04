@@ -39,6 +39,7 @@ Never read the SQLite file directly — always go through MCP tools.
 | "Hub-Session starten" / "Hub-Projekt laden" / "welches Hub-Projekt soll ich laden" / "starte Hub-Session" / `/project-hub:session-start` | `/project-hub:session-start` |
 | "Was steht an" / "What's next" / "nächster Schritt Hub" / "offene Aufgaben Hub" / "next step" / `/project-hub:next-step` | `/project-hub:next-step` |
 | "Hub konfigurieren" / "Hub-Einstellungen" / "project-hub config" / "meinen Namen im Hub" / "Sprache im Hub" / `/project-hub:configure` | `/project-hub:configure` |
+| "neuen Projekttyp anlegen" / "eigenen Typ erstellen" / "custom project type" / `/project-hub:type-creator` | `/project-hub:type-creator` |
 | "Hub-Hilfe" / "project-hub help" / "welche Hub-Skills gibt es" / `/project-hub:help` | `/project-hub:help` |
 | "project-hub einrichten" / "setup project-hub" / `/project-hub:setup` | `/project-hub:setup` |
 
