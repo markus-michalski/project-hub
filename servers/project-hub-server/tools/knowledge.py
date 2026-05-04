@@ -5,10 +5,14 @@ They are Markdown files the user maintains locally and Claude reads at session s
 """
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Optional
 
 from .config import get_knowledge_root
+
+# Bundled templates ship alongside this plugin
+_PLUGIN_TEMPLATES = Path(__file__).parent.parent.parent.parent / "knowledge"
 
 
 def _knowledge_dir(project_type: str) -> Path:
@@ -96,3 +100,52 @@ def get_all_knowledge(project_type: str) -> list[dict]:
         if full:
             result.append(full)
     return result
+
+
+def _md5(path: Path) -> str:
+    return hashlib.md5(path.read_bytes()).hexdigest()
+
+
+def sync_knowledge_templates(
+    force: bool = False,
+    plugin_templates_dir: Optional[Path] = None,
+) -> dict:
+    """Compare bundled plugin templates with the user's installed knowledge files.
+
+    Returns a report dict:
+      - items: list of {"path", "status": "up-to-date"|"newer-version-available"|"new",
+                        "plugin_bytes", "local_bytes"?}
+      - synced: list of paths actually written (only when force=True)
+    """
+    templates_root = plugin_templates_dir or _PLUGIN_TEMPLATES
+    user_root = get_knowledge_root()
+
+    items = []
+    synced = []
+
+    for plugin_file in sorted(templates_root.rglob("*.md")):
+        rel = plugin_file.relative_to(templates_root)
+        user_file = user_root / rel
+
+        entry: dict = {
+            "path": str(rel),
+            "plugin_bytes": plugin_file.stat().st_size,
+        }
+
+        if not user_file.exists():
+            entry["status"] = "new"
+        elif _md5(plugin_file) == _md5(user_file):
+            entry["status"] = "up-to-date"
+            entry["local_bytes"] = user_file.stat().st_size
+        else:
+            entry["status"] = "newer-version-available"
+            entry["local_bytes"] = user_file.stat().st_size
+
+        if force and entry["status"] != "up-to-date":
+            user_file.parent.mkdir(parents=True, exist_ok=True)
+            user_file.write_bytes(plugin_file.read_bytes())
+            synced.append(str(rel))
+
+        items.append(entry)
+
+    return {"items": items, "synced": synced}

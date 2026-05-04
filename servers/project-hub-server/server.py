@@ -13,6 +13,7 @@ from tools.knowledge import (
     get_knowledge,
     list_knowledge,
     save_knowledge,
+    sync_knowledge_templates,
 )
 from tools.notes import add_note, delete_note, get_note, list_notes, update_note
 from tools.projects import (
@@ -319,3 +320,17 @@ def tool_save_knowledge(project_type: str, topic: str, content: str) -> dict:
 def tool_delete_knowledge(project_type: str, topic: str) -> bool:
     """Delete a knowledge file. Returns True if deleted, False if not found."""
     return delete_knowledge(project_type, topic)
+
+
+@mcp.tool()
+def tool_sync_knowledge_templates(force: bool = False) -> dict:
+    """Compare bundled plugin templates with the user's installed knowledge files.
+
+    Reports new files and files where the plugin ships a different version.
+    Set force=True to copy all new/changed templates to ~/.project-hub/knowledge/.
+    User confirmation should be obtained before calling with force=True.
+
+    Returns: {items: [{path, status, plugin_bytes, local_bytes?}], synced: [path, ...]}
+    status values: "up-to-date" | "newer-version-available" | "new"
+    """
+    return sync_knowledge_templates(force=force)

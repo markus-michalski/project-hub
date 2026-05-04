@@ -1,6 +1,6 @@
-"""Tests for the knowledge tool functions (save/get/list/delete)."""
+"""Tests for the knowledge tool functions (save/get/list/delete/sync)."""
 import pytest
-from tools.knowledge import delete_knowledge, get_all_knowledge, get_knowledge, list_knowledge, save_knowledge
+from tools.knowledge import delete_knowledge, get_all_knowledge, get_knowledge, list_knowledge, save_knowledge, sync_knowledge_templates
 
 
 @pytest.fixture
@@ -92,3 +92,78 @@ def test_get_knowledge_path_traversal_rejected(knowledge_root):
 def test_delete_knowledge_path_traversal_rejected(knowledge_root):
     with pytest.raises(ValueError, match="Invalid topic"):
         delete_knowledge("generic", "../../sensitive")
+
+
+# ---------------------------------------------------------------------------
+# sync_knowledge_templates
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def plugin_templates(tmp_path):
+    """Create a fake plugin templates directory with two files."""
+    tmpl_root = tmp_path / "plugin_templates"
+    (tmpl_root / "it-project").mkdir(parents=True)
+    (tmpl_root / "it-project" / "charter.md").write_text("# IT Charter\n\nContent.", encoding="utf-8")
+    (tmpl_root / "consulting").mkdir(parents=True)
+    (tmpl_root / "consulting" / "engagement.md").write_text("# Engagement\n\nContent.", encoding="utf-8")
+    return tmpl_root
+
+
+def test_sync_detects_new_files(knowledge_root, plugin_templates):
+    report = sync_knowledge_templates(force=False, plugin_templates_dir=plugin_templates)
+
+    assert len(report["items"]) == 2
+    statuses = {i["path"]: i["status"] for i in report["items"]}
+    assert statuses["it-project/charter.md"] == "new"
+    assert statuses["consulting/engagement.md"] == "new"
+    assert report["synced"] == []
+
+
+def test_sync_detects_up_to_date(knowledge_root, plugin_templates, monkeypatch):
+    monkeypatch.setattr("tools.knowledge.get_knowledge_root", lambda: knowledge_root)
+    # Copy plugin file to user root so it matches
+    user_file = knowledge_root / "it-project" / "charter.md"
+    user_file.parent.mkdir(parents=True)
+    user_file.write_text("# IT Charter\n\nContent.", encoding="utf-8")
+
+    report = sync_knowledge_templates(force=False, plugin_templates_dir=plugin_templates)
+
+    charter_item = next(i for i in report["items"] if "charter" in i["path"])
+    assert charter_item["status"] == "up-to-date"
+
+
+def test_sync_detects_changed_file(knowledge_root, plugin_templates, monkeypatch):
+    monkeypatch.setattr("tools.knowledge.get_knowledge_root", lambda: knowledge_root)
+    user_file = knowledge_root / "consulting" / "engagement.md"
+    user_file.parent.mkdir(parents=True)
+    user_file.write_text("# Engagement\n\nOld content.", encoding="utf-8")
+
+    report = sync_knowledge_templates(force=False, plugin_templates_dir=plugin_templates)
+
+    eng_item = next(i for i in report["items"] if "engagement" in i["path"])
+    assert eng_item["status"] == "newer-version-available"
+    assert "local_bytes" in eng_item
+
+
+def test_sync_force_copies_new_and_changed(knowledge_root, plugin_templates, monkeypatch):
+    monkeypatch.setattr("tools.knowledge.get_knowledge_root", lambda: knowledge_root)
+
+    report = sync_knowledge_templates(force=True, plugin_templates_dir=plugin_templates)
+
+    assert len(report["synced"]) == 2
+    charter = knowledge_root / "it-project" / "charter.md"
+    assert charter.exists()
+    assert "IT Charter" in charter.read_text()
+
+
+def test_sync_force_skips_up_to_date(knowledge_root, plugin_templates, monkeypatch):
+    monkeypatch.setattr("tools.knowledge.get_knowledge_root", lambda: knowledge_root)
+    user_file = knowledge_root / "it-project" / "charter.md"
+    user_file.parent.mkdir(parents=True)
+    user_file.write_text("# IT Charter\n\nContent.", encoding="utf-8")
+
+    report = sync_knowledge_templates(force=True, plugin_templates_dir=plugin_templates)
+
+    # Only the engagement.md (new) should be synced, not the up-to-date charter
+    assert "it-project/charter.md" not in report["synced"]
+    assert "consulting/engagement.md" in report["synced"]
