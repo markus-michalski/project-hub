@@ -20,9 +20,6 @@ test -d ~/.project-hub/venv && echo "venv: OK" || echo "venv: MISSING"
 # Check config
 test -f ~/.project-hub/config.yaml && echo "config: OK" || echo "config: MISSING"
 
-# Check dependencies
-~/.project-hub/venv/bin/python3 -c "import mcp; import fastmcp; import yaml" 2>/dev/null && echo "deps: OK" || echo "deps: MISSING"
-
 # Check data directory
 test -d ~/.project-hub && echo "data-dir: OK" || echo "data-dir: MISSING"
 ```
@@ -39,10 +36,13 @@ mkdir -p ~/.project-hub
 python3 -m venv ~/.project-hub/venv
 ```
 
-### Step 4: Install Dependencies (if missing)
+### Step 4: Sync Dependencies (always)
+
+Always run this, even if venv already existed. `pip` is idempotent and fast on a warm
+cache (~1s). This ensures new deps added in later releases are never silently skipped.
 
 ```bash
-~/.project-hub/venv/bin/pip install -r ${CLAUDE_PLUGIN_ROOT}/requirements.txt
+~/.project-hub/venv/bin/pip install -r ${CLAUDE_PLUGIN_ROOT}/requirements.txt -q
 ```
 
 ### Step 5: Copy Config (if missing)
@@ -174,7 +174,7 @@ print('DB: OK')
 
 - Daten-Verzeichnis: OK / ERSTELLT  (~/.project-hub)
 - Venv:             OK / ERSTELLT  (~/.project-hub/venv)
-- Dependencies:     OK / INSTALLIERT
+- Dependencies:     SYNCHRONISIERT
 - Config:           OK / ERSTELLT  (~/.project-hub/config.yaml)
 - Knowledge:        OK / INSTALLIERT (~/.project-hub/knowledge/[gewählte Types])
 - Datenbank:        OK / INITIALISIERT
