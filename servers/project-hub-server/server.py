@@ -16,6 +16,12 @@ from tools.knowledge import (
     sync_knowledge_templates,
 )
 from tools.notes import add_note, delete_note, get_note, list_notes, update_note
+from tools.project_types import (
+    create_project_type,
+    delete_project_type,
+    get_project_type,
+    list_project_types,
+)
 from tools.projects import (
     create_project,
     get_project,
@@ -23,12 +29,6 @@ from tools.projects import (
     list_docs,
     list_projects,
     update_project,
-)
-from tools.project_types import (
-    create_project_type,
-    delete_project_type,
-    get_project_type,
-    list_project_types,
 )
 from tools.search import search_contacts, search_notes
 from tools.session import clear_session, get_session, set_session

@@ -4,7 +4,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from tools.project_types import (
     create_project_type,
     delete_project_type,
