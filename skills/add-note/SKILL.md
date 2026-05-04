@@ -46,7 +46,15 @@ Ask for:
 
 Use MCP `tool_add_note(project_id, title, content, note_type, agenda)`.
 
-### 5. Output
+### 5. Optional: Attach Files
+
+After saving, ask: "Möchtest du eine Datei anhängen?" (skip if user is clearly in a hurry)
+
+If yes: ask for the absolute file path.
+Use MCP `tool_attach_file(note_id, file_path)`.
+Repeat until the user is done.
+
+### 6. Output
 
 ```
 ## Notiz gespeichert
@@ -56,6 +64,7 @@ Use MCP `tool_add_note(project_id, title, content, note_type, agenda)`.
 **Projekt:** [Projektname]
 
 Notiz-ID: [id] (für späteres Abrufen)
+[Anhänge: [name1], [name2]] (nur wenn Dateien angehängt wurden)
 
 Tipp: `/summarize [note-id]` erstellt ein strukturiertes Summary dieser Notiz.
 ```
@@ -64,3 +73,4 @@ Tipp: `/summarize [note-id]` erstellt ein strukturiertes Summary dieser Notiz.
 
 - For `meeting-notes` with an agenda: remind the user they can run `/summarize` to get a structured summary with agenda comparison
 - For `email`: the raw email can be used later with `/summarize` or `/compose` as reference
+- Attachment paths must be absolute and within `~/` (path traversal protection)

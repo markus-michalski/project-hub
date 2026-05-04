@@ -89,12 +89,14 @@ def init_db() -> None:
 
             INSERT OR IGNORE INTO session (id) VALUES (1);
         """)
-        # Safe migration: no-op if column already exists
-        try:
-            conn.execute(
-                "ALTER TABLE notes ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))"
-            )
-            conn.commit()
-        except sqlite3.OperationalError:
-            pass
+        # Safe migrations: no-op if column already exists
+        for migration in (
+            "ALTER TABLE notes ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))",
+            "ALTER TABLE notes ADD COLUMN attachments TEXT NOT NULL DEFAULT '[]'",
+        ):
+            try:
+                conn.execute(migration)
+                conn.commit()
+            except sqlite3.OperationalError:
+                pass
     conn.close()

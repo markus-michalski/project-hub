@@ -15,6 +15,7 @@ from tools.knowledge import (
     save_knowledge,
     sync_knowledge_templates,
 )
+from tools.attachments import attach_file, list_attachments, remove_attachment
 from tools.notes import add_note, delete_note, get_note, list_notes, update_note
 from tools.project_types import (
     create_project_type,
@@ -263,6 +264,42 @@ def tool_update_note(
 def tool_delete_note(note_id: int) -> bool:
     """Delete a note by ID."""
     return delete_note(note_id)
+
+
+# ---------------------------------------------------------------------------
+# Attachments
+# ---------------------------------------------------------------------------
+
+@mcp.tool()
+def tool_attach_file(note_id: int, file_path: str) -> dict:
+    """Copy a local file to the note's attachments folder and store the reference.
+
+    file_path: absolute path to the source file (original is not moved/deleted).
+    Returns {"name": str, "path": str, "size": int}.
+    Raises ValueError if note not found or path traversal detected.
+    Prints a warning to stderr if file is larger than 10 MB.
+    """
+    return attach_file(note_id, file_path)
+
+
+@mcp.tool()
+def tool_list_attachments(note_id: int) -> list[dict]:
+    """List all attachments for a note.
+
+    Returns [{"name": str, "path": str, "size": int}, ...].
+    """
+    return list_attachments(note_id)
+
+
+@mcp.tool()
+def tool_remove_attachment(note_id: int, file_name: str) -> dict:
+    """Remove an attachment from a note by file name.
+
+    Deletes the file from disk and removes the reference from the DB.
+    Raises ValueError if the note or attachment is not found.
+    """
+    remove_attachment(note_id, file_name)
+    return {"removed": file_name}
 
 
 # ---------------------------------------------------------------------------

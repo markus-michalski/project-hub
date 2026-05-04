@@ -40,6 +40,8 @@ If no notes exist → "Keine Notizen vorhanden. Nutze `/add-note` um eine zu ers
 
 ### 3. Show Current Content
 
+Use MCP `tool_list_attachments(note_id)` to load current attachments.
+
 Display the note clearly:
 
 ```
@@ -52,6 +54,11 @@ Display the note clearly:
 
 ### Inhalt
 [content]
+
+### Anhänge
+[Keine] oder:
+- report.pdf (102 KB)
+- contract.docx (45 KB)
 ```
 
 ### 4. Collect Changes
@@ -63,6 +70,8 @@ Options:
 - Inhalt bearbeiten / ergänzen
 - Typ ändern (note | meeting-notes | email | decision | action-item)
 - Agenda aktualisieren (nur bei meeting-notes)
+- Datei anhängen
+- Anhang entfernen
 
 Accept free-form responses — infer what the user wants to change.
 If the user pastes new content, use it as the updated `content`.
@@ -70,8 +79,11 @@ If the user describes what to add/change, apply the edit intelligently.
 
 ### 5. Save Changes
 
-Use MCP `tool_update_note(note_id, title, content, note_type, agenda)`.
-Only pass fields that actually changed.
+**Text changes:** Use MCP `tool_update_note(note_id, title, content, note_type, agenda)`. Only pass fields that actually changed.
+
+**Add attachment:** Use MCP `tool_attach_file(note_id, file_path)`. Ask for absolute file path.
+
+**Remove attachment:** Use MCP `tool_remove_attachment(note_id, file_name)`.
 
 ### 6. Confirm
 
@@ -80,6 +92,7 @@ Notiz aktualisiert.
 
 **Titel:** [new title]
 **Typ:** [type]
+**Anhänge:** [names] oder "Keine"
 
 [updated content preview — first 3 lines]
 
