@@ -8,7 +8,7 @@ description: |
   Reads/writes Markdown files from ~/.project-hub/knowledge/<project-type>/.
 model: claude-sonnet-4-6
 user-invocable: true
-argument-hint: "[list|show <topic>|update <topic>|export <topic>|delete <topic>]"
+argument-hint: "[list|show <topic>|update <topic>|export <topic>|delete <topic>|sync [--force]]"
 ---
 
 # Knowledge Management Skill
@@ -42,6 +42,11 @@ Export a knowledge topic in Confluence-ready Markdown format.
 ### `/knowledge delete <topic>`
 
 Delete a knowledge topic after confirmation.
+
+### `/knowledge sync [--force]`
+
+Compare bundled plugin templates with your installed knowledge files.
+Shows what's new or changed. Use `--force` to apply updates after confirmation.
 
 ---
 
@@ -182,15 +187,45 @@ Prüfe nach dem Einfügen, ob die Tabellen korrekt formatiert sind.
 
 ---
 
-## Template Installation Helper
+#### SYNC `[--force]`
 
-If a user has no knowledge files yet, offer to copy templates from the plugin repo:
+1. Call `tool_sync_knowledge_templates(force=False)` to get the report (always dry-run first)
+2. Display the results:
 
-```bash
-# Copy templates to local knowledge directory
-mkdir -p ~/.project-hub/knowledge/merchant-onboarding
-cp ${CLAUDE_PLUGIN_ROOT}/knowledge/merchant-onboarding/*.md ~/.project-hub/knowledge/merchant-onboarding/
+```
+## Knowledge Template Sync
+
+Checking templates...
+  it-project/charter.md      — UP TO DATE
+  it-project/runbook.md      — NEW (not installed yet)
+  consulting/engagement.md   — NEWER VERSION AVAILABLE (plugin: 3.2KB, local: 1.8KB)
+  ...
+
+2 Dateien können aktualisiert werden.
 ```
 
-Tell user: "Templates kopiert. Öffne die Dateien und ersetze die Platzhalter mit euren echten Inhalten.
-Die Dateien liegen in `~/.project-hub/knowledge/merchant-onboarding/`."
+3. If everything is up-to-date: "Alle Templates sind aktuell."
+
+4. If `--force` was given OR if there are files to sync: ask for confirmation:
+   "Soll ich die 2 Dateien jetzt synchronisieren? Bestehende Dateien werden überschrieben. (ja/nein)"
+
+5. On confirmation: call `tool_sync_knowledge_templates(force=True)`
+6. Report what was synced:
+
+```
+Synchronisiert:
+  ✓ it-project/runbook.md
+  ✓ consulting/engagement.md
+
+Dateien liegen jetzt in ~/.project-hub/knowledge/.
+Öffne sie und ersetze Platzhalter mit euren echten Inhalten.
+```
+
+**Important:** Never call with `force=True` without explicit user confirmation.
+
+---
+
+## Template Installation Helper
+
+If a user has no knowledge files yet, suggest using `/knowledge sync` to install all templates at once.
+This replaces the manual `cp` approach and ensures future updates can be detected.

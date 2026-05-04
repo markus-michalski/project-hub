@@ -37,7 +37,7 @@ Load all relevant context in parallel:
 
 ### 3. Set Session
 
-Use MCP `tool_set_session(project_id, last_skill="resume")`.
+Use MCP `tool_set_session(identifier, last_skill="resume")`.
 
 ### 4. Output
 

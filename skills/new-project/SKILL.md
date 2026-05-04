@@ -62,7 +62,7 @@ Use MCP `tool_create_project()` with collected data.
 
 ### 5. Set Active Session
 
-Use MCP `tool_set_session(project_id, last_skill="new-project")`.
+Use MCP `tool_set_session(identifier, last_skill="new-project")`.
 
 ### 6. Output
 
