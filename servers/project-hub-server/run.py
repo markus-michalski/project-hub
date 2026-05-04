@@ -1,6 +1,6 @@
 """Entry point for the project-hub MCP server."""
-import sys
 import os
+import sys
 
 # Add server directory to path
 sys.path.insert(0, os.path.dirname(__file__))

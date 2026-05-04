@@ -5,27 +5,26 @@ Provides persistent project management: projects, contacts, notes, and session t
 from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
-
+from tools.contacts import add_contact, delete_contact, list_contacts, update_contact
 from tools.db import init_db
+from tools.knowledge import (
+    delete_knowledge,
+    get_all_knowledge,
+    get_knowledge,
+    list_knowledge,
+    save_knowledge,
+)
+from tools.notes import add_note, delete_note, get_note, list_notes, update_note
 from tools.projects import (
-    list_projects,
+    create_project,
     get_project,
     get_project_by_id,
-    create_project,
-    update_project,
     list_docs,
+    list_projects,
+    update_project,
 )
-from tools.contacts import list_contacts, add_contact, update_contact, delete_contact
-from tools.notes import list_notes, get_note, add_note, update_note, delete_note
-from tools.session import get_session, set_session, clear_session
-from tools.knowledge import (
-    list_knowledge,
-    get_knowledge,
-    get_all_knowledge,
-    save_knowledge,
-    delete_knowledge,
-)
-from tools.search import search_notes, search_contacts
+from tools.search import search_contacts, search_notes
+from tools.session import clear_session, get_session, set_session
 
 # Initialize DB on startup
 init_db()

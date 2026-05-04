@@ -1,6 +1,5 @@
 """Tests for notes CRUD operations."""
 import pytest
-
 from tools.notes import add_note, delete_note, get_note, list_notes, update_note
 from tools.projects import create_project
 

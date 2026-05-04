@@ -5,8 +5,8 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from .db import db_connection
 from .config import get_docs_root
+from .db import db_connection
 
 
 def _slugify(name: str) -> str:

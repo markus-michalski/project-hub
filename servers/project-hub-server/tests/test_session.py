@@ -1,6 +1,5 @@
 """Tests for session management."""
 import pytest
-
 from tools.projects import create_project
 from tools.session import clear_session, get_session, set_session
 
