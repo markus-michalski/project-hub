@@ -1,6 +1,5 @@
 """Tests for cross-project search (notes and contacts)."""
 import pytest
-
 from tools.contacts import add_contact
 from tools.notes import add_note
 from tools.projects import create_project

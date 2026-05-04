@@ -1,6 +1,5 @@
 """Tests for contact CRUD operations."""
 import pytest
-
 from tools.contacts import add_contact, delete_contact, list_contacts, update_contact
 from tools.projects import create_project
 

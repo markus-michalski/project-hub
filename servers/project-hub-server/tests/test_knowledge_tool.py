@@ -1,6 +1,5 @@
 """Tests for the knowledge tool functions (save/get/list/delete)."""
 import pytest
-
 from tools.knowledge import delete_knowledge, get_all_knowledge, get_knowledge, list_knowledge, save_knowledge
 
 
