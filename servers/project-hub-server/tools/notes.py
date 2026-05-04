@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from .db import db_connection
+from .docs_writer import write_note_to_disk
+from .projects import get_project_by_id
 
 
 def list_notes(project_id: int, note_type: str = "", limit: int = 50, offset: int = 0) -> dict:
@@ -62,7 +64,15 @@ def add_note(
             )
             note_id = cursor.lastrowid
         row = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
-        return dict(row)
+        note = dict(row)
+
+    file_path: Optional[str] = None
+    project = get_project_by_id(project_id)
+    if project and project.get("docs_path"):
+        file_path = write_note_to_disk(project["docs_path"], title, content, note_type)
+
+    note["file_path"] = file_path
+    return note
 
 
 def update_note(
