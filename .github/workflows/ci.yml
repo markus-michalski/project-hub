@@ -22,10 +22,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: pip install -r requirements.txt pytest ruff
+        run: pip install -r requirements.txt pytest ruff pyyaml
 
       - name: Lint (ruff)
         run: ruff check servers/
 
-      - name: Run tests
+      - name: Run smoke tests
+        run: pytest tests/smoke/ -v
+
+      - name: Run unit tests
         run: pytest servers/project-hub-server/tests/ -v
