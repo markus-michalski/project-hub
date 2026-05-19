@@ -232,7 +232,7 @@ def parse_project_template(content: str) -> dict:
 
     for key, val in data.items():
         if isinstance(val, (list, dict)):
-            return {"error": f"Field '{key}' contains a complex value ({type(val).__name__}). All fields must be plain text."}
+            return {"error": f"Field '{key}' contains a {type(val).__name__} value. All fields must be plain text."}
 
     return {k: _coerce_str(v) for k, v in data.items()}
 
