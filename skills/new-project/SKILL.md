@@ -17,8 +17,34 @@ argument-hint: "<project-name>"
 # New Project
 
 Create a new project with all relevant metadata.
+Supports both interactive input and pre-filled templates (pasted or from file).
 
 ## Workflow
+
+### 0. Check for Template
+
+Ask the user if they have a pre-filled template:
+
+Use `AskUserQuestion`:
+- **Vorlage einpasten** — Ich habe eine ausgefüllte Vorlage zum Einpastenn
+- **Datei-Pfad angeben** — Vorlage als .md-Datei gespeichert
+- **Interaktiv anlegen** — Felder jetzt eingeben
+
+#### Branch A: Vorlage einpasten
+Ask the user to paste the template content.
+Then: `tool_create_project_from_template(template_content=<pasted_content>)`.
+Skip to step 5 on success.
+
+#### Branch B: Datei-Pfad
+Ask for the absolute file path.
+Then: `tool_create_project_from_template(file_path=<path>)`.
+Skip to step 5 on success.
+
+For both template branches: if result contains `"error"` → show error, offer to fix or fall back to interactive.
+
+#### Branch C: Interaktiv → continue with steps 1–4 below.
+
+---
 
 ### 1. Determine Project Name
 

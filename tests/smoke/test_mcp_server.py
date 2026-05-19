@@ -38,6 +38,9 @@ EXPECTED_TOOLS = {
     "tool_delete_knowledge",
     # Reports
     "tool_generate_report",
+    # Templates
+    "tool_get_project_template",
+    "tool_create_project_from_template",
 }
 
 

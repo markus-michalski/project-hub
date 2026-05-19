@@ -18,8 +18,10 @@ from tools.knowledge import (
 )
 from tools.notes import add_note, delete_note, get_note, list_notes, update_note
 from tools.project_types import (
+    create_project_from_template,
     create_project_type,
     delete_project_type,
+    get_project_template,
     get_project_type,
     list_project_types,
 )
@@ -430,6 +432,37 @@ def tool_delete_project_type(type_name: str) -> dict:
     Returns {"deleted": True, "name": ...} on success or {"error": ...} on failure.
     """
     return delete_project_type(type_name)
+
+
+@mcp.tool()
+def tool_get_project_template(project_type: str = "generic") -> dict:
+    """Return the fillable template for a project type.
+
+    The template contains YAML frontmatter with all fields for the type.
+    Users can copy it, fill it in outside the chat, then import it via
+    tool_create_project_from_template.
+
+    Falls back to the generic template when no type-specific template exists.
+    Returns {"project_type": ..., "template_content": ..., "fallback"?: true}.
+    """
+    return get_project_template(project_type)
+
+
+@mcp.tool()
+def tool_create_project_from_template(
+    template_content: str = "",
+    file_path: str = "",
+) -> dict:
+    """Create a project from a filled-out template.
+
+    Accepts either:
+    - template_content: the filled template pasted as text
+    - file_path: absolute path to a saved .md template file
+
+    Parses the YAML frontmatter, validates required fields, and creates the project.
+    Returns the same result as tool_create_project on success, or {"error": ...} on failure.
+    """
+    return create_project_from_template(template_content=template_content, file_path=file_path)
 
 
 # ---------------------------------------------------------------------------
