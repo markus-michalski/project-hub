@@ -43,6 +43,7 @@ Never read the SQLite file directly — always go through MCP tools.
 | "Hub-Hilfe" / "project-hub help" / "welche Hub-Skills gibt es" / `/project-hub:help` | `/project-hub:help` |
 | "project-hub einrichten" / "setup project-hub" / `/project-hub:setup` | `/project-hub:setup` |
 | "Report erstellen" / "HTML-Report" / "Bericht exportieren" / "Projektbericht" / "all-projects report" / `/project-hub:report` | `/project-hub:report [full\|summary\|all-projects]` |
+| "Vorlage holen" / "Projektvorlage" / "Template für neues Projekt" / "gib mir die Vorlage" / "welche Felder brauche ich" / `/project-hub:get-template` | `/project-hub:get-template [type]` |
 
 ## Anti-Patterns
 
