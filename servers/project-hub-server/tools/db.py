@@ -121,14 +121,23 @@ def init_db() -> None:
 
             INSERT OR IGNORE INTO session (id) VALUES (1);
         """)
-        # Safe migrations: no-op if column already exists
-        for migration in (
-            "ALTER TABLE notes ADD COLUMN updated_at TEXT NOT NULL DEFAULT (datetime('now'))",
-            "ALTER TABLE notes ADD COLUMN attachments TEXT NOT NULL DEFAULT '[]'",
+        # Safe migrations: no-op if column already exists.
+        # updated_at uses a constant default ('') because ALTER TABLE ADD COLUMN
+        # rejects non-constant expressions like datetime('now') in SQLite.
+        # Existing rows are backfilled from created_at so ORDER BY updated_at works.
+        for alter_sql, backfill_sql in (
+            (
+                "ALTER TABLE notes ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''",
+                "UPDATE notes SET updated_at = created_at WHERE updated_at = ''",
+            ),
+            ("ALTER TABLE notes ADD COLUMN attachments TEXT NOT NULL DEFAULT '[]'", None),
         ):
             try:
-                conn.execute(migration)
+                conn.execute(alter_sql)
+                if backfill_sql:
+                    conn.execute(backfill_sql)
                 conn.commit()
-            except sqlite3.OperationalError:
-                pass
+            except sqlite3.OperationalError as exc:
+                if "duplicate column name" not in str(exc).lower():
+                    raise
     conn.close()
