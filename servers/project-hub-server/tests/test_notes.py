@@ -172,6 +172,7 @@ def test_migration_adds_updated_at_to_legacy_db(tmp_path, monkeypatch):
     that init_db() correctly migrates it so update_note/list_notes work.
     """
     import sqlite3
+
     import tools.db as db_module
 
     db_file = tmp_path / "legacy.db"
