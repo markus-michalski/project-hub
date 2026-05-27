@@ -25,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing yet
 
+## [2.2.1] - 2026-05-27
+
+### Changed
+- bump the pip-all group with 2 updates (#41)
+
+### Fixed
+- repair updated_at migration for legacy notes databases (#43)
+
 ## [2.2.0] - 2026-05-19
 
 ### Added
@@ -139,7 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.2.1...HEAD
 [1.0.0]: https://github.com/markus-michalski/claude-agents-project-management/releases/tag/v1.0.0
 [1.1.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.1.0
 [1.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.3.0
@@ -150,3 +158,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [1.5.1]: https://github.com/markus-michalski/project-hub/releases/tag/v1.5.1
 [2.1.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.1.0
 [2.2.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.2.0
+[2.2.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.2.1
