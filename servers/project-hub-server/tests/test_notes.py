@@ -163,3 +163,78 @@ def test_list_notes_includes_updated_at(project):
     add_note(project["id"], "Note A", "Content A")
     result = list_notes(project["id"])
     assert "updated_at" in result["items"][0]
+
+
+def test_migration_adds_updated_at_to_legacy_db(tmp_path, monkeypatch):
+    """Regression test for #42: updated_at missing from notes in pre-migration DBs.
+
+    Simulates a DB created before the updated_at column was added and verifies
+    that init_db() correctly migrates it so update_note/list_notes work.
+    """
+    import sqlite3
+    import tools.db as db_module
+
+    db_file = tmp_path / "legacy.db"
+    monkeypatch.setattr(db_module, "get_db_path", lambda: db_file)
+
+    # Build legacy schema without updated_at
+    conn = sqlite3.connect(db_file)
+    conn.executescript("""
+        CREATE TABLE projects (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            slug        TEXT NOT NULL UNIQUE,
+            name        TEXT NOT NULL,
+            type        TEXT NOT NULL DEFAULT 'generic',
+            status      TEXT NOT NULL DEFAULT 'active',
+            description TEXT NOT NULL DEFAULT '',
+            docs_path   TEXT NOT NULL DEFAULT '',
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE TABLE notes (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            title       TEXT NOT NULL,
+            type        TEXT NOT NULL DEFAULT 'note',
+            content     TEXT NOT NULL DEFAULT '',
+            agenda      TEXT NOT NULL DEFAULT '',
+            created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE TABLE session (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            project_id INTEGER REFERENCES projects(id),
+            last_skill TEXT NOT NULL DEFAULT '',
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT OR IGNORE INTO session (id) VALUES (1);
+        INSERT INTO projects (slug, name) VALUES ('legacy-proj', 'Legacy Project');
+        INSERT INTO notes (project_id, title, content)
+            VALUES (1, 'Old Note', 'Pre-migration content');
+    """)
+    conn.close()
+
+    # Confirm legacy schema has no updated_at
+    conn = sqlite3.connect(db_file)
+    cols_before = [row[1] for row in conn.execute("PRAGMA table_info(notes)").fetchall()]
+    conn.close()
+    assert "updated_at" not in cols_before
+
+    # init_db() must apply the migration
+    from tools.db import init_db
+    init_db()
+
+    conn = sqlite3.connect(db_file)
+    cols_after = [row[1] for row in conn.execute("PRAGMA table_info(notes)").fetchall()]
+    conn.close()
+    assert "updated_at" in cols_after, "Migration must add updated_at column"
+
+    # update_note must not raise "no such column: updated_at"
+    updated = update_note(1, content="Post-migration update")
+    assert updated is not None
+    assert updated["content"] == "Post-migration update"
+    assert updated["updated_at"], "updated_at must be set after update"
+
+    # list_notes must not raise "no such column: updated_at"
+    result = list_notes(1)
+    assert result["total"] == 1
+    assert "updated_at" in result["items"][0]
