@@ -75,7 +75,7 @@ Never read the SQLite file directly — always go through MCP tools.
 2. if no project: tool_list_projects("active") → ask user which to load
 3. tool_get_project(identifier)                → load full project
 4. tool_get_all_knowledge(project_type)        → load domain knowledge
-5. tool_list_notes(project_id, limit=5)        → recent activity
+5. tool_list_notes(project_id)                 → all notes (default limit=50; check total for overflow)
 6. Present project summary to user
 ```
 

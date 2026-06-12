@@ -32,7 +32,7 @@ If no projects exist → suggest `/new-project`.
 Load all relevant context in parallel:
 - MCP `tool_get_project_by_id(project_id)` — full project details
 - MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — all contacts
-- MCP `tool_list_notes(project_id)` → iterate `result["items"]` — recent notes (latest 5)
+- MCP `tool_list_notes(project_id)` → iterate `result["items"]` — all notes (default limit=50); if `result["total"] > 50`, note that older entries exist and suggest `/search` for deep history
 - If `project_type` is NOT `generic`: MCP `tool_list_knowledge(project_type)` — check for knowledge files
 
 ### 3. Set Session
