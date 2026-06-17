@@ -51,7 +51,7 @@ def search_contacts(query: str, project_id: int = 0) -> list[dict]:
                 """SELECT c.*, p.name as project_name, p.slug as project_slug
                    FROM contacts c
                    JOIN projects p ON p.id = c.project_id
-                   WHERE c.project_id = ?
+                   WHERE (c.project_id = ? OR c.is_shared = 1)
                      AND (c.name LIKE ? OR c.role LIKE ? OR c.email LIKE ? OR c.company LIKE ?)
                    ORDER BY c.name""",
                 (project_id, pattern, pattern, pattern, pattern),

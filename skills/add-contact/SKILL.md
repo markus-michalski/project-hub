@@ -37,9 +37,15 @@ For `merchant-onboarding` projects, suggest standard roles based on type:
 - Internal: Onboarding PM, Technical Implementation Manager, Account Manager, Legal/Compliance, Risk
 - External: Merchant PM, Merchant Technical Contact, Merchant Legal/Commercial
 
+**For internal contacts:** Ask if this person works on multiple projects (e.g. a colleague who is involved in all client projects):
+- If yes → set `is_shared=True` so they appear in all projects automatically
+- If no → leave default (`is_shared=False`)
+
+External contacts are always project-specific and should never be shared.
+
 ### 3. Save Contact
 
-Use MCP `tool_add_contact(project_id, name, role, contact_type, email, phone, company, notes)`.
+Use MCP `tool_add_contact(project_id, name, role, contact_type, email, phone, company, notes, is_shared)`.
 
 ### 4. Output
 
@@ -49,6 +55,7 @@ Use MCP `tool_add_contact(project_id, name, role, contact_type, email, phone, co
 **Name:** [Name]
 **Rolle:** [Rolle]
 **Typ:** [Intern / Extern]
+**Geteilt:** [Ja — in allen Projekten verfügbar / Nein]
 **E-Mail:** [Email oder "—"]
 **Telefon:** [Phone oder "—"]
 **Firma:** [Company oder "—"]
