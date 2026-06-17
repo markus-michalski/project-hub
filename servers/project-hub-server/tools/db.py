@@ -98,6 +98,7 @@ def init_db() -> None:
                 phone       TEXT    NOT NULL DEFAULT '',
                 company     TEXT    NOT NULL DEFAULT '',
                 notes       TEXT    NOT NULL DEFAULT '',
+                is_shared   INTEGER NOT NULL DEFAULT 0,
                 created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
             );
 
@@ -131,6 +132,7 @@ def init_db() -> None:
                 "UPDATE notes SET updated_at = created_at WHERE updated_at = ''",
             ),
             ("ALTER TABLE notes ADD COLUMN attachments TEXT NOT NULL DEFAULT '[]'", None),
+            ("ALTER TABLE contacts ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 0", None),
         ):
             try:
                 conn.execute(alter_sql)

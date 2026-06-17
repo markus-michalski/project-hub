@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from mcp.server.fastmcp import FastMCP
 from tools.attachments import attach_file, list_attachments, remove_attachment
-from tools.contacts import add_contact, delete_contact, list_contacts, update_contact
+from tools.contacts import add_contact, delete_contact, list_contacts, list_shared_contacts, update_contact
 from tools.db import init_db
 from tools.knowledge import (
     delete_knowledge,
@@ -167,6 +167,17 @@ def tool_list_contacts(
 
 
 @mcp.tool()
+def tool_list_shared_contacts(limit: int = 50, offset: int = 0) -> dict:
+    """List all shared/global contacts available across every project.
+
+    Shared contacts are internal contacts defined once and reused everywhere.
+    Returns {"items": [...], "total": N, "limit": L, "offset": O}.
+    Each item includes project_name and project_slug showing where the contact was created.
+    """
+    return list_shared_contacts(limit, offset)
+
+
+@mcp.tool()
 def tool_add_contact(
     project_id: int,
     name: str,
@@ -176,13 +187,15 @@ def tool_add_contact(
     phone: str = "",
     company: str = "",
     notes: str = "",
+    is_shared: bool = False,
 ) -> dict:
     """Add a contact to a project.
 
     contact_type: internal (own company) | external (merchant, client, partner, vendor)
+    is_shared: set True for internal contacts available across all projects (e.g. own-company employees)
     role examples: Onboarding PM, Tech Lead, Account Manager, Legal, Merchant PM, etc.
     """
-    return add_contact(project_id, name, role, contact_type, email, phone, company, notes)
+    return add_contact(project_id, name, role, contact_type, email, phone, company, notes, is_shared)
 
 
 @mcp.tool()
@@ -195,12 +208,18 @@ def tool_update_contact(
     phone: str = "",
     company: str = "",
     notes: str = "",
+    is_shared: bool | None = None,
 ) -> dict | None:
-    """Update an existing contact."""
+    """Update an existing contact. Only provided (non-empty) values are changed.
+
+    is_shared: True = make contact globally available; False = make project-specific again.
+    """
     fields = {k: v for k, v in {
         "name": name, "role": role, "type": contact_type,
         "email": email, "phone": phone, "company": company, "notes": notes,
     }.items() if v}
+    if is_shared is not None:
+        fields["is_shared"] = int(is_shared)
     return update_contact(contact_id, **fields)
 
 

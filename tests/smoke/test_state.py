@@ -1,5 +1,5 @@
 """Smoke: DB CRUD roundtrips — project, contact, note, session."""
-from tools.contacts import add_contact, list_contacts, update_contact, delete_contact
+from tools.contacts import add_contact, list_contacts, list_shared_contacts, update_contact, delete_contact
 from tools.notes import add_note, get_note, list_notes, update_note, delete_note
 from tools.projects import create_project, get_project, update_project
 from tools.session import clear_session, get_session, set_session
@@ -58,6 +58,25 @@ def test_contact_create_list_update_delete():
     assert result is True
 
     assert list_contacts(pid)["total"] == 0
+
+
+def test_shared_contact_roundtrip():
+    p = create_project("Shared Contact Host")
+    pid = p["id"]
+
+    shared = add_contact(pid, name="Shared Employee", role="PM", is_shared=True)
+    assert shared["is_shared"] == 1
+
+    result = list_shared_contacts()
+    ids = [c["id"] for c in result["items"]]
+    assert shared["id"] in ids
+
+    updated = update_contact(shared["id"], is_shared=False)
+    assert updated["is_shared"] == 0
+
+    result_after = list_shared_contacts()
+    ids_after = [c["id"] for c in result_after["items"]]
+    assert shared["id"] not in ids_after
 
 
 # ---------------------------------------------------------------------------

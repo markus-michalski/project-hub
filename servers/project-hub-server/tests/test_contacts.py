@@ -1,7 +1,8 @@
 """Tests for contact CRUD operations."""
 import pytest
-from tools.contacts import add_contact, delete_contact, list_contacts, update_contact
+from tools.contacts import add_contact, delete_contact, list_contacts, list_shared_contacts, update_contact
 from tools.projects import create_project
+from tools.search import search_contacts
 
 
 @pytest.fixture
@@ -123,3 +124,97 @@ def test_contacts_isolated_per_project(tmp_path, monkeypatch):
 
     assert list_contacts(p1["id"])["total"] == 1
     assert list_contacts(p2["id"])["total"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Shared contacts
+# ---------------------------------------------------------------------------
+
+def test_add_shared_contact(project):
+    c = add_contact(project["id"], name="Shared Person", role="PM", is_shared=True)
+    assert c["is_shared"] == 1
+
+
+def test_add_non_shared_contact_default(project):
+    c = add_contact(project["id"], name="Local Person", role="Dev")
+    assert c["is_shared"] == 0
+
+
+def test_list_shared_contacts_returns_only_shared(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p = create_project("Shared Host")
+    add_contact(p["id"], name="Shared One", is_shared=True)
+    add_contact(p["id"], name="Shared Two", is_shared=True)
+    add_contact(p["id"], name="Local Only", is_shared=False)
+
+    result = list_shared_contacts()
+    names = [c["name"] for c in result["items"]]
+    assert "Shared One" in names
+    assert "Shared Two" in names
+    assert "Local Only" not in names
+    assert result["total"] == 2
+
+
+def test_list_shared_contacts_includes_project_info(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p = create_project("Info Host")
+    add_contact(p["id"], name="Cross Person", is_shared=True)
+
+    result = list_shared_contacts()
+    item = result["items"][0]
+    assert "project_name" in item
+    assert item["project_name"] == "Info Host"
+
+
+def test_update_contact_can_set_is_shared(project):
+    c = add_contact(project["id"], name="Initially Local")
+    assert c["is_shared"] == 0
+
+    updated = update_contact(c["id"], is_shared=True)
+    assert updated["is_shared"] == 1
+
+
+def test_update_contact_can_unshare(project):
+    c = add_contact(project["id"], name="Initially Shared", is_shared=True)
+    assert c["is_shared"] == 1
+
+    updated = update_contact(c["id"], is_shared=False)
+    assert updated["is_shared"] == 0
+
+
+def test_search_contacts_includes_shared_from_other_project(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Search Project A")
+    p2 = create_project("Search Project B")
+
+    # Shared contact lives in p2 but should appear when searching in p1
+    add_contact(p2["id"], name="Riverty PM", role="PM", is_shared=True)
+    add_contact(p1["id"], name="Local Contact", role="Dev", is_shared=False)
+
+    results = search_contacts("Riverty", project_id=p1["id"])
+    names = [c["name"] for c in results]
+    assert "Riverty PM" in names
+
+
+def test_search_contacts_does_not_include_non_shared_from_other_project(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Filter Project A")
+    p2 = create_project("Filter Project B")
+
+    add_contact(p2["id"], name="Private Bob", role="Dev", is_shared=False)
+
+    results = search_contacts("Private Bob", project_id=p1["id"])
+    assert results == []
+
+
+def test_add_external_contact_shared_raises(project):
+    import pytest
+    with pytest.raises(ValueError, match="External contacts cannot be shared"):
+        add_contact(project["id"], name="External Corp", contact_type="external", is_shared=True)
+
+
+def test_update_contact_shared_external_raises(project):
+    import pytest
+    c = add_contact(project["id"], name="Ext Contact", contact_type="external")
+    with pytest.raises(ValueError, match="External contacts cannot be shared"):
+        update_contact(c["id"], is_shared=True)
