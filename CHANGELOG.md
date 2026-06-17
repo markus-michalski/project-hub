@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing yet
 
+## [2.3.0] - 2026-06-17
+
+### Added
+- add shared/global contact directory across projects (#50)
+
+### Changed
+- bump actions/checkout (#45)
+- bump the pip-all group across 1 directory with 3 updates (#48)
+
 ## [2.2.2] - 2026-06-12
 
 ### Changed
@@ -155,7 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.2.2...HEAD
+[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.3.0...HEAD
 [1.0.0]: https://github.com/markus-michalski/claude-agents-project-management/releases/tag/v1.0.0
 [1.1.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.1.0
 [1.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.3.0
@@ -168,3 +177,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.2.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.2.0
 [2.2.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.2.1
 [2.2.2]: https://github.com/markus-michalski/project-hub/releases/tag/v2.2.2
+[2.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.3.0
