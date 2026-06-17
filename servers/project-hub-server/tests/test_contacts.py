@@ -218,3 +218,97 @@ def test_update_contact_shared_external_raises(project):
     c = add_contact(project["id"], name="Ext Contact", contact_type="external")
     with pytest.raises(ValueError, match="External contacts cannot be shared"):
         update_contact(c["id"], is_shared=True)
+
+
+# ---------------------------------------------------------------------------
+# Duplicate shared contact prevention
+# ---------------------------------------------------------------------------
+
+def test_add_shared_duplicate_name_raises(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Dup Project A")
+    p2 = create_project("Dup Project B")
+
+    add_contact(p1["id"], name="Max Mustermann", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Max Mustermann", is_shared=True)
+
+
+def test_add_shared_duplicate_email_raises(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Email Dup A")
+    p2 = create_project("Email Dup B")
+
+    add_contact(p1["id"], name="Alice One", email="alice@example.com", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Alice Two", email="alice@example.com", is_shared=True)
+
+
+def test_add_shared_duplicate_name_case_insensitive(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Case Dup A")
+    p2 = create_project("Case Dup B")
+
+    add_contact(p1["id"], name="max mustermann", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="MAX MUSTERMANN", is_shared=True)
+
+
+def test_add_non_shared_contact_with_shared_name_blocked(tmp_path, monkeypatch):
+    # Even a non-shared add is blocked if a shared contact with that name exists
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Non-Shared Dup A")
+    p2 = create_project("Non-Shared Dup B")
+
+    add_contact(p1["id"], name="Common Name", is_shared=True)
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Common Name", is_shared=False)
+
+
+def test_update_promote_duplicate_name_raises(tmp_path, monkeypatch):
+    # Create local contact FIRST, then add shared one in another project, then try to promote
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Promote Dup A")
+    p2 = create_project("Promote Dup B")
+
+    local = add_contact(p2["id"], name="Shared Person", is_shared=False)
+    add_contact(p1["id"], name="Shared Person", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        update_contact(local["id"], is_shared=True)
+
+
+def test_update_reshare_same_contact_allowed(project):
+    # Re-saving is_shared=True on an already-shared contact must not raise
+    c = add_contact(project["id"], name="Already Shared", is_shared=True)
+    updated = update_contact(c["id"], is_shared=True, role="Updated Role")
+    assert updated["is_shared"] == 1
+    assert updated["role"] == "Updated Role"
+
+
+def test_add_non_shared_contact_blocked_if_shared_exists(tmp_path, monkeypatch):
+    # Even a non-shared add is blocked if a shared contact with that name exists
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Block Non-Shared A")
+    p2 = create_project("Block Non-Shared B")
+
+    add_contact(p1["id"], name="Global Employee", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Global Employee", is_shared=False)
+
+
+def test_rename_contact_to_shared_name_raises(tmp_path, monkeypatch):
+    # Renaming a local contact to match a shared contact name must be blocked
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Rename Block A")
+    p2 = create_project("Rename Block B")
+
+    add_contact(p1["id"], name="Shared Alice", is_shared=True)
+    local = add_contact(p2["id"], name="Local Bob", is_shared=False)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        update_contact(local["id"], name="Shared Alice")

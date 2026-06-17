@@ -65,6 +65,44 @@ def list_shared_contacts(limit: int = 50, offset: int = 0) -> dict:
         }
 
 
+def _find_duplicate_shared_contact(
+    name: str, email: str = "", exclude_id: Optional[int] = None
+) -> Optional[dict]:
+    """Return the first shared contact that matches name or email (case-insensitive).
+
+    Used to prevent duplicate shared contacts before insert or promote operations.
+    exclude_id: ignore this contact id (needed when re-saving an already-shared contact).
+    """
+    with db_connection() as conn:
+        base = """
+            SELECT c.*, p.name as project_name
+            FROM contacts c
+            JOIN projects p ON p.id = c.project_id
+            WHERE c.is_shared = 1
+        """
+        conditions: list[str] = []
+        params: list = []
+
+        if exclude_id is not None:
+            conditions.append("c.id != ?")
+            params.append(exclude_id)
+
+        name_cond = "LOWER(c.name) = LOWER(?)"
+        if email:
+            match_cond = f"({name_cond} OR LOWER(c.email) = LOWER(?))"
+            match_params = [name, email]
+        else:
+            match_cond = name_cond
+            match_params = [name]
+
+        conditions.append(match_cond)
+        params.extend(match_params)
+
+        where = " AND ".join(conditions)
+        row = conn.execute(f"{base} AND {where} LIMIT 1", params).fetchone()
+        return dict(row) if row else None
+
+
 def add_contact(
     project_id: int,
     name: str,
@@ -80,9 +118,17 @@ def add_contact(
 
     is_shared: if True, the contact is available across all projects.
     Only internal contacts can be shared; external contacts are always project-specific.
+    Raises ValueError if a shared contact with the same name or email already exists.
     """
     if is_shared and contact_type == "external":
         raise ValueError("External contacts cannot be shared across projects.")
+    existing = _find_duplicate_shared_contact(name, email)
+    if existing:
+        raise ValueError(
+            f"A shared contact with this name or email already exists: "
+            f"'{existing['name']}' (id={existing['id']}, project='{existing['project_name']}'). "
+            f"This contact is available in all projects — no need to add it again."
+        )
     with db_connection() as conn:
         with conn:
             cursor = conn.execute(
@@ -103,13 +149,30 @@ def update_contact(contact_id: int, **fields) -> Optional[dict]:
     allowed = {"name", "role", "type", "email", "phone", "company", "notes", "is_shared"}
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
 
-    # Enforce: external contacts cannot be shared
-    if updates.get("is_shared"):
+    # Fetch current state once if needed for validation
+    needs_current = updates.get("is_shared") or "name" in updates or "email" in updates
+    current_dict: dict = {}
+    if needs_current:
         with db_connection() as conn:
-            row = conn.execute("SELECT type FROM contacts WHERE id = ?", (contact_id,)).fetchone()
-        effective_type = updates.get("type") or (dict(row)["type"] if row else "internal")
+            row = conn.execute("SELECT * FROM contacts WHERE id = ?", (contact_id,)).fetchone()
+        current_dict = dict(row) if row else {}
+
+    if updates.get("is_shared"):
+        effective_type = updates.get("type") or current_dict.get("type", "internal")
         if effective_type == "external":
             raise ValueError("External contacts cannot be shared across projects.")
+
+    # Block if effective name/email would collide with any existing shared contact
+    if "name" in updates or "email" in updates or updates.get("is_shared"):
+        effective_name = updates.get("name") or current_dict.get("name", "")
+        effective_email = updates.get("email") or current_dict.get("email", "")
+        existing = _find_duplicate_shared_contact(effective_name, effective_email, exclude_id=contact_id)
+        if existing:
+            raise ValueError(
+                f"A shared contact with this name or email already exists: "
+                f"'{existing['name']}' (id={existing['id']}, project='{existing['project_name']}'). "
+                f"This contact is available in all projects."
+            )
 
     if not updates:
         with db_connection() as conn:
