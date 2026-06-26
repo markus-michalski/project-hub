@@ -214,7 +214,7 @@ def tool_update_contact(
 
     is_shared: True = make contact globally available; False = make project-specific again.
     """
-    fields = {k: v for k, v in {
+    fields: dict[str, str | int] = {k: v for k, v in {
         "name": name, "role": role, "type": contact_type,
         "email": email, "phone": phone, "company": company, "notes": notes,
     }.items() if v}
