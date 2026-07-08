@@ -74,9 +74,11 @@ Never read the SQLite file directly — always go through MCP tools.
 1. tool_get_session()                          → check active project
 2. if no project: tool_list_projects("active") → ask user which to load
 3. tool_get_project(identifier)                → load full project
-4. tool_get_all_knowledge(project_type)        → load domain knowledge
-5. tool_list_notes(project_id)                 → all notes (default limit=50; check total for overflow)
-6. Present project summary to user
+4. tool_list_contacts(project_id)              → project-specific contacts
+5. tool_list_shared_contacts()                 → shared contacts (cross-project)
+6. tool_get_all_knowledge(project_type)        → load domain knowledge
+7. tool_list_notes(project_id)                 → all notes (default limit=50; check total for overflow)
+8. Present project summary to user
 ```
 
 On explicit project name (e.g. `/project-hub:resume Acme`):

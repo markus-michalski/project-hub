@@ -11,6 +11,20 @@ A personal project management hub for Claude Code. Create projects, store contac
 
 **Prerequisites:** Python 3.11+, Claude Code with plugin support
 
+### Marketplace (recommended)
+
+```bash
+# 1. Add the marketplace
+claude plugin marketplace add markus-michalski/project-hub
+
+# 2. Install the plugin
+claude plugin install project-hub@project-hub
+```
+
+Updates run via `claude plugin update project-hub` — no manual `git pull` needed.
+
+### Git Clone (manual)
+
 ```bash
 # 1. Clone the plugin
 git clone https://github.com/markus-michalski/project-hub \
@@ -27,8 +41,9 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
+### Initial setup (both methods)
+
 ```bash
-# 2. Initial setup
 /project-hub:setup
 ```
 
