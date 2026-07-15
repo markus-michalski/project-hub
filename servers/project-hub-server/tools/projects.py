@@ -7,6 +7,7 @@ from typing import Optional
 
 from .config import get_docs_root
 from .db import db_connection
+from .project_links import get_links_for_project
 
 
 def _slugify(name: str) -> str:
@@ -52,19 +53,28 @@ def list_projects(status: str = "", limit: int = 50, offset: int = 0) -> dict:
 
 
 def get_project(identifier: str) -> Optional[dict]:
-    """Get a project by slug or name (case-insensitive)."""
+    """Get a project by slug or name (case-insensitive). Includes linked projects (see link_project)."""
     with db_connection() as conn:
         row = conn.execute(
             "SELECT * FROM projects WHERE slug = ? OR LOWER(name) = LOWER(?)",
             (identifier, identifier),
         ).fetchone()
-        return _row_to_dict(row) if row else None
+    if not row:
+        return None
+    project = _row_to_dict(row)
+    project["links"] = get_links_for_project(project["id"])
+    return project
 
 
 def get_project_by_id(project_id: int) -> Optional[dict]:
+    """Get a project by its numeric ID. Includes linked projects (see link_project)."""
     with db_connection() as conn:
         row = conn.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
-        return _row_to_dict(row) if row else None
+    if not row:
+        return None
+    project = _row_to_dict(row)
+    project["links"] = get_links_for_project(project["id"])
+    return project
 
 
 def create_project(

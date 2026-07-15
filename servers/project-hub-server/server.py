@@ -17,6 +17,7 @@ from tools.knowledge import (
     sync_knowledge_templates,
 )
 from tools.notes import add_note, delete_note, get_note, list_notes, update_note
+from tools.project_links import link_project, unlink_project
 from tools.project_types import (
     create_project_from_template,
     create_project_type,
@@ -82,13 +83,19 @@ def tool_list_projects(status: str = "", limit: int = 50, offset: int = 0) -> di
 
 @mcp.tool()
 def tool_get_project(identifier: str) -> dict | None:
-    """Get a project by slug or name."""
+    """Get a project by slug or name.
+
+    Includes a "links" list of related projects, see tool_link_project.
+    """
     return get_project(identifier)
 
 
 @mcp.tool()
 def tool_get_project_by_id(project_id: int) -> dict | None:
-    """Get a project by its numeric ID."""
+    """Get a project by its numeric ID.
+
+    Includes a "links" list of related projects, see tool_link_project.
+    """
     return get_project_by_id(project_id)
 
 
@@ -148,6 +155,31 @@ def tool_update_project(
 def tool_list_docs(project_id: int) -> dict:
     """List all documents in a project's docs folder."""
     return list_docs(project_id)
+
+
+@mcp.tool()
+def tool_link_project(identifier: str, related_identifier: str, relation_type: str) -> dict:
+    """Link two projects together, e.g. to mark a follow-up ("Joybuy 2" succeeds "Joybuy").
+
+    relation_type: successor | predecessor | related
+      successor    — identifier is the successor of related_identifier
+      predecessor  — identifier is the predecessor of related_identifier
+      related      — symmetric relation, no direction (e.g. two markets of the same rollout)
+
+    Raises ValueError if either project is not found, if identifier == related_identifier,
+    if relation_type is invalid, or if the two projects are already linked (unlink first to change it).
+    Returns {"relation_type": ..., "project": {id, slug, name}, "related_project": {id, slug, name}}.
+    """
+    return link_project(identifier, related_identifier, relation_type)
+
+
+@mcp.tool()
+def tool_unlink_project(identifier: str, related_identifier: str) -> bool:
+    """Remove the link between two projects, regardless of direction or relation type.
+
+    Returns True if a link was removed, False if the two projects were not linked.
+    """
+    return unlink_project(identifier, related_identifier)
 
 
 # ---------------------------------------------------------------------------

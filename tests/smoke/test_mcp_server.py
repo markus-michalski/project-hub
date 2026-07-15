@@ -16,6 +16,8 @@ EXPECTED_TOOLS = {
     "tool_create_project",
     "tool_update_project",
     "tool_list_docs",
+    "tool_link_project",
+    "tool_unlink_project",
     # Contacts
     "tool_list_contacts",
     "tool_add_contact",

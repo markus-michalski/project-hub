@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Nothing yet
+- link projects together as successor/predecessor/related; `tool_get_project`/`tool_get_project_by_id` now include a `links` list (#59)
 
 ### Changed
 - Nothing yet

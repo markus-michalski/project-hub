@@ -1,6 +1,7 @@
-"""Smoke: DB CRUD roundtrips — project, contact, note, session."""
+"""Smoke: DB CRUD roundtrips — project, contact, note, session, project links."""
 from tools.contacts import add_contact, list_contacts, list_shared_contacts, update_contact, delete_contact
 from tools.notes import add_note, get_note, list_notes, update_note, delete_note
+from tools.project_links import link_project, unlink_project
 from tools.projects import create_project, get_project, update_project
 from tools.session import clear_session, get_session, set_session
 
@@ -104,6 +105,25 @@ def test_note_create_read_update_delete():
     from tools.notes import delete_note as _delete
     assert _delete(note["id"]) is True
     assert list_notes(pid)["total"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Project Links
+# ---------------------------------------------------------------------------
+
+def test_project_link_and_unlink_roundtrip():
+    joybuy = create_project("Joybuy Smoke")
+    joybuy2 = create_project("Joybuy Smoke 2")
+
+    link_project(joybuy2["slug"], joybuy["slug"], "successor")
+
+    reloaded = get_project(joybuy2["slug"])
+    assert reloaded["links"] == [
+        {"relation": "successor", "project": {"id": joybuy["id"], "slug": joybuy["slug"], "name": joybuy["name"]}}
+    ]
+
+    assert unlink_project(joybuy2["slug"], joybuy["slug"]) is True
+    assert get_project(joybuy2["slug"])["links"] == []
 
 
 # ---------------------------------------------------------------------------
