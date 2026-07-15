@@ -74,3 +74,32 @@ def test_user_invocable_is_boolean():
         if not isinstance(value, bool):
             failures.append(f"{skill_md.parent.name}: user-invocable={value!r} (must be bool)")
     assert not failures, "Skills with non-boolean user-invocable:\n" + "\n".join(failures)
+
+
+def test_add_contact_checks_for_duplicates_before_creating():
+    """Regression test for #56: add-contact must search for existing contacts before
+    saving a new one, unconditionally — not just on explicit request. Must use
+    tool_search_contacts (unpaginated, cross-project) rather than the paginated
+    tool_list_contacts/tool_list_shared_contacts, which can silently miss a match once a
+    project or the shared directory grows past the default page size. Skipping the search
+    entirely is exactly how duplicate contacts get created.
+    """
+    body = (SKILLS_DIR / "add-contact" / "SKILL.md").read_text(encoding="utf-8")
+
+    search_pos = body.find("tool_search_contacts")
+    save_pos = body.rfind("tool_add_contact(project_id")
+    assert search_pos != -1, "add-contact must call tool_search_contacts()"
+    assert save_pos != -1, "add-contact must document the tool_add_contact(project_id, ...) save call"
+    assert search_pos < save_pos, (
+        "tool_search_contacts() must be documented as happening before the tool_add_contact() "
+        "save call, so existing contacts are checked before a new one is created"
+    )
+
+    # The check must be unconditional, not gated behind an explicit user request — verify
+    # the "unconditional" language sits near the search call, not just anywhere in the file.
+    window = body[max(0, search_pos - 200):search_pos + 400].lower()
+    assert "unconditionally" in window or "immer" in window, (
+        "add-contact must state near the tool_search_contacts() call that the duplicate "
+        "check happens unconditionally, not only when the user explicitly asks to see "
+        "existing contacts first"
+    )
