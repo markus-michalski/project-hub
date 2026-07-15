@@ -33,6 +33,7 @@ def _ensure_docs_path(slug: str) -> str:
 def list_projects(status: str = "", limit: int = 50, offset: int = 0) -> dict:
     """List projects with pagination, optionally filtered by status.
 
+    Each item includes its "links" list of related projects (see link_project).
     Returns {"items": [...], "total": N, "limit": L, "offset": O}.
     """
     with db_connection() as conn:
@@ -44,12 +45,16 @@ def list_projects(status: str = "", limit: int = 50, offset: int = 0) -> dict:
 
         query = f"SELECT * FROM projects {where} ORDER BY updated_at DESC LIMIT ? OFFSET ?"
         rows = conn.execute(query, count_params + [limit, offset]).fetchall()
-        return {
-            "items": [_row_to_dict(r) for r in rows],
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-        }
+        items = [_row_to_dict(r) for r in rows]
+
+    for item in items:
+        item["links"] = get_links_for_project(item["id"])
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 def get_project(identifier: str) -> Optional[dict]:

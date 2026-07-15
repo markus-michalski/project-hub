@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - link projects together as successor/predecessor/related; `tool_get_project`/`tool_get_project_by_id` now include a `links` list (#59)
+- `tool_list_projects` items now include the same `links` list; HTML reports (full/summary/all-projects) render project relations (e.g. "Nachfolger von: Joybuy") (#63)
 
 ### Changed
 - Nothing yet
@@ -23,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Security
-- Nothing yet
+- HTML report generation now escapes template output (`autoescape` enabled) instead of rendering project/contact/note text as raw HTML
 
 ## [2.3.1] - 2026-06-17
 
