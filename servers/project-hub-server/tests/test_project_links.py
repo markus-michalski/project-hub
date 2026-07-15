@@ -1,6 +1,5 @@
 """Tests for project-to-project relations (successor / predecessor / related)."""
 import pytest
-
 from tools.project_links import get_links_for_project, link_project, unlink_project
 from tools.projects import create_project
 
