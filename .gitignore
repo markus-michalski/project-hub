@@ -25,3 +25,6 @@ __pycache__/
 tmp/
 temp/
 .claude/settings.local.json
+
+# git-workflow skill scratch directory
+.git-workflow/

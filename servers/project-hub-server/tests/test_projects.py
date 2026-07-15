@@ -1,5 +1,6 @@
 """Tests for project CRUD operations."""
-from tools.projects import create_project, get_project, list_projects, update_project
+from tools.project_links import link_project
+from tools.projects import create_project, get_project, get_project_by_id, list_projects, update_project
 
 
 def test_create_project_basic(tmp_path, monkeypatch):
@@ -137,3 +138,30 @@ def test_update_project_no_fields_returns_unchanged(tmp_path, monkeypatch):
     result = update_project(project["slug"])
 
     assert result["name"] == "No Change"
+
+
+def test_get_project_includes_empty_links_by_default(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    project = create_project("Unlinked Project")
+
+    assert get_project(project["slug"])["links"] == []
+    assert get_project_by_id(project["id"])["links"] == []
+
+
+def test_get_project_includes_links_after_linking(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    joybuy = create_project("Joybuy")
+    joybuy2 = create_project("Joybuy 2")
+    link_project(joybuy2["slug"], joybuy["slug"], "successor")
+
+    found = get_project(joybuy2["slug"])
+    assert found["links"] == [
+        {"relation": "successor", "project": {"id": joybuy["id"], "slug": joybuy["slug"], "name": joybuy["name"]}}
+    ]
+
+    found_by_id = get_project_by_id(joybuy["id"])
+    assert found_by_id["links"] == [
+        {"relation": "predecessor", "project": {"id": joybuy2["id"], "slug": joybuy2["slug"], "name": joybuy2["name"]}}
+    ]

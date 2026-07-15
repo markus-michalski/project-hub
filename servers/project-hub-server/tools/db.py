@@ -113,6 +113,16 @@ def init_db() -> None:
                 updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
             );
 
+            CREATE TABLE IF NOT EXISTS project_links (
+                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id          INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                related_project_id  INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+                relation_type       TEXT    NOT NULL CHECK (relation_type IN ('successor', 'related')),
+                created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
+                CHECK (project_id != related_project_id),
+                UNIQUE (project_id, related_project_id, relation_type)
+            );
+
             CREATE TABLE IF NOT EXISTS session (
                 id              INTEGER PRIMARY KEY CHECK (id = 1),
                 project_id      INTEGER REFERENCES projects(id),
