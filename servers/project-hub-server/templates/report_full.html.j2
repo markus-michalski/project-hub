@@ -86,6 +86,11 @@
   .empty { color: var(--muted); font-style: italic; padding: 16px 0; font-size: 13px; }
   /* Description */
   .project-description { color: var(--muted); margin-top: 8px; font-size: 14px; }
+  /* Project links (successor/predecessor/related) */
+  .project-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .link-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px;
+    background: #eef1f5; color: var(--text); border: 1px solid var(--border); }
+  .project-links-inline { color: var(--muted); font-size: 12px; margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -110,6 +115,13 @@
     <span><strong>Erstellt:</strong> {{ project.created_at[:10] }}</span>
     <span><strong>Bericht erstellt:</strong> {{ generated_at }}</span>
   </div>
+  {% if links %}
+  <div class="project-links">
+    {% for link in links %}
+    <span class="link-badge">{{ relation_labels[link.relation] }} <strong>{{ link.project.name }}</strong></span>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 
 {% if report_type == "full" %}
@@ -317,7 +329,15 @@
       <tbody>
         {% for p in projects | sort(attribute="name") %}
         <tr>
-          <td><strong>{{ p.name }}</strong>{% if p.description %}<br><small style="color:var(--muted);">{{ p.description[:80] }}{% if p.description|length > 80 %}…{% endif %}</small>{% endif %}</td>
+          <td>
+            <strong>{{ p.name }}</strong>
+            {% if p.description %}<br><small style="color:var(--muted);">{{ p.description[:80] }}{% if p.description|length > 80 %}…{% endif %}</small>{% endif %}
+            {% if p.links %}
+            <div class="project-links-inline">
+              {% for link in p.links %}{{ relation_labels[link.relation] }} <strong>{{ link.project.name }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}
+            </div>
+            {% endif %}
+          </td>
           <td>{{ p.type or "—" }}</td>
           <td><span class="badge badge-{{ p.status }}">{{ status_labels[p.status] }}</span></td>
           <td>{{ p.phase or "—" }}</td>

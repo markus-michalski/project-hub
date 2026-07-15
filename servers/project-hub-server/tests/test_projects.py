@@ -165,3 +165,28 @@ def test_get_project_includes_links_after_linking(tmp_path, monkeypatch):
     assert found_by_id["links"] == [
         {"relation": "predecessor", "project": {"id": joybuy2["id"], "slug": joybuy2["slug"], "name": joybuy2["name"]}}
     ]
+
+
+def test_list_projects_includes_empty_links_by_default(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    create_project("Lonely Project")
+
+    items = list_projects()["items"]
+    assert items[0]["links"] == []
+
+
+def test_list_projects_includes_links_after_linking(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    joybuy = create_project("Joybuy")
+    joybuy2 = create_project("Joybuy 2")
+    link_project(joybuy2["slug"], joybuy["slug"], "successor")
+
+    items = {p["slug"]: p for p in list_projects()["items"]}
+    assert items[joybuy2["slug"]]["links"] == [
+        {"relation": "successor", "project": {"id": joybuy["id"], "slug": joybuy["slug"], "name": joybuy["name"]}}
+    ]
+    assert items[joybuy["slug"]]["links"] == [
+        {"relation": "predecessor", "project": {"id": joybuy2["id"], "slug": joybuy2["slug"], "name": joybuy2["name"]}}
+    ]

@@ -30,6 +30,12 @@ Use MCP `tool_get_session()` to identify the currently active project.
 
 Group projects by status. Mark the active project with `← aktiv`.
 
+Each project item from `tool_list_projects` includes a `links` list (see
+`tool_link_project`). If non-empty, append a "Relationen" line under the
+project's table row, one entry per link, e.g. `Nachfolger von: Joybuy` /
+`Vorgänger von: Joybuy 2` / `Verknüpft mit: Parkbee NL`. Omit the line entirely
+when `links` is empty.
+
 ```
 ## Project Hub Dashboard
 
@@ -38,6 +44,7 @@ Group projects by status. Mark the active project with `← aktiv`.
 |---------|-----|-------|---------|-----------------|
 | [Name] ← aktiv | [Typ] | [Phase] | [Datum] | [updated_at] |
 | [Name] | [Typ] | [Phase] | [Datum] | [updated_at] |
+  ↳ Nachfolger von: [verlinktes Projekt]
 
 ### Pausierte Projekte
 [same table format or "Keine"]

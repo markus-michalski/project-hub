@@ -10,11 +10,18 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from .db import db_connection
+from .project_links import get_links_for_project
 
 _REPORT_TYPES = {"full", "summary", "all-projects"}
+
+_RELATION_LABELS = {
+    "successor": "Nachfolger von",
+    "predecessor": "Vorgänger von",
+    "related": "Verknüpft mit",
+}
 
 _STATUS_LABELS = {
     "active": "Aktiv",
@@ -37,7 +44,7 @@ _TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 def _jinja_env() -> Environment:
     return Environment(
         loader=FileSystemLoader(str(_TEMPLATES_DIR)),
-        autoescape=False,
+        autoescape=select_autoescape(enabled_extensions=("j2", "html")),
     )
 
 
@@ -94,6 +101,7 @@ def generate_report(
         notes = [dict(r) for r in note_rows]
 
     note_type_counts = dict(Counter(n["type"] for n in notes))
+    links = get_links_for_project(project["id"])
 
     dest = Path(output_path).expanduser() if output_path else _default_path(project["slug"], report_type)
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -105,6 +113,8 @@ def generate_report(
         contacts=contacts,
         notes=notes,
         note_type_counts=note_type_counts,
+        links=links,
+        relation_labels=_RELATION_LABELS,
         status_labels=_STATUS_LABELS,
         note_type_labels=_NOTE_TYPE_LABELS,
         generated_at=generated_at,
@@ -132,6 +142,9 @@ def _render_all_projects(env: Environment, generated_at: str, output_path: str) 
                 "SELECT COUNT(*) FROM notes WHERE project_id = ?", (p["id"],)
             ).fetchone()[0]
 
+    for p in projects:
+        p["links"] = get_links_for_project(p["id"])
+
     status_counts = dict(Counter(p["status"] for p in projects))
     type_counts = dict(Counter(p["type"] for p in projects))
 
@@ -144,6 +157,7 @@ def _render_all_projects(env: Environment, generated_at: str, output_path: str) 
         projects=projects,
         status_counts=status_counts,
         type_counts=type_counts,
+        relation_labels=_RELATION_LABELS,
         status_labels=_STATUS_LABELS,
         note_type_labels=_NOTE_TYPE_LABELS,
         generated_at=generated_at,
