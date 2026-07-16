@@ -8,9 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- link projects together as successor/predecessor/related; `tool_get_project`/`tool_get_project_by_id` now include a `links` list (#59)
-- `tool_list_projects` items now include the same `links` list; HTML reports (full/summary/all-projects) render project relations (e.g. "Nachfolger von: Joybuy") (#63)
-- `tool_export_project`/`tool_import_project` now include linked projects (by slug, not DB ID); on import, links are restored if the target project already exists in the destination DB, otherwise skipped and listed under `links_not_restored` (#64)
+- Nothing yet
 
 ### Changed
 - Nothing yet
@@ -22,13 +20,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Fixed
-- MCP server launch and setup/session-start/configure skills now work on native
-  Windows (no WSL or Git Bash required) — added OS-aware `bin/run-server`/
-  `bin/run-server.cmd` launcher wrappers and Windows-compatible venv path
-  handling in skill workflows (#61)
+- Nothing yet
 
 ### Security
-- HTML report generation now escapes template output (`autoescape` enabled) instead of rendering project/contact/note text as raw HTML
+- Nothing yet
+
+## [2.4.0] - 2026-07-16
+
+### Added
+- include project links in export/import (#64) (#67)
+- show project relations in dashboard/report output (#63) (#66)
+- add project-to-project relations (#59) (#65)
+
+### Changed
+- add marketplace install method, fix stale resume session pattern (#58)
+- bump the actions-all group across 1 directory with 2 updates (#54)
+- bump the pip-all group across 1 directory with 3 updates (#53)
+
+### Fixed
+- launch MCP server on native Windows without WSL (#68)
+- check for existing contacts before creating a new one (#62)
+- correct type annotation for fields dict in tool_update_contact
 
 ## [2.3.1] - 2026-06-17
 
@@ -174,7 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.3.1...HEAD
+[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.4.0...HEAD
 [1.0.0]: https://github.com/markus-michalski/claude-agents-project-management/releases/tag/v1.0.0
 [1.1.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.1.0
 [1.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.3.0
@@ -189,3 +201,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.2.2]: https://github.com/markus-michalski/project-hub/releases/tag/v2.2.2
 [2.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.3.0
 [2.3.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.3.1
+[2.4.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.4.0
