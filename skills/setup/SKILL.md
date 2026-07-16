@@ -11,6 +11,27 @@ First-time setup and repair for the project-hub plugin.
 
 ## Workflow
 
+**Multi-line Python scripts — write a file, don't inline them.** Several
+steps below need multi-line Python. Never pass multi-line content via
+`<PY> -c "<script>"` — a `-c` argument containing literal newlines parses
+differently across bash, PowerShell, and cmd, and reliably breaks under
+PowerShell. Instead, for any script longer than one line:
+
+1. Write the script content to a file using your own file-write capability
+   (you have one — this isn't a shell heredoc trick, just save the file
+   directly). Reuse `~/.project-hub/_setup_scratch.py` as the target path
+   from Step 2 onward, since `~/.project-hub` is guaranteed to exist by
+   then and it's fine to overwrite this file between steps. For Step 1,
+   which runs before Step 2 creates that directory, use the OS temp
+   directory instead — resolve it with the single-line (newline-free, so
+   safe everywhere) command `<PY> -c "import tempfile; print(tempfile.gettempdir())"`.
+2. Run it as `<PY> <path-to-that-file>` — a plain file-path argument,
+   portable across every shell, no quoting concerns at all.
+
+Single-line `<PY> -c "..."` commands (Step 2, Step 5's config-copy) are
+unaffected by this — the newline-parsing problem only applies to multi-line
+content — and can stay exactly as shown.
+
 ### Step 0: Detect Platform and Resolve a Working Python Interpreter
 
 Try each of the following in order and use the **first one that actually runs**
@@ -60,18 +81,18 @@ POSIX/Windows choice below.
 
 ### Step 1: Check Current State
 
-Use `<PY>` (the interpreter resolved in Step 0 — remember Step 0's Windows
-quoting note: `& "<PY>" -c "..."`, not bare `<PY>`, if `<PY>` is a
-space-containing full path from the known-install fallback):
+This script is multi-line — follow the write-then-run pattern above: get the
+OS temp directory, save the script below as `<tmp>/project-hub-setup-step1.py`,
+then run `<PY> <tmp>/project-hub-setup-step1.py` (remember Step 0's Windows
+quoting note — `& "<PY>" ...`, not bare `<PY>`, if `<PY>` is a space-containing
+full path from the known-install fallback):
 
-```bash
-<PY> -c "
+```python
 from pathlib import Path
 base = Path.home() / '.project-hub'
 print('venv:', 'OK' if (base / 'venv').is_dir() else 'MISSING')
 print('config:', 'OK' if (base / 'config.yaml').is_file() else 'MISSING')
 print('data-dir:', 'OK' if base.is_dir() else 'MISSING')
-"
 ```
 
 ### Step 2: Create Data Directory (if missing)
@@ -103,26 +124,21 @@ cache (~1s). This ensures new deps added in later releases are never silently sk
 Use `<PY>` (still the Step 0 interpreter — this step doesn't need the venv):
 
 ```bash
-<PY> -c "
-import shutil
-from pathlib import Path
-shutil.copy2(r'${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml', Path.home() / '.project-hub' / 'config.yaml')
-"
+<PY> -c "import shutil; from pathlib import Path; shutil.copy2(r'${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml', Path.home() / '.project-hub' / 'config.yaml')"
 ```
 
 Then tell the user: "Die Config wurde nach `~/.project-hub/config.yaml` kopiert.
 Du kannst folgende Einstellungen anpassen:
-- `docs_root` — Wo Projekt-Dokumente gespeichert werden (Standard: `~/.project-hub/projects`)
+- `docs_root` — Wo Projekt-Dokumente gespeichert werden (Standard: `~/Documents/project-hub`)
 - `db_path` — SQLite-Datenbankpfad (Standard: lokal; für Team-Nutzung: Netzwerk-Share eintragen)
 - `user.name` / `user.email` — Deine Daten für Kommunikations-Drafts
 - `default_language` — Sprache für generierte Texte (`en` oder `de`)"
 
 After copying the config, check whether the user's existing config already has a `db_path`
-set to a network path:
-
-Run the following script via the venv's Python (see Step 0 for platform detection —
-POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:
-`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`):
+set to a network path. This script is multi-line — follow the write-then-run
+pattern from above (save as `~/.project-hub/_setup_scratch.py`, then run it
+via the venv's Python — POSIX: `~/.project-hub/venv/bin/python3 <path>`,
+Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" <path>`):
 
 ```python
 import yaml
@@ -132,11 +148,26 @@ if not cfg_path.exists():
     exit(0)
 cfg = yaml.safe_load(cfg_path.read_text()) or {}
 db_path = cfg.get('db_path', '')
-network_hints = ['/mnt/', '/media/', 'Dropbox', 'OneDrive', 'Google Drive', '/Volumes/', '/net/']
-if any(h in str(db_path) for h in network_hints):
+cloud_sync_hints = ['Dropbox', 'OneDrive', 'Google Drive', 'My Drive', 'iCloud', 'Mobile Documents']
+network_share_hints = ['/mnt/', '/media/', '/Volumes/', '/net/']
+if any(h in str(db_path) for h in cloud_sync_hints):
+    print('CLOUD_SYNC:' + str(db_path))
+elif any(h in str(db_path) for h in network_share_hints):
     print('NETWORK_SHARE:' + str(db_path))
 else:
     print('LOCAL')
+```
+
+If the output starts with `CLOUD_SYNC:`, show:
+```
+🛑  Cloud-Sync-Pfad erkannt: {db_path}
+Dropbox/OneDrive/Google Drive & Co. synchronisieren per Datei-Kopie, nicht per
+Datei-Sperre — im WAL-Modus können .db/-wal/-shm dabei mitten im Schreibvorgang
+kopiert werden und unabhängig voneinander divergieren. Das führt zu STILLER
+DATENKORRUPTION, nicht zu einem SQLITE_BUSY-Fehler — der automatische Retry
+hilft hier nicht, der Schaden ist bereits passiert.
+Empfehlung: `db_path` auf einen lokalen Pfad oder einen echten Netzwerk-Share
+(NFS/Samba) setzen, nicht auf einen Cloud-Sync-Ordner.
 ```
 
 If the output starts with `NETWORK_SHARE:`, show:
@@ -152,8 +183,10 @@ Hinweise für Team-Nutzung:
 
 ### Step 5b: Install Knowledge Templates
 
-Run via the venv's Python (see Step 0 — POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`,
-Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`).
+Multi-line — follow the write-then-run pattern (save as
+`~/.project-hub/_setup_scratch.py`, then run via the venv's Python — POSIX:
+`~/.project-hub/venv/bin/python3 <path>`, Windows:
+`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" <path>`).
 `${CLAUDE_PLUGIN_ROOT}` is interpolated by the harness the same way it already is in
 Steps 4, 5, and 6 below — no need to guess the plugin root via a candidate-path search.
 **On Windows the interpolated value can contain backslashes** (e.g.
@@ -208,8 +241,10 @@ oder nutze `/knowledge update <topic>` um sie interaktiv zu befüllen."
 
 ### Step 6: Verify MCP Server + Init DB
 
-Run via the venv's Python (see Step 0 — POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`,
-Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`):
+Multi-line — follow the write-then-run pattern (save as
+`~/.project-hub/_setup_scratch.py`, then run via the venv's Python — POSIX:
+`~/.project-hub/venv/bin/python3 <path>`, Windows:
+`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" <path>`):
 
 ```python
 import sys

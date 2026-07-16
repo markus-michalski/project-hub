@@ -78,15 +78,27 @@ Neuer Wert:
 - `user.email`: must contain `@`
 - `docs_root`: accept `~`-paths, do NOT expand them (keep as-is in YAML)
 - `db_path`: accept any path including `~` and network paths; do NOT expand `~` in YAML.
-  After saving, show a warning if the path looks like a network share
-  (contains `/mnt/`, `/media/`, `Dropbox`, `OneDrive`, `Google Drive`, `/Volumes/`, `/net/`):
-  ```
-  ⚠️  Netzwerk-Pfad erkannt. Hinweise für Team-Nutzung:
-  - WAL-Modus ist aktiv (unterstützt mehrere gleichzeitige Leser).
-  - Schreib-Konflikte werden automatisch mit Retry behandelt.
-  - Alle Team-Mitglieder müssen denselben Pfad in ihrer config.yaml eintragen.
-  - Echtzeit-Synchronisation und Konflikt-Erkennung sind in Phase 1 NICHT enthalten.
-  ```
+  After saving, check the new path against two categories (do NOT treat them the same):
+  - **Cloud-sync folder** (contains `Dropbox`, `OneDrive`, `Google Drive`, `My Drive`,
+    `iCloud`, `Mobile Documents` — the latter two catch macOS iCloud Drive's real path,
+    `~/Library/Mobile Documents/...`, which doesn't contain the literal word "iCloud"):
+    ```
+    🛑  Cloud-Sync-Pfad erkannt.
+    Dropbox/OneDrive/Google Drive & Co. synchronisieren per Datei-Kopie, nicht per
+    Datei-Sperre — im WAL-Modus können .db/-wal/-shm dabei mitten im Schreibvorgang
+    kopiert werden und unabhängig voneinander divergieren. Das führt zu STILLER
+    DATENKORRUPTION, nicht zu einem SQLITE_BUSY-Fehler — der automatische Retry
+    hilft hier nicht, der Schaden ist bereits passiert.
+    Empfehlung: lokalen Pfad oder einen echten Netzwerk-Share (NFS/Samba) nutzen.
+    ```
+  - **Real network share** (contains `/mnt/`, `/media/`, `/Volumes/`, `/net/`):
+    ```
+    ⚠️  Netzwerk-Pfad erkannt. Hinweise für Team-Nutzung:
+    - WAL-Modus ist aktiv (unterstützt mehrere gleichzeitige Leser).
+    - Schreib-Konflikte werden automatisch mit Retry behandelt.
+    - Alle Team-Mitglieder müssen denselben Pfad in ihrer config.yaml eintragen.
+    - Echtzeit-Synchronisation und Konflikt-Erkennung sind in Phase 1 NICHT enthalten.
+    ```
 - `default_language`: only `de` or `en` are valid
 - `communication.default_tone`: only `professional`, `friendly`, or `formal`
 
@@ -97,14 +109,16 @@ If validation fails → show error and ask again.
 Read the full config file, apply the change, write it back.
 
 Use Python to preserve YAML structure. Detect platform first (see
-`skills/setup/SKILL.md` Step 0), then run via the venv's Python — POSIX:
-`~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:
-`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`.
-
-**Do not rely on shell variable interpolation for the new value** — substitute the
-literal value directly into the script text yourself when composing the command
-(shell variable expansion like `$NEW_VALUE` is bash-specific and won't work under
-PowerShell):
+`skills/setup/SKILL.md` Step 0). This script is multi-line — never pass it via
+`-c "<script>"` (breaks under PowerShell); save it to a file (e.g.
+`~/.project-hub/_configure_scratch.py`) using your own file-write capability,
+substituting the literal new value directly into the file content when you
+write it (do not rely on shell variable interpolation like `$NEW_VALUE` —
+that's bash-specific and won't work under PowerShell, and is unnecessary
+anyway once the value is written directly into the file). Then run it as a
+plain file argument via the venv's Python — POSIX:
+`~/.project-hub/venv/bin/python3 <path>`, Windows:
+`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" <path>`:
 
 ```python
 import yaml
