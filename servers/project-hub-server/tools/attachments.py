@@ -40,7 +40,10 @@ def attach_file(
     if not source.exists():
         raise FileNotFoundError(f"File not found: {file_path}")
 
-    home = home_override or Path.home()
+    # .resolve() matters on Windows: home_override/Path.home() can be an 8.3
+    # short path (e.g. RUNNER~1) that won't compare equal to the resolved
+    # long-form `source` below even for genuinely identical directories.
+    home = (home_override or Path.home()).resolve()
     try:
         source.relative_to(home)
     except ValueError:
