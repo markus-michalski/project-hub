@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -21,7 +22,10 @@ def note(project):
     return add_note(project["id"], "Test Note", "Content here")
 
 
-_HOME = Path("/tmp")  # all test files live under /tmp
+# pytest's tmp_path fixture always lives under the OS temp dir (/tmp on POSIX,
+# %TEMP% on Windows) — use the same OS-correct root here instead of hardcoding
+# the POSIX path, or sample_file (built on tmp_path) fails relative_to() on Windows.
+_HOME = Path(tempfile.gettempdir())
 
 
 @pytest.fixture

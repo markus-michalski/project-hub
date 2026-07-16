@@ -128,7 +128,7 @@ def sync_knowledge_templates(
         user_file = user_root / rel
 
         entry: dict = {
-            "path": str(rel),
+            "path": rel.as_posix(),
             "plugin_bytes": plugin_file.stat().st_size,
         }
 
@@ -144,7 +144,7 @@ def sync_knowledge_templates(
         if force and entry["status"] != "up-to-date":
             user_file.parent.mkdir(parents=True, exist_ok=True)
             user_file.write_bytes(plugin_file.read_bytes())
-            synced.append(str(rel))
+            synced.append(rel.as_posix())
 
         items.append(entry)
 
