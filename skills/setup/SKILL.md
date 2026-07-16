@@ -106,7 +106,7 @@ Use `<PY>` (still the Step 0 interpreter — this step doesn't need the venv):
 <PY> -c "
 import shutil
 from pathlib import Path
-shutil.copy2('${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml', Path.home() / '.project-hub' / 'config.yaml')
+shutil.copy2(r'${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml', Path.home() / '.project-hub' / 'config.yaml')
 "
 ```
 
@@ -152,32 +152,22 @@ Hinweise für Team-Nutzung:
 
 ### Step 5b: Install Knowledge Templates
 
-Note: `${CLAUDE_PLUGIN_ROOT}` is NOT available as a shell variable. Use Python to derive
-the plugin root by checking known installation locations. Run via the venv's Python
-(see Step 0 — POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:
-`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`):
+Run via the venv's Python (see Step 0 — POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`,
+Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`).
+`${CLAUDE_PLUGIN_ROOT}` is interpolated by the harness the same way it already is in
+Steps 4, 5, and 6 below — no need to guess the plugin root via a candidate-path search.
+**On Windows the interpolated value can contain backslashes** (e.g.
+`C:\Users\...\project-hub`) — wrap it in a raw string (`r'${CLAUDE_PLUGIN_ROOT}/...'`)
+wherever it's embedded in a Python string literal, or a plain `'...'` literal
+turns a stray `\U`/`\u`/`\N` sequence into an invalid Unicode escape and the
+script fails with a `SyntaxError` before it even runs. Applies to this step
+and Steps 5 and 6 below, all of which embed the same placeholder:
 
 ```python
-import shutil, sys
+import shutil
 from pathlib import Path
 
-# Find plugin root — check known locations
-candidates = [
-    Path.home() / '.claude' / 'plugins' / 'marketplaces' / 'project-hub',
-    Path.home() / '.claude' / 'plugins' / 'project-hub',
-    Path.home() / 'projekte' / 'project-hub',
-]
-plugin_root = None
-for c in candidates:
-    if (c / 'knowledge').exists():
-        plugin_root = c
-        break
-
-if plugin_root is None:
-    print('knowledge: PLUGIN_ROOT_NOT_FOUND — skipping template install')
-    sys.exit(0)
-
-knowledge_src = plugin_root / 'knowledge'
+knowledge_src = Path(r'${CLAUDE_PLUGIN_ROOT}/knowledge')
 knowledge_dst = Path.home() / '.project-hub' / 'knowledge'
 total_copied = 0
 
@@ -223,7 +213,7 @@ Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>
 
 ```python
 import sys
-sys.path.insert(0, '${CLAUDE_PLUGIN_ROOT}/servers/project-hub-server')
+sys.path.insert(0, r'${CLAUDE_PLUGIN_ROOT}/servers/project-hub-server')
 from tools.db import init_db
 init_db()
 print('DB: OK')

@@ -151,6 +151,106 @@ def test_setup_known_install_fallback_uses_powershell_env_syntax():
     assert "%LocalAppData%" not in body
 
 
+def test_setup_step5b_uses_claude_plugin_root_not_candidate_guessing():
+    """Regression guard for #70: Step 5b must use the interpolated ${CLAUDE_PLUGIN_ROOT}
+    (already proven to work in Steps 4/5/6) instead of guessing the plugin root via a
+    hardcoded candidate-path search — the candidate list didn't include the actual cache
+    path and could silently install knowledge templates from the wrong version, or skip
+    them entirely, once cache and checkout diverge."""
+    body = (ROOT / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
+    step5b = body.split("### Step 5b:", 1)[1].split("### Step 6:", 1)[0]
+    assert "${CLAUDE_PLUGIN_ROOT}/knowledge" in step5b, (
+        "Step 5b must interpolate ${CLAUDE_PLUGIN_ROOT} like Steps 4/5/6 do"
+    )
+    assert "candidates" not in step5b, (
+        "Step 5b still guesses the plugin root via a candidate-path search (regression for #70)"
+    )
+    assert "PLUGIN_ROOT_NOT_FOUND" not in step5b, (
+        "Step 5b still has the silent-skip fallback from the candidate-guessing heuristic"
+    )
+
+
+def _extract_python_block(section_text):
+    """Pull the content of the first ```python fenced block out of a SKILL.md section."""
+    match = re.search(r"```python\n(.*?)```", section_text, re.DOTALL)
+    assert match, "no ```python fenced block found in section"
+    return match.group(1)
+
+
+def test_setup_step5b_script_copies_new_but_never_overwrites_existing():
+    """Real execution of Step 5b's embedded script, not just a text check. This is the
+    exact mechanism the #70 breaking-change analysis relies on to argue re-running setup
+    is safe: templates are copied once but never overwritten on a later run, so a user's
+    own edits to a placeholder file survive. That guarantee had zero executable coverage —
+    close it by running the actual script against a real directory tree, twice."""
+    body = (ROOT / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
+    step5b = body.split("### Step 5b:", 1)[1].split("### Step 6:", 1)[0]
+    script = _extract_python_block(step5b)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        plugin_root = tmp_path / "plugin_root"
+        (plugin_root / "knowledge" / "generic").mkdir(parents=True)
+        (plugin_root / "knowledge" / "generic" / "charter.md").write_text("ORIGINAL TEMPLATE")
+
+        fake_home = tmp_path / "fake_home"
+        fake_home.mkdir()
+        env = {**os.environ, "HOME": str(fake_home), "USERPROFILE": str(fake_home)}
+
+        resolved_script = script.replace("${CLAUDE_PLUGIN_ROOT}", str(plugin_root))
+        dest_file = fake_home / ".project-hub" / "knowledge" / "generic" / "charter.md"
+
+        # First run: nothing installed yet -> must copy.
+        result = subprocess.run(
+            [sys.executable, "-c", resolved_script], env=env, capture_output=True, text=True, timeout=10
+        )
+        assert result.returncode == 0, f"first run failed: {result.stderr}"
+        assert dest_file.exists(), "first run must install the template"
+        assert dest_file.read_text() == "ORIGINAL TEMPLATE"
+
+        # Simulate the user editing their placeholder.
+        dest_file.write_text("USER EDITED CONTENT")
+
+        # Second run: file already exists -> must NOT overwrite the user's edit.
+        result = subprocess.run(
+            [sys.executable, "-c", resolved_script], env=env, capture_output=True, text=True, timeout=10
+        )
+        assert result.returncode == 0, f"second run failed: {result.stderr}"
+        assert dest_file.read_text() == "USER EDITED CONTENT", (
+            "Step 5b overwrote an already-installed template — this would silently destroy "
+            "user-authored content on every /project-hub:setup re-run"
+        )
+
+
+def test_claude_plugin_root_interpolation_survives_windows_backslash_paths():
+    """Regression guard: ${CLAUDE_PLUGIN_ROOT} can be interpolated as a Windows path
+    containing backslashes (e.g. C:\\Users\\...\\project-hub). Embedded in a plain
+    (non-raw) Python string literal, a stray \\U/\\u/\\N sequence becomes an invalid
+    Unicode escape and the script fails with a SyntaxError before it even runs — this
+    broke test_setup_step5b_script_copies_new_but_never_overwrites_existing for real on
+    Windows CI. Verify Steps 5, 5b, and 6 all use a raw string, so this can't recur
+    regardless of which OS actually generates the substituted path (checked here via
+    compile(), not subprocess, so it runs identically on every CI platform)."""
+    body = (ROOT / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
+    fake_windows_root = r"C:\Users\RUNNER~1\AppData\Local\Temp\plugin_root"
+    for start, end, label in [
+        ("### Step 5:", "### Step 5b:", "Step 5"),
+        ("### Step 5b:", "### Step 6:", "Step 5b"),
+        ("### Step 6:", "### Step 7:", "Step 6"),
+    ]:
+        section = body.split(start, 1)[1].split(end, 1)[0]
+        script = _extract_python_block(section)
+        resolved = script.replace("${CLAUDE_PLUGIN_ROOT}", fake_windows_root)
+        try:
+            compile(resolved, f"<{label}>", "exec")
+        except SyntaxError as e:
+            raise AssertionError(
+                f"{label}: script is not valid Python once ${{CLAUDE_PLUGIN_ROOT}} is "
+                f"substituted with a Windows backslash path — missing raw string (r'...')"
+                f" around the placeholder: {e}"
+            ) from e
+
+
 def test_run_server_wrapper_actually_launches_python():
     """Real subprocess spawn through the OS-appropriate wrapper — proves shebang
     execution / %USERPROFILE%-%*-quoting actually work, not just that the files exist."""
