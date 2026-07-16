@@ -12,6 +12,9 @@ project registry — not a code repo manager, not a book/video project manager.
 - Database: `~/.project-hub/project-hub.db`
 - Knowledge (user): `~/.project-hub/knowledge/<project-type>/`
 - Venv: `~/.project-hub/venv/`
+- Project docs: `{docs_root}/<project-slug>/docs/`, `docs_root` defaults to
+  `~/Documents/project-hub` and is configurable via `config.yaml` — distinct
+  from the fixed `~/.project-hub/` infra directory above
 - `{plugin_root}` = directory containing this CLAUDE.md
 
 ## MCP Server

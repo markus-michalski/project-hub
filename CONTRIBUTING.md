@@ -50,20 +50,23 @@ git checkout -b feat/your-feature-name
 
 ### 3. Set Up Local Development
 
+`requirements-dev.txt` includes `requirements.txt` plus test/lint/type-check
+tooling (`pytest`, `ruff`, `mypy`, `types-PyYAML`) — install it for
+development, `requirements.txt` alone is what end users get via
+`/project-hub:setup`.
+
 POSIX (Linux/macOS/WSL):
 
 ```bash
 python3 -m venv ~/.project-hub/venv
-~/.project-hub/venv/bin/pip install -r requirements.txt
-~/.project-hub/venv/bin/pip install pytest ruff mypy
+~/.project-hub/venv/bin/pip install -r requirements-dev.txt
 ```
 
 Windows (PowerShell):
 
 ```powershell
 python -m venv "$env:USERPROFILE\.project-hub\venv"
-& "$env:USERPROFILE\.project-hub\venv\Scripts\pip.exe" install -r requirements.txt
-& "$env:USERPROFILE\.project-hub\venv\Scripts\pip.exe" install pytest ruff mypy
+& "$env:USERPROFILE\.project-hub\venv\Scripts\pip.exe" install -r requirements-dev.txt
 ```
 
 ### 4. Make Your Changes

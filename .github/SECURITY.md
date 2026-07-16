@@ -76,7 +76,10 @@ If you accidentally commit a secret:
 
 ## Dependencies
 
-Python dependencies are pinned in `requirements.txt`. Dependabot scans weekly and opens PRs for updates. When adding dependencies:
+Python dependencies are split: `requirements.txt` (runtime, installed on end
+users' machines via `/project-hub:setup`) and `requirements-dev.txt`
+(adds test/lint/type-check tooling for contributors). Dependabot scans both
+weekly and opens PRs for updates. When adding dependencies:
 - Prefer well-maintained, popular packages
 - Check for known vulnerabilities (e.g. via `pip-audit`)
 - Pin to specific versions for reproducibility

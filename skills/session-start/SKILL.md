@@ -38,9 +38,16 @@ Use the first one that actually runs — don't stop at the first failure, a
 "Python missing". `win32` → Windows (venv Python at `venv\Scripts\python.exe`),
 anything else → POSIX (`venv/bin/python3`).
 
-Then run the combined check via the venv's Python — POSIX:
-`~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:
-`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`:
+The check below is multi-line — never pass multi-line content via `-c
+"<script>"` (breaks under PowerShell). Save it to a file (e.g.
+`~/.project-hub/_session_scratch.py`) using your own file-write capability,
+then run it as a plain file argument via the venv's Python — POSIX:
+`~/.project-hub/venv/bin/python3 <path>`, Windows:
+`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" <path>`. Unlike
+setup's Step 1, this doesn't need the OS-temp-dir fallback for a
+not-yet-existing `~/.project-hub`: if that directory is missing, the venv
+interpreter this step invokes is missing too, so the step fails and routes
+to "Setup unvollständig" either way — the file-write location doesn't matter:
 
 ```python
 from pathlib import Path

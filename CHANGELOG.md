@@ -11,7 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Changed
-- Nothing yet
+- Split `requirements.txt` into runtime deps only (`mcp`, `fastmcp`, `jinja2`,
+  `pyyaml`) and a new `requirements-dev.txt` (adds `pytest`, `ruff`, `mypy`,
+  `types-PyYAML`) — `/project-hub:setup` only installs the runtime set now,
+  saving install time/disk space on every managed device that never runs the
+  dev tooling. Contributors install `requirements-dev.txt` instead (#71)
 
 ### Deprecated
 - Nothing yet
@@ -41,6 +45,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   plain (non-raw) string literal turns a stray `\U`/`\u`/`\N` sequence into
   an invalid Unicode escape, crashing the script with a `SyntaxError` before
   it runs — caught by CI on the Windows runner for the #70 fix above (#70)
+- `config.example.yaml` no longer lists a Dropbox path as an equivalent
+  `db_path` option to a real network share, and explicitly warns against
+  cloud-sync folders (Dropbox/OneDrive/Google Drive/iCloud) for `db_path` —
+  those sync by copying files, not respecting locks, which can silently
+  corrupt the WAL-mode `.db`/`-wal`/`-shm` triplet instead of surfacing a
+  recoverable `SQLITE_BUSY` error. `setup` and `configure` now detect and
+  warn about cloud-sync paths distinctly from genuine network shares (#71)
+- `setup/SKILL.md`'s documented `docs_root` default corrected to match the
+  actual shipped default (`~/Documents/project-hub`, was incorrectly
+  documented as `~/.project-hub/projects`); `CLAUDE.md` now documents the
+  `docs_root`/`~/.project-hub` split, which wasn't mentioned anywhere (#71)
+- `setup`/`session-start`/`configure` no longer pass multi-line Python via
+  `<PY> -c "<script>"` — a `-c` argument containing literal newlines parses
+  differently across bash, PowerShell, and cmd, and reliably breaks under
+  PowerShell (confirmed on the Windows field test, not just theoretical).
+  Multi-line scripts are now saved to a file and run as a plain path
+  argument instead — portable across every shell (#71)
 
 ### Security
 - Nothing yet

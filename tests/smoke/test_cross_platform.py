@@ -11,6 +11,9 @@ ROOT = Path(__file__).parent.parent.parent
 MCP_JSON = ROOT / ".mcp.json"
 RUN_SERVER = ROOT / "bin" / "run-server"
 RUN_SERVER_CMD = ROOT / "bin" / "run-server.cmd"
+CONFIG_EXAMPLE = ROOT / "config" / "config.example.yaml"
+REQUIREMENTS = ROOT / "requirements.txt"
+REQUIREMENTS_DEV = ROOT / "requirements-dev.txt"
 
 SKILLS_REQUIRING_OS_BRANCH = [
     ROOT / "skills" / "setup" / "SKILL.md",
@@ -22,6 +25,14 @@ SKILLS_REQUIRING_PY_LAUNCHER_FALLBACK = [
     ROOT / "skills" / "setup" / "SKILL.md",
     ROOT / "skills" / "session-start" / "SKILL.md",
 ]
+
+SKILLS_WITH_MULTILINE_PYTHON = [
+    ROOT / "skills" / "setup" / "SKILL.md",
+    ROOT / "skills" / "session-start" / "SKILL.md",
+    ROOT / "skills" / "configure" / "SKILL.md",
+]
+
+DEV_ONLY_PACKAGES = ["pytest", "ruff", "mypy", "types-PyYAML"]
 
 
 def test_mcp_json_is_valid_json():
@@ -117,10 +128,11 @@ def test_setup_step3_venv_creation_uses_resolved_interpreter_not_hardcoded():
 def test_setup_steps_1_2_5_use_resolved_interpreter_not_hardcoded():
     """Regression guard for #69: Steps 1, 2, and 5 (system-level Python invocations
     before the venv exists) must all reuse <PY> from Step 0, not hardcode python3 —
-    the same bug Step 3 already guards against, just for the other three call sites."""
+    the same bug Step 3 already guards against, just for the other three call sites.
+    Step 1 uses the write-then-run pattern (#71: <PY> against a file path) rather
+    than <PY> -c; Step 2 and Step 5's config-copy remain single-line -c invocations."""
     body = (ROOT / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
     for start, end, label in [
-        ("### Step 1:", "### Step 2:", "Step 1"),
         ("### Step 2:", "### Step 3:", "Step 2"),
         ("### Step 5:", "### Step 5b:", "Step 5"),
     ]:
@@ -129,6 +141,10 @@ def test_setup_steps_1_2_5_use_resolved_interpreter_not_hardcoded():
         assert not re.search(r"^python3? -c", section, re.MULTILINE), (
             f"{label} still hardcodes python3/python"
         )
+
+    step1 = body.split("### Step 1:", 1)[1].split("### Step 2:", 1)[0]
+    assert "<PY>" in step1, "Step 1 must invoke <PY>, not a hardcoded python3"
+    assert not re.search(r"^python3? ", step1, re.MULTILINE), "Step 1 still hardcodes python3/python"
 
 
 def test_setup_documents_windows_quoting_note_for_py_fallback():
@@ -249,6 +265,126 @@ def test_claude_plugin_root_interpolation_survives_windows_backslash_paths():
                 f"substituted with a Windows backslash path — missing raw string (r'...')"
                 f" around the placeholder: {e}"
             ) from e
+
+
+def test_db_path_examples_do_not_recommend_cloud_sync():
+    """Regression guard for #71: config.example.yaml must not list a cloud-sync
+    folder (Dropbox et al.) as an equivalent db_path option to a real network share
+    — cloud-sync clients copy files instead of respecting locks, and under WAL mode
+    that causes silent data corruption, not a recoverable SQLITE_BUSY error."""
+    content = CONFIG_EXAMPLE.read_text(encoding="utf-8")
+    assert "db_path: ~/Dropbox" not in content, (
+        "config.example.yaml still recommends a Dropbox path as a db_path example"
+    )
+    assert "DO NOT use a cloud-sync folder" in content or "Cloud-Sync" in content, (
+        "config.example.yaml is missing an explicit warning against cloud-sync db_path"
+    )
+
+
+def test_setup_and_configure_distinguish_cloud_sync_from_network_share():
+    """Regression guard for #71: the runtime db_path check in setup and configure must
+    treat cloud-sync paths (Dropbox/OneDrive/Google Drive/iCloud) as a distinct,
+    stronger-worded risk from a genuine network share (NFS/Samba) — lumping them into
+    one generic 'team use' warning hides the silent-corruption risk of the former."""
+    setup_body = (ROOT / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
+    assert "cloud_sync_hints" in setup_body, "setup must detect cloud-sync paths separately"
+    assert "CLOUD_SYNC:" in setup_body and "NETWORK_SHARE:" in setup_body, (
+        "setup must distinguish CLOUD_SYNC from NETWORK_SHARE outcomes"
+    )
+    # macOS iCloud Drive's real path is ~/Library/Mobile Documents/... (no literal
+    # "iCloud"); modern Google Drive mounts as ".../My Drive/..." (no literal "Google
+    # Drive") — both must be covered, not just the four obvious brand names.
+    assert "Mobile Documents" in setup_body and "My Drive" in setup_body, (
+        "setup's cloud_sync_hints must cover iCloud Drive's and Google Drive's real "
+        "on-disk path fragments, not just the brand name substrings"
+    )
+    configure_body = (ROOT / "skills" / "configure" / "SKILL.md").read_text(encoding="utf-8")
+    assert "Cloud-Sync-Pfad erkannt" in configure_body, (
+        "configure must also warn distinctly about cloud-sync db_path changes"
+    )
+
+
+def test_docs_root_default_matches_config_example():
+    """Regression guard for #71: skills/setup/SKILL.md's stated docs_root default must
+    match the actual default shipped in config.example.yaml — they drifted apart once
+    already (SKILL.md said ~/.project-hub/projects, the real default was
+    ~/Documents/project-hub) and nothing would catch a repeat without this test."""
+    config_content = CONFIG_EXAMPLE.read_text(encoding="utf-8")
+    match = re.search(r"^docs_root:\s*(\S+)", config_content, re.MULTILINE)
+    assert match, "config.example.yaml must set a default docs_root"
+    actual_default = match.group(1)
+
+    setup_body = (ROOT / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
+    assert f"`{actual_default}`" in setup_body, (
+        f"setup/SKILL.md's documented docs_root default doesn't match config.example.yaml's "
+        f"actual default ({actual_default})"
+    )
+
+
+def test_skills_use_write_then_run_for_multiline_python_not_inline_c():
+    """Regression guard for #71: a `-c "..."` argument that spans multiple lines parses
+    differently across bash/PowerShell/cmd and reliably breaks under PowerShell — the
+    exact failure mode the Windows field test hit. No fenced code block in these skills
+    should be paired with a multi-line -c invocation; multi-line scripts must be saved
+    to a file and run as a plain path argument instead."""
+    multiline_c_pattern = re.compile(r'-c\s+"\s*\n')
+    for skill_md in SKILLS_WITH_MULTILINE_PYTHON:
+        body = skill_md.read_text(encoding="utf-8")
+        assert not multiline_c_pattern.search(body), (
+            f"{skill_md}: found a multi-line `-c \"...` invocation — breaks under "
+            f"PowerShell, use the write-then-run pattern instead"
+        )
+
+
+def test_requirements_split_runtime_from_dev_tooling():
+    """Regression guard for #71: dev/test tooling (pytest, ruff, mypy, types-PyYAML)
+    must not ship in the runtime requirements.txt that /project-hub:setup installs on
+    end users' machines — it costs install time/disk space for tooling they never run.
+    requirements-dev.txt must pull in requirements.txt and add the dev tooling."""
+    assert REQUIREMENTS.exists() and REQUIREMENTS_DEV.exists()
+    runtime_content = REQUIREMENTS.read_text(encoding="utf-8")
+    dev_content = REQUIREMENTS_DEV.read_text(encoding="utf-8")
+    for pkg in DEV_ONLY_PACKAGES:
+        assert pkg not in runtime_content, f"{pkg} must not be in runtime requirements.txt"
+        assert pkg in dev_content, f"{pkg} must be in requirements-dev.txt"
+    assert "requirements.txt" in dev_content, (
+        "requirements-dev.txt must reference requirements.txt (e.g. -r requirements.txt) "
+        "so a dev install still gets the runtime deps"
+    )
+
+
+def test_setup_installs_runtime_requirements_not_dev():
+    """Regression guard for #71: /project-hub:setup (Step 4) must install
+    requirements.txt for end users, never requirements-dev.txt — swapping this
+    would silently reintroduce pytest/ruff/mypy on every user's machine even
+    though test_requirements_split_runtime_from_dev_tooling stays green (it only
+    checks file *content*, not which file Step 4 actually wires up to pip)."""
+    body = (ROOT / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
+    step4 = body.split("### Step 4:", 1)[1].split("### Step 5:", 1)[0]
+    assert "requirements.txt" in step4
+    assert "requirements-dev.txt" not in step4
+
+
+def test_contributing_and_ci_reference_same_dev_requirements_file():
+    """Regression guard for #71: CONTRIBUTING.md's install commands and CI's install
+    step must reference the identical dev-requirements filename — a typo'd/renamed
+    divergence here isn't caught by CI (CI never reads CONTRIBUTING.md) and would only
+    surface as a contributor's pip install failing on a file that doesn't exist."""
+    contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    contributing_refs = set(re.findall(r"requirements[-\w]*\.txt", contributing))
+    ci_install_refs = set(re.findall(r"pip install -r (requirements[-\w]*\.txt)", ci))
+
+    assert REQUIREMENTS_DEV.name in contributing_refs, (
+        "CONTRIBUTING.md must reference requirements-dev.txt for local dev setup"
+    )
+    assert ci_install_refs == {REQUIREMENTS_DEV.name}, (
+        f"CI's install step references {ci_install_refs}, expected only "
+        f"{{'{REQUIREMENTS_DEV.name}'}} — must match CONTRIBUTING.md"
+    )
+    for fname in contributing_refs | ci_install_refs:
+        assert (ROOT / fname).exists(), f"{fname} referenced but not found in repo root"
 
 
 def test_run_server_wrapper_actually_launches_python():

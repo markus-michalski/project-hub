@@ -8,20 +8,29 @@ docs_root: ~/Documents/project-hub
 # Database location (SQLite)
 # Default: ~/.project-hub/project-hub.db
 #
-# SHARED / TEAM USE: Point multiple users to the same file on a network share,
-# NFS mount, Samba share, or cloud-synced folder (Dropbox, NAS, etc.).
-# WAL mode supports concurrent reads; write conflicts are handled with
-# automatic retries. Low-concurrency teams (2-5 users) work reliably.
+# SHARED / TEAM USE: Point multiple users to the same file on a real network
+# share — NFS mount or Samba share. WAL mode supports concurrent reads;
+# write conflicts are handled with automatic retries. Low-concurrency teams
+# (2-5 users) work reliably.
 #
 # Examples:
 #   db_path: ~/.project-hub/project-hub.db            # default (local)
 #   db_path: /mnt/nas/team-hub/project-hub.db         # NFS / NAS
-#   db_path: ~/Dropbox/project-hub/project-hub.db     # Dropbox
 #   db_path: /mnt/smb/shared/project-hub/project-hub.db  # Samba
 #
+# DO NOT use a cloud-sync folder (Dropbox, OneDrive, Google Drive, iCloud,
+# etc.) for db_path. Those clients sync by COPYING files on a schedule, not
+# by respecting file locks — under WAL mode the .db/-wal/-shm triplet can be
+# copied mid-write and diverge independently between sync passes. The
+# failure mode is SILENT CORRUPTION, not a SQLITE_BUSY error, so the
+# automatic-retry mitigation below cannot help: the corruption has already
+# happened by the time any retry logic would run. Only a real network
+# share (NFS/Samba) preserves the lock semantics WAL mode depends on.
+#
 # WARNING: Real-time conflict detection is NOT supported in Phase 1.
-#   Two simultaneous writes may produce SQLITE_BUSY — the plugin retries
-#   automatically, but avoid heavy concurrent writes.
+#   Two simultaneous writes on a genuine network share may produce
+#   SQLITE_BUSY — the plugin retries automatically, but avoid heavy
+#   concurrent writes.
 #
 # db_path: ~/.project-hub/project-hub.db
 
