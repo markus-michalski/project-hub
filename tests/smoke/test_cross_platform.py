@@ -222,6 +222,35 @@ def test_setup_step5b_script_copies_new_but_never_overwrites_existing():
         )
 
 
+def test_claude_plugin_root_interpolation_survives_windows_backslash_paths():
+    """Regression guard: ${CLAUDE_PLUGIN_ROOT} can be interpolated as a Windows path
+    containing backslashes (e.g. C:\\Users\\...\\project-hub). Embedded in a plain
+    (non-raw) Python string literal, a stray \\U/\\u/\\N sequence becomes an invalid
+    Unicode escape and the script fails with a SyntaxError before it even runs — this
+    broke test_setup_step5b_script_copies_new_but_never_overwrites_existing for real on
+    Windows CI. Verify Steps 5, 5b, and 6 all use a raw string, so this can't recur
+    regardless of which OS actually generates the substituted path (checked here via
+    compile(), not subprocess, so it runs identically on every CI platform)."""
+    body = (ROOT / "skills" / "setup" / "SKILL.md").read_text(encoding="utf-8")
+    fake_windows_root = r"C:\Users\RUNNER~1\AppData\Local\Temp\plugin_root"
+    for start, end, label in [
+        ("### Step 5:", "### Step 5b:", "Step 5"),
+        ("### Step 5b:", "### Step 6:", "Step 5b"),
+        ("### Step 6:", "### Step 7:", "Step 6"),
+    ]:
+        section = body.split(start, 1)[1].split(end, 1)[0]
+        script = _extract_python_block(section)
+        resolved = script.replace("${CLAUDE_PLUGIN_ROOT}", fake_windows_root)
+        try:
+            compile(resolved, f"<{label}>", "exec")
+        except SyntaxError as e:
+            raise AssertionError(
+                f"{label}: script is not valid Python once ${{CLAUDE_PLUGIN_ROOT}} is "
+                f"substituted with a Windows backslash path — missing raw string (r'...')"
+                f" around the placeholder: {e}"
+            ) from e
+
+
 def test_run_server_wrapper_actually_launches_python():
     """Real subprocess spawn through the OS-appropriate wrapper — proves shebang
     execution / %USERPROFILE%-%*-quoting actually work, not just that the files exist."""

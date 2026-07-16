@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   never-installed cases but won't retroactively replace templates a previous
   run already installed from the wrong source — delete the affected files
   under `~/.project-hub/knowledge/` manually and re-run setup if needed (#70)
+- `setup` Steps 5, 5b, and 6 now wrap the interpolated `${CLAUDE_PLUGIN_ROOT}`
+  in a raw string (`r'...'`) wherever it's embedded in a Python string
+  literal. On Windows the interpolated value can contain backslashes, and a
+  plain (non-raw) string literal turns a stray `\U`/`\u`/`\N` sequence into
+  an invalid Unicode escape, crashing the script with a `SyntaxError` before
+  it runs — caught by CI on the Windows runner for the #70 fix above (#70)
 
 ### Security
 - Nothing yet
