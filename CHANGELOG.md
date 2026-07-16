@@ -11,11 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Changed
-- Split `requirements.txt` into runtime deps only (`mcp`, `fastmcp`, `jinja2`,
-  `pyyaml`) and a new `requirements-dev.txt` (adds `pytest`, `ruff`, `mypy`,
-  `types-PyYAML`) — `/project-hub:setup` only installs the runtime set now,
-  saving install time/disk space on every managed device that never runs the
-  dev tooling. Contributors install `requirements-dev.txt` instead (#71)
+- Nothing yet
 
 ### Deprecated
 - Nothing yet
@@ -24,47 +20,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Fixed
-- `setup`/`session-start` now fall back to the `py -3` launcher when `python`/
-  `python3` resolve to the Microsoft Store app-execution-alias stub (exit code
-  49) instead of a real interpreter — common on Intune/SCCM-managed Windows
-  devices where Python is installed but not on `PATH`. Venv creation (Step 3)
-  now reuses the interpreter resolved during platform detection instead of
-  hardcoding `python`/`python3` again (#69)
-- `setup` Step 5b (knowledge template install) now uses the interpolated
-  `${CLAUDE_PLUGIN_ROOT}` — already proven to work in Steps 4/5/6 — instead of
-  guessing the plugin root via a hardcoded candidate-path search that could
-  silently install templates from the wrong version, or skip them entirely,
-  once the plugin cache and a dev checkout diverge. Note: since template
-  files are never overwritten once present, re-running setup fixes future/
-  never-installed cases but won't retroactively replace templates a previous
-  run already installed from the wrong source — delete the affected files
-  under `~/.project-hub/knowledge/` manually and re-run setup if needed (#70)
-- `setup` Steps 5, 5b, and 6 now wrap the interpolated `${CLAUDE_PLUGIN_ROOT}`
-  in a raw string (`r'...'`) wherever it's embedded in a Python string
-  literal. On Windows the interpolated value can contain backslashes, and a
-  plain (non-raw) string literal turns a stray `\U`/`\u`/`\N` sequence into
-  an invalid Unicode escape, crashing the script with a `SyntaxError` before
-  it runs — caught by CI on the Windows runner for the #70 fix above (#70)
-- `config.example.yaml` no longer lists a Dropbox path as an equivalent
-  `db_path` option to a real network share, and explicitly warns against
-  cloud-sync folders (Dropbox/OneDrive/Google Drive/iCloud) for `db_path` —
-  those sync by copying files, not respecting locks, which can silently
-  corrupt the WAL-mode `.db`/`-wal`/`-shm` triplet instead of surfacing a
-  recoverable `SQLITE_BUSY` error. `setup` and `configure` now detect and
-  warn about cloud-sync paths distinctly from genuine network shares (#71)
-- `setup/SKILL.md`'s documented `docs_root` default corrected to match the
-  actual shipped default (`~/Documents/project-hub`, was incorrectly
-  documented as `~/.project-hub/projects`); `CLAUDE.md` now documents the
-  `docs_root`/`~/.project-hub` split, which wasn't mentioned anywhere (#71)
-- `setup`/`session-start`/`configure` no longer pass multi-line Python via
-  `<PY> -c "<script>"` — a `-c` argument containing literal newlines parses
-  differently across bash, PowerShell, and cmd, and reliably breaks under
-  PowerShell (confirmed on the Windows field test, not just theoretical).
-  Multi-line scripts are now saved to a file and run as a plain path
-  argument instead — portable across every shell (#71)
+- Nothing yet
 
 ### Security
 - Nothing yet
+
+## [2.4.1] - 2026-07-16
+
+### Fixed
+- db_path cloud-sync warning, docs_root default, script quoting, dev deps (#71) (#74)
+- resolve knowledge template root via ${CLAUDE_PLUGIN_ROOT} (#70) (#73)
+- resolve Python via py -3 fallback on Store-alias-blocked devices (#69) (#72)
 
 ## [2.4.0] - 2026-07-16
 
@@ -227,7 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.4.1...HEAD
 [1.0.0]: https://github.com/markus-michalski/claude-agents-project-management/releases/tag/v1.0.0
 [1.1.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.1.0
 [1.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.3.0
@@ -243,3 +209,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.3.0
 [2.3.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.3.1
 [2.4.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.4.0
+[2.4.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.4.1
