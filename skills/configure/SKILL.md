@@ -96,11 +96,18 @@ If validation fails → show error and ask again.
 
 Read the full config file, apply the change, write it back.
 
-Use Python to preserve YAML structure and comments:
+Use Python to preserve YAML structure. Detect platform first (see
+`skills/setup/SKILL.md` Step 0), then run via the venv's Python — POSIX:
+`~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:
+`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`.
 
-```bash
-~/.project-hub/venv/bin/python3 -c "
-import yaml, re
+**Do not rely on shell variable interpolation for the new value** — substitute the
+literal value directly into the script text yourself when composing the command
+(shell variable expansion like `$NEW_VALUE` is bash-specific and won't work under
+PowerShell):
+
+```python
+import yaml
 from pathlib import Path
 
 config_path = Path.home() / '.project-hub' / 'config.yaml'
@@ -109,14 +116,14 @@ content = config_path.read_text()
 # Parse to verify structure
 config = yaml.safe_load(content)
 
-# Apply change (example for user.name — adjust per setting)
-config['user']['name'] = '$NEW_VALUE'
+# Apply change (example for user.name — adjust per setting; substitute the actual
+# new value here as a literal, not via a shell variable)
+config['user']['name'] = 'NEW_VALUE_HERE'
 
 # Write back — use yaml.dump only for the value line, preserve comments via regex
 # Simple approach: use sed-like replacement to keep comments intact
 config_path.write_text(yaml.dump(config, default_flow_style=False, allow_unicode=True))
 print('OK')
-"
 ```
 
 **Note:** When writing, use `yaml.dump(config, default_flow_style=False, allow_unicode=True)` to preserve Unicode characters (Umlaute). Comments in the original file will be lost — that is acceptable.

@@ -11,44 +11,57 @@ First-time setup and repair for the project-hub plugin.
 
 ## Workflow
 
+### Step 0: Detect Platform
+
+```bash
+python3 -c "import sys; print(sys.platform)"
+```
+
+If `python3` is not found, retry with `python` — and use `python` for every
+subsequent command in this skill instead of `python3`. Output `win32` means
+Windows (venv layout: `venv\Scripts\python.exe`, `venv\Scripts\pip.exe`); any
+other output means POSIX (Linux/macOS/WSL, venv layout: `venv/bin/python3`,
+`venv/bin/pip`). Use this result for every POSIX/Windows choice below.
+
 ### Step 1: Check Current State
 
 ```bash
-# Check venv
-test -d ~/.project-hub/venv && echo "venv: OK" || echo "venv: MISSING"
-
-# Check config
-test -f ~/.project-hub/config.yaml && echo "config: OK" || echo "config: MISSING"
-
-# Check data directory
-test -d ~/.project-hub && echo "data-dir: OK" || echo "data-dir: MISSING"
+python3 -c "
+from pathlib import Path
+base = Path.home() / '.project-hub'
+print('venv:', 'OK' if (base / 'venv').is_dir() else 'MISSING')
+print('config:', 'OK' if (base / 'config.yaml').is_file() else 'MISSING')
+print('data-dir:', 'OK' if base.is_dir() else 'MISSING')
+"
 ```
 
 ### Step 2: Create Data Directory (if missing)
 
 ```bash
-mkdir -p ~/.project-hub
+python3 -c "from pathlib import Path; Path.home().joinpath('.project-hub').mkdir(parents=True, exist_ok=True)"
 ```
 
 ### Step 3: Create Venv (if missing)
 
-```bash
-python3 -m venv ~/.project-hub/venv
-```
+- POSIX: `python3 -m venv ~/.project-hub/venv`
+- Windows: `python -m venv "$env:USERPROFILE\.project-hub\venv"`
 
 ### Step 4: Sync Dependencies (always)
 
 Always run this, even if venv already existed. `pip` is idempotent and fast on a warm
 cache (~1s). This ensures new deps added in later releases are never silently skipped.
 
-```bash
-~/.project-hub/venv/bin/pip install -r ${CLAUDE_PLUGIN_ROOT}/requirements.txt -q
-```
+- POSIX: `~/.project-hub/venv/bin/pip install -r ${CLAUDE_PLUGIN_ROOT}/requirements.txt -q`
+- Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\pip.exe" install -r ${CLAUDE_PLUGIN_ROOT}/requirements.txt -q`
 
 ### Step 5: Copy Config (if missing)
 
 ```bash
-cp ${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml ~/.project-hub/config.yaml
+python3 -c "
+import shutil
+from pathlib import Path
+shutil.copy2('${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml', Path.home() / '.project-hub' / 'config.yaml')
+"
 ```
 
 Then tell the user: "Die Config wurde nach `~/.project-hub/config.yaml` kopiert.
@@ -61,8 +74,11 @@ Du kannst folgende Einstellungen anpassen:
 After copying the config, check whether the user's existing config already has a `db_path`
 set to a network path:
 
-```bash
-~/.project-hub/venv/bin/python3 -c "
+Run the following script via the venv's Python (see Step 0 for platform detection —
+POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:
+`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`):
+
+```python
 import yaml
 from pathlib import Path
 cfg_path = Path.home() / '.project-hub' / 'config.yaml'
@@ -75,7 +91,6 @@ if any(h in str(db_path) for h in network_hints):
     print('NETWORK_SHARE:' + str(db_path))
 else:
     print('LOCAL')
-"
 ```
 
 If the output starts with `NETWORK_SHARE:`, show:
@@ -92,10 +107,11 @@ Hinweise für Team-Nutzung:
 ### Step 5b: Install Knowledge Templates
 
 Note: `${CLAUDE_PLUGIN_ROOT}` is NOT available as a shell variable. Use Python to derive
-the plugin root by checking known installation locations:
+the plugin root by checking known installation locations. Run via the venv's Python
+(see Step 0 — POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:
+`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`):
 
-```bash
-~/.project-hub/venv/bin/python3 -c "
+```python
 import shutil, sys
 from pathlib import Path
 
@@ -135,7 +151,6 @@ for type_dir in sorted(knowledge_src.iterdir()):
     print(f'  {type_dir.name}: {status}')
 
 print(f'knowledge: {total_copied} templates installed total')
-"
 ```
 
 **Ask the user which project types they want to install templates for.**
@@ -157,14 +172,15 @@ oder nutze `/knowledge update <topic>` um sie interaktiv zu befüllen."
 
 ### Step 6: Verify MCP Server + Init DB
 
-```bash
-~/.project-hub/venv/bin/python3 -c "
+Run via the venv's Python (see Step 0 — POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`,
+Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`):
+
+```python
 import sys
 sys.path.insert(0, '${CLAUDE_PLUGIN_ROOT}/servers/project-hub-server')
 from tools.db import init_db
 init_db()
 print('DB: OK')
-"
 ```
 
 ### Step 7: Report
@@ -188,6 +204,8 @@ Danach kannst du loslegen:
 
 ## Error Handling
 
-- `python3` not found → Tell user to install Python 3.11+
+- `python3` not found (POSIX) → Tell user to install Python 3.11+
+- `python`/`python3` not found on Windows → Tell user to install Python 3.11+ from
+  python.org and check "Add python.exe to PATH" during install
 - `pip install` fails → Show the exact error and suggest running manually
 - DB init fails → Show error, check if `~/.project-hub/` is writable

@@ -22,10 +22,29 @@ Guided session initialization: verify setup, pick a project, load full context.
 
 ### 1. Check Setup
 
+Detect platform first (see also `skills/setup/SKILL.md` Step 0):
+
 ```bash
-test -d ~/.project-hub/venv && echo "venv: OK" || echo "venv: MISSING"
-test -f ~/.project-hub/config.yaml && echo "config: OK" || echo "config: MISSING"
-~/.project-hub/venv/bin/python3 -c "import mcp, fastmcp, yaml" 2>/dev/null && echo "deps: OK" || echo "deps: MISSING"
+python3 -c "import sys; print(sys.platform)"
+```
+
+`win32` → Windows (venv Python at `venv\Scripts\python.exe`), anything else → POSIX
+(`venv/bin/python3`). If `python3` is not found, retry with `python`.
+
+Then run the combined check via the venv's Python — POSIX:
+`~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:
+`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`:
+
+```python
+from pathlib import Path
+base = Path.home() / '.project-hub'
+print('venv:', 'OK' if (base / 'venv').is_dir() else 'MISSING')
+print('config:', 'OK' if (base / 'config.yaml').is_file() else 'MISSING')
+try:
+    import mcp, fastmcp, yaml
+    print('deps: OK')
+except ImportError:
+    print('deps: MISSING')
 ```
 
 If anything is MISSING → tell user:

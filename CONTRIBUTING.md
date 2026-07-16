@@ -50,10 +50,20 @@ git checkout -b feat/your-feature-name
 
 ### 3. Set Up Local Development
 
+POSIX (Linux/macOS/WSL):
+
 ```bash
 python3 -m venv ~/.project-hub/venv
 ~/.project-hub/venv/bin/pip install -r requirements.txt
 ~/.project-hub/venv/bin/pip install pytest ruff mypy
+```
+
+Windows (PowerShell):
+
+```powershell
+python -m venv "$env:USERPROFILE\.project-hub\venv"
+& "$env:USERPROFILE\.project-hub\venv\Scripts\pip.exe" install -r requirements.txt
+& "$env:USERPROFILE\.project-hub\venv\Scripts\pip.exe" install pytest ruff mypy
 ```
 
 ### 4. Make Your Changes
@@ -66,6 +76,8 @@ Follow existing patterns. For each change type:
 
 ### 5. Test Locally
 
+POSIX (Linux/macOS/WSL):
+
 ```bash
 # Run all tests
 ~/.project-hub/venv/bin/pytest
@@ -75,6 +87,19 @@ Follow existing patterns. For each change type:
 
 # Type checking
 ~/.project-hub/venv/bin/mypy servers/project-hub-server/
+```
+
+Windows (PowerShell):
+
+```powershell
+# Run all tests
+& "$env:USERPROFILE\.project-hub\venv\Scripts\pytest.exe"
+
+# Lint
+& "$env:USERPROFILE\.project-hub\venv\Scripts\ruff.exe" check servers/
+
+# Type checking
+& "$env:USERPROFILE\.project-hub\venv\Scripts\mypy.exe" servers/project-hub-server/
 ```
 
 All checks must pass before opening a PR.

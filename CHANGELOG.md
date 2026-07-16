@@ -22,7 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Fixed
-- Nothing yet
+- MCP server launch and setup/session-start/configure skills now work on native
+  Windows (no WSL or Git Bash required) — added OS-aware `bin/run-server`/
+  `bin/run-server.cmd` launcher wrappers and Windows-compatible venv path
+  handling in skill workflows (#61)
 
 ### Security
 - HTML report generation now escapes template output (`autoescape` enabled) instead of rendering project/contact/note text as raw HTML
