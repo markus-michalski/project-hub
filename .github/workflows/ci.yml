@@ -35,3 +35,23 @@ jobs:
 
       - name: Run unit tests
         run: pytest servers/project-hub-server/tests/ -v
+
+  test-windows:
+    name: Tests (Windows, Python 3.11)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7.0.0
+
+      - uses: actions/setup-python@v6.3.0
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run smoke tests
+        run: pytest tests/smoke/ -v
+
+      - name: Run unit tests
+        run: pytest servers/project-hub-server/tests/ -v
