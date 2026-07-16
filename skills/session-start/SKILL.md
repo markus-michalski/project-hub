@@ -22,14 +22,21 @@ Guided session initialization: verify setup, pick a project, load full context.
 
 ### 1. Check Setup
 
-Detect platform first (see also `skills/setup/SKILL.md` Step 0):
+Detect platform and resolve a working interpreter first (same fallback chain
+as `skills/setup/SKILL.md` Step 0 — see there for the full rationale,
+especially the exit-code-49 Microsoft Store alias trap on managed Windows
+devices):
 
 ```bash
 python3 -c "import sys; print(sys.platform)"
+python -c "import sys; print(sys.platform)"
+py -3 -c "import sys; print(sys.platform)"
 ```
 
-`win32` → Windows (venv Python at `venv\Scripts\python.exe`), anything else → POSIX
-(`venv/bin/python3`). If `python3` is not found, retry with `python`.
+Use the first one that actually runs — don't stop at the first failure, a
+`python`/`python3` exit code 49 with no output means the Store-alias stub, not
+"Python missing". `win32` → Windows (venv Python at `venv\Scripts\python.exe`),
+anything else → POSIX (`venv/bin/python3`).
 
 Then run the combined check via the venv's Python — POSIX:
 `~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:

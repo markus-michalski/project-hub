@@ -28,3 +28,4 @@ temp/
 
 # git-workflow skill scratch directory
 .git-workflow/
+.git-workflow-archive/
