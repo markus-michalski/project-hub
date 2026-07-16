@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   devices where Python is installed but not on `PATH`. Venv creation (Step 3)
   now reuses the interpreter resolved during platform detection instead of
   hardcoding `python`/`python3` again (#69)
+- `setup` Step 5b (knowledge template install) now uses the interpolated
+  `${CLAUDE_PLUGIN_ROOT}` — already proven to work in Steps 4/5/6 — instead of
+  guessing the plugin root via a hardcoded candidate-path search that could
+  silently install templates from the wrong version, or skip them entirely,
+  once the plugin cache and a dev checkout diverge. Note: since template
+  files are never overwritten once present, re-running setup fixes future/
+  never-installed cases but won't retroactively replace templates a previous
+  run already installed from the wrong source — delete the affected files
+  under `~/.project-hub/knowledge/` manually and re-run setup if needed (#70)
 
 ### Security
 - Nothing yet

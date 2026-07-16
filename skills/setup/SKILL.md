@@ -152,32 +152,16 @@ Hinweise für Team-Nutzung:
 
 ### Step 5b: Install Knowledge Templates
 
-Note: `${CLAUDE_PLUGIN_ROOT}` is NOT available as a shell variable. Use Python to derive
-the plugin root by checking known installation locations. Run via the venv's Python
-(see Step 0 — POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`, Windows:
-`& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`):
+Run via the venv's Python (see Step 0 — POSIX: `~/.project-hub/venv/bin/python3 -c "<script>"`,
+Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" -c "<script>"`).
+`${CLAUDE_PLUGIN_ROOT}` is interpolated by the harness the same way it already is in
+Steps 4, 5, and 6 below — no need to guess the plugin root via a candidate-path search:
 
 ```python
-import shutil, sys
+import shutil
 from pathlib import Path
 
-# Find plugin root — check known locations
-candidates = [
-    Path.home() / '.claude' / 'plugins' / 'marketplaces' / 'project-hub',
-    Path.home() / '.claude' / 'plugins' / 'project-hub',
-    Path.home() / 'projekte' / 'project-hub',
-]
-plugin_root = None
-for c in candidates:
-    if (c / 'knowledge').exists():
-        plugin_root = c
-        break
-
-if plugin_root is None:
-    print('knowledge: PLUGIN_ROOT_NOT_FOUND — skipping template install')
-    sys.exit(0)
-
-knowledge_src = plugin_root / 'knowledge'
+knowledge_src = Path('${CLAUDE_PLUGIN_ROOT}/knowledge')
 knowledge_dst = Path.home() / '.project-hub' / 'knowledge'
 total_copied = 0
 
