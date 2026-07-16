@@ -549,13 +549,14 @@ def tool_generate_report(
 
 @mcp.tool()
 def tool_export_project(project_id: int, output_path: str = "") -> dict:
-    """Export a project with all contacts and notes as a portable JSON file.
+    """Export a project with all contacts, notes, and linked projects as a portable JSON file.
 
     Useful for sharing with a colleague or moving to a different DB.
-    Attachments are NOT included in Phase 1.
+    Attachments are NOT included in Phase 1. Linked projects (tool_link_project)
+    are exported by slug, not DB ID.
 
     output_path: optional destination; defaults to ~/.project-hub/exports/{slug}-{date}.json
-    Returns {"path": str, "project": str, "contacts": int, "notes": int}.
+    Returns {"path": str, "project": str, "contacts": int, "notes": int, "links": int}.
     """
     return export_project(project_id, output_path)
 
@@ -568,6 +569,9 @@ def tool_import_project(json_path: str, merge_strategy: str = "skip") -> dict:
       skip      — abort and return {"imported": False} (safe default)
       rename    — insert with a unique slug suffix
       overwrite — replace the existing project (destructive!)
+
+    Linked projects are restored by slug if the linked project already exists in
+    this DB; otherwise they are skipped and listed under "links_not_restored".
 
     Returns a summary with project name, slug, and counts.
     """

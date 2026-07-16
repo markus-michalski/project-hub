@@ -10,18 +10,23 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .db import db_connection
+from .project_links import get_links_for_project, link_project
 
 _EXPORT_VERSION = 1
 
 
 def export_project(project_id: int, output_path: str = "") -> dict:
-    """Export a project with all contacts and notes as a JSON file.
+    """Export a project with all contacts, notes, and linked projects as a JSON file.
 
     project_id: numeric project ID (use tool_get_project to find it)
     output_path: destination file path; defaults to
                  ~/.project-hub/exports/{slug}-{date}.json
 
-    Returns {"path": str, "project": str, "contacts": int, "notes": int}.
+    Linked projects (see tool_link_project) are exported by slug, not by DB ID —
+    IDs are not stable across databases. Restoring a link on import requires the
+    linked project to already exist in the target DB (see import_project).
+
+    Returns {"path": str, "project": str, "contacts": int, "notes": int, "links": int}.
     Raises ValueError if project not found.
     """
     with db_connection() as conn:
@@ -46,12 +51,22 @@ def export_project(project_id: int, output_path: str = "") -> dict:
         ).fetchall()
         notes = [dict(r) for r in note_rows]
 
+    links = [
+        {
+            "relation": link["relation"],
+            "slug": link["project"]["slug"],
+            "name": link["project"]["name"],
+        }
+        for link in get_links_for_project(project_id)
+    ]
+
     payload = {
         "export_version": _EXPORT_VERSION,
         "exported_at": datetime.now(timezone.utc).isoformat(),
         "project": project,
         "contacts": contacts,
         "notes": notes,
+        "links": links,
     }
 
     if not output_path:
@@ -75,6 +90,7 @@ def export_project(project_id: int, output_path: str = "") -> dict:
         "project": project["name"],
         "contacts": len(contacts),
         "notes": len(notes),
+        "links": len(links),
     }
 
 
@@ -86,6 +102,10 @@ def import_project(json_path: str, merge_strategy: str = "skip") -> dict:
         - "skip"      — abort import, return {"imported": False, "reason": "exists"}
         - "rename"    — append _imported_{timestamp} suffix to slug/name and insert
         - "overwrite" — delete existing project (cascade) and re-insert
+
+    Linked projects (see export_project) are restored by slug: if the linked
+    project already exists in this DB, the link is recreated; otherwise it is
+    skipped and listed under "links_not_restored" in the result.
 
     Returns summary dict.
     Raises ValueError on invalid file format or unsupported version.
@@ -119,6 +139,10 @@ def import_project(json_path: str, merge_strategy: str = "skip") -> dict:
                     "imported": False,
                     "reason": f"project with slug '{project['slug']}' already exists",
                     "project": project["name"],
+                    "contacts": 0,
+                    "notes": 0,
+                    "links": 0,
+                    "links_not_restored": [],
                 }
             elif merge_strategy == "overwrite":
                 conn.execute("DELETE FROM projects WHERE slug = ?", (project["slug"],))
@@ -165,9 +189,25 @@ def import_project(json_path: str, merge_strategy: str = "skip") -> dict:
 
         conn.commit()
 
+    restored_links = 0
+    links_not_restored: list[dict] = []
+    for link in raw.get("links", []):
+        try:
+            link_project(project["slug"], link["slug"], link["relation"])
+            restored_links += 1
+        except (ValueError, KeyError) as e:
+            links_not_restored.append(
+                {
+                    "slug": link.get("slug", "?"),
+                    "name": link.get("name", link.get("slug", "?")),
+                    "relation": link.get("relation", "?"),
+                    "reason": str(e),
+                }
+            )
+
     print(
         f"[project-hub] Imported project '{project['name']}' "
-        f"({imported_contacts} contacts, {imported_notes} notes)",
+        f"({imported_contacts} contacts, {imported_notes} notes, {restored_links} links)",
         file=sys.stderr,
     )
 
@@ -178,5 +218,7 @@ def import_project(json_path: str, merge_strategy: str = "skip") -> dict:
         "project_id": new_project_id,
         "contacts": imported_contacts,
         "notes": imported_notes,
+        "links": restored_links,
+        "links_not_restored": links_not_restored,
         "merge_strategy": merge_strategy,
     }

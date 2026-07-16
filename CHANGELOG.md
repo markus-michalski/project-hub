@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - link projects together as successor/predecessor/related; `tool_get_project`/`tool_get_project_by_id` now include a `links` list (#59)
 - `tool_list_projects` items now include the same `links` list; HTML reports (full/summary/all-projects) render project relations (e.g. "Nachfolger von: Joybuy") (#63)
+- `tool_export_project`/`tool_import_project` now include linked projects (by slug, not DB ID); on import, links are restored if the target project already exists in the destination DB, otherwise skipped and listed under `links_not_restored` (#64)
 
 ### Changed
 - Nothing yet
