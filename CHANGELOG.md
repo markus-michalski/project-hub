@@ -20,7 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Fixed
-- Nothing yet
+- `setup`/`session-start` now fall back to the `py -3` launcher when `python`/
+  `python3` resolve to the Microsoft Store app-execution-alias stub (exit code
+  49) instead of a real interpreter — common on Intune/SCCM-managed Windows
+  devices where Python is installed but not on `PATH`. Venv creation (Step 3)
+  now reuses the interpreter resolved during platform detection instead of
+  hardcoding `python`/`python3` again (#69)
 
 ### Security
 - Nothing yet

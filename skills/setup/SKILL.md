@@ -11,22 +11,61 @@ First-time setup and repair for the project-hub plugin.
 
 ## Workflow
 
-### Step 0: Detect Platform
+### Step 0: Detect Platform and Resolve a Working Python Interpreter
+
+Try each of the following in order and use the **first one that actually runs**
+(prints a platform string, doesn't error):
 
 ```bash
 python3 -c "import sys; print(sys.platform)"
+python -c "import sys; print(sys.platform)"
+py -3 -c "import sys; print(sys.platform)"
 ```
 
-If `python3` is not found, retry with `python` — and use `python` for every
-subsequent command in this skill instead of `python3`. Output `win32` means
-Windows (venv layout: `venv\Scripts\python.exe`, `venv\Scripts\pip.exe`); any
-other output means POSIX (Linux/macOS/WSL, venv layout: `venv/bin/python3`,
-`venv/bin/pip`). Use this result for every POSIX/Windows choice below.
+**Do not stop at the first failure.** On Windows, `python3`/`python` frequently
+fail with **exit code 49 and no output** even when Python is genuinely
+installed — this is the Microsoft Store app-execution-alias stub, not a
+missing-Python error. It's common on Intune/SCCM-managed devices where Python
+was pushed via MSI/EXE without adding it to `PATH`. `py` (the Python Launcher
+for Windows) is a separate executable that always lives in `C:\Windows\` — on
+`PATH` regardless of how Python itself was installed — so try it before
+concluding Python is missing.
+
+If all three fail, check known install locations as a last resort (Windows,
+PowerShell syntax): `$env:ProgramFiles\Python3*\python.exe`,
+`${env:ProgramFiles(x86)}\Python3*\python.exe`,
+`$env:LocalAppData\Programs\Python\Python3*\python.exe` — use the first one
+that exists.
+
+Only if *every* option above fails is Python genuinely not installed or not
+locatable — see Error Handling.
+
+Call whichever command succeeded `<PY>` — use it verbatim (not the literal
+text `<PY>`) for every subsequent system-level Python invocation in this skill
+(Steps 1, 2, 3, 5), until the venv exists in Step 3. From Step 4 onward the
+venv's *own* interpreter is used instead, which is already resolved separately
+via the OS branch below and unaffected by this detection.
+
+**Windows quoting note:** `python3`/`python`/`py -3` need no special handling.
+But if `<PY>` came from the known-install-path fallback, it's a full path that
+may contain spaces (e.g. `C:\Program Files\Python313\python.exe` — exactly the
+Intune-managed-device case this fallback exists for). On Windows, invoke it
+via the call operator with quotes: `& "<PY>" -c "..."`, not bare `<PY> -c
+"..."` — PowerShell doesn't split unquoted paths on spaces the way you'd want.
+
+Output `win32` means Windows (venv layout: `venv\Scripts\python.exe`,
+`venv\Scripts\pip.exe`); any other output means POSIX (Linux/macOS/WSL, venv
+layout: `venv/bin/python3`, `venv/bin/pip`). Use this result for every
+POSIX/Windows choice below.
 
 ### Step 1: Check Current State
 
+Use `<PY>` (the interpreter resolved in Step 0 — remember Step 0's Windows
+quoting note: `& "<PY>" -c "..."`, not bare `<PY>`, if `<PY>` is a
+space-containing full path from the known-install fallback):
+
 ```bash
-python3 -c "
+<PY> -c "
 from pathlib import Path
 base = Path.home() / '.project-hub'
 print('venv:', 'OK' if (base / 'venv').is_dir() else 'MISSING')
@@ -38,13 +77,18 @@ print('data-dir:', 'OK' if base.is_dir() else 'MISSING')
 ### Step 2: Create Data Directory (if missing)
 
 ```bash
-python3 -c "from pathlib import Path; Path.home().joinpath('.project-hub').mkdir(parents=True, exist_ok=True)"
+<PY> -c "from pathlib import Path; Path.home().joinpath('.project-hub').mkdir(parents=True, exist_ok=True)"
 ```
 
 ### Step 3: Create Venv (if missing)
 
-- POSIX: `python3 -m venv ~/.project-hub/venv`
-- Windows: `python -m venv "$env:USERPROFILE\.project-hub\venv"`
+Use `<PY>` — the same interpreter resolved in Step 0, not a hardcoded
+`python`/`python3`. On a managed device where only `py -3` worked in Step 0,
+hardcoding `python` here would immediately hit the same Store-alias failure
+Step 0 just worked around.
+
+- POSIX: `<PY> -m venv ~/.project-hub/venv`
+- Windows: `<PY> -m venv "$env:USERPROFILE\.project-hub\venv"`
 
 ### Step 4: Sync Dependencies (always)
 
@@ -56,8 +100,10 @@ cache (~1s). This ensures new deps added in later releases are never silently sk
 
 ### Step 5: Copy Config (if missing)
 
+Use `<PY>` (still the Step 0 interpreter — this step doesn't need the venv):
+
 ```bash
-python3 -c "
+<PY> -c "
 import shutil
 from pathlib import Path
 shutil.copy2('${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml', Path.home() / '.project-hub' / 'config.yaml')
@@ -204,8 +250,17 @@ Danach kannst du loslegen:
 
 ## Error Handling
 
-- `python3` not found (POSIX) → Tell user to install Python 3.11+
-- `python`/`python3` not found on Windows → Tell user to install Python 3.11+ from
-  python.org and check "Add python.exe to PATH" during install
+- `python3` not found (POSIX), and no other interpreter in Step 0's chain
+  works either → Python is genuinely not installed. Tell user to install
+  Python 3.11+.
+- On Windows, `python`/`python3` exiting with code 49 and no output is
+  **not** "Python not found" — it's the Microsoft Store app-execution-alias
+  stub. Do not tell the user to install Python; instead fall through Step 0's
+  chain (`py -3`, then known install paths).
+- Only if **every** entry in Step 0's fallback chain fails is Python actually
+  missing on Windows → tell the user to install Python 3.11+ from python.org
+  and check "Add python.exe to PATH" during install. On a managed device
+  where the user can't install software themselves, suggest contacting IT to
+  confirm the Python install location or add it to `PATH`.
 - `pip install` fails → Show the exact error and suggest running manually
 - DB init fails → Show error, check if `~/.project-hub/` is writable
