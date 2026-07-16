@@ -124,6 +124,7 @@ Export the active project as a JSON file to share with a colleague.
 **Datei:** [path]
 **Kontakte:** [n]
 **Notizen:** [n]
+**Verknüpfungen:** [n]
 
 Anhänge sind in Phase 1 NICHT enthalten.
 
