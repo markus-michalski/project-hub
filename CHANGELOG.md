@@ -30,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Fixed
+- `tool_add_note` no longer leaves an orphaned database row when writing the note
+  file to disk fails. The note file is now written before the database row is
+  inserted, so a write failure raises before any row is created instead of
+  silently returning a note with `file_path=None` (#75).
+- Note files and the action-items list are written/read as UTF-8 explicitly,
+  fixing a `UnicodeEncodeError` for non-cp1252 characters (arrows, checkmarks,
+  em-dashes, emoji) on Windows with a non-UTF-8 locale (#75).
 - Duplicate shared contacts could be created when the same person was entered with a
   different spelling, because the check compared names with exact string equality.
   `Jan-Kalle Wulf` did not match the existing `Jan Kalle Wulf`.
