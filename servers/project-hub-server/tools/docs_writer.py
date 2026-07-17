@@ -34,7 +34,7 @@ def write_note_to_disk(docs_path: str, title: str, content: str, note_type: str)
         slug = _slugify(title)
         filename = f"{today}-{slug}.md"
         file_path = folder / filename
-        file_path.write_text(_render_note(title, content, note_type))
+        file_path.write_text(_render_note(title, content, note_type), encoding="utf-8")
 
     return str(file_path)
 
@@ -45,10 +45,10 @@ def _append_action_item(todo_path: Path, title: str) -> None:
 
     if not todo_path.exists():
         lines = ["# Action Items", "", "## Open", "", item_line, "", "## Done", ""]
-        todo_path.write_text("\n".join(lines))
+        todo_path.write_text("\n".join(lines), encoding="utf-8")
         return
 
-    lines = todo_path.read_text().splitlines()
+    lines = todo_path.read_text(encoding="utf-8").splitlines()
 
     insert_pos: int | None = None
     for i, line in enumerate(lines):
@@ -63,7 +63,7 @@ def _append_action_item(todo_path: Path, title: str) -> None:
     else:
         lines.append(item_line)
 
-    todo_path.write_text("\n".join(lines))
+    todo_path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def _render_note(title: str, content: str, note_type: str) -> str:

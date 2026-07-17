@@ -1,4 +1,6 @@
 """Tests for notes CRUD operations."""
+from pathlib import Path
+
 import pytest
 from tools.notes import add_note, delete_note, get_note, list_notes, update_note
 from tools.projects import create_project
@@ -140,6 +142,48 @@ def test_delete_note(project):
 
 def test_delete_note_not_found():
     assert delete_note(99999) is False
+
+
+# --- Bug #75 regression tests ---
+
+
+@pytest.fixture
+def project_with_docs(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p = create_project("Docs Project")
+    return p
+
+
+def test_add_note_unicode_content_roundtrips(project_with_docs):
+    """Bug #75 / Bug 1: note with arrow must be saved and returned verbatim."""
+    content = "Go-Live 15.09.2026 → ca. 2 Monate"
+    note = add_note(project_with_docs["id"], "Meeting", content, note_type="meeting-notes")
+
+    assert note["content"] == content
+    assert note["file_path"] is not None
+
+    written = Path(note["file_path"]).read_text(encoding="utf-8")
+    assert "→" in written
+
+
+def test_add_note_no_orphan_on_write_failure(project_with_docs, monkeypatch):
+    """Bug #75 / Bug 2: if write_note_to_disk raises, no DB row must be created.
+
+    The file write happens before the DB insert, so a write failure never
+    creates a row in the first place — no rollback needed.
+    """
+    import tools.notes as notes_module
+
+    def _fail(*args, **kwargs):
+        raise OSError("simulated write failure")
+
+    monkeypatch.setattr(notes_module, "write_note_to_disk", _fail)
+
+    with pytest.raises(OSError):
+        add_note(project_with_docs["id"], "Ghost Note", "content")
+
+    result = list_notes(project_with_docs["id"])
+    assert result["total"] == 0, "no row must be created when the disk write fails"
 
 
 def test_note_has_updated_at(project):

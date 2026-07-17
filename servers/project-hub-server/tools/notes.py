@@ -56,6 +56,11 @@ def add_note(
     note_type options: note, meeting-notes, email, decision, action-item
     agenda: optional agenda text to compare against during meeting-notes summarization
     """
+    file_path: Optional[str] = None
+    project = get_project_by_id(project_id)
+    if project and project.get("docs_path"):
+        file_path = write_note_to_disk(project["docs_path"], title, content, note_type)
+
     with db_connection() as conn:
         with conn:
             cursor = conn.execute(
@@ -65,11 +70,6 @@ def add_note(
             note_id = cursor.lastrowid
         row = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
         note = dict(row)
-
-    file_path: Optional[str] = None
-    project = get_project_by_id(project_id)
-    if project and project.get("docs_path"):
-        file_path = write_note_to_disk(project["docs_path"], title, content, note_type)
 
     note["file_path"] = file_path
     return note
