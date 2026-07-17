@@ -3,9 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
-from tools.docs_writer import _append_action_item, write_note_to_disk
+from tools.docs_writer import write_note_to_disk
 
 
 def test_write_note_non_cp1252_content(tmp_path):
