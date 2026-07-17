@@ -1,6 +1,14 @@
 """Tests for contact CRUD operations."""
 import pytest
-from tools.contacts import add_contact, delete_contact, list_contacts, list_shared_contacts, update_contact
+from tools.contacts import (
+    _find_duplicate_shared_contact,
+    _name_key,
+    add_contact,
+    delete_contact,
+    list_contacts,
+    list_shared_contacts,
+    update_contact,
+)
 from tools.projects import create_project
 from tools.search import search_contacts
 
@@ -312,3 +320,147 @@ def test_rename_contact_to_shared_name_raises(tmp_path, monkeypatch):
 
     with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
         update_contact(local["id"], name="Shared Alice")
+
+
+# ---------------------------------------------------------------------------
+# Name normalization
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "variant",
+    [
+        "Jan-Kalle Wulf",       # hyphen instead of space
+        "jan kalle wulf",       # casing
+        "Wulf, Jan Kalle",      # Teams "Lastname, Firstname" format
+        "Jan  Kalle   Wulf",    # collapsed whitespace
+        "Jan Kalle Wulf ",      # trailing whitespace
+    ],
+)
+def test_name_variants_fold_to_same_key(variant):
+    assert _name_key(variant) == _name_key("Jan Kalle Wulf")
+
+
+@pytest.mark.parametrize(
+    ("a", "b"),
+    [
+        ("Michaela Müller", "Michaela Mueller"),   # umlaut transliteration
+        ("Jörg Weiß", "Joerg Weiss"),              # umlaut + eszett
+        ("José García", "Jose Garcia"),            # accents
+    ],
+)
+def test_name_key_folds_umlauts_and_accents(a, b):
+    assert _name_key(a) == _name_key(b)
+
+
+def test_name_key_keeps_different_people_apart():
+    assert _name_key("Markus Ruppel") != _name_key("Marius Westhaus")
+
+
+def test_add_shared_duplicate_hyphen_variant_raises(tmp_path, monkeypatch):
+    # The case that produced a real duplicate: SOP spells the name without a hyphen,
+    # Teams spells it with one.
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Hyphen Dup A")
+    p2 = create_project("Hyphen Dup B")
+
+    add_contact(p1["id"], name="Jan Kalle Wulf", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Jan-Kalle Wulf", is_shared=True)
+
+
+def test_add_shared_duplicate_lastname_first_raises(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Order Dup A")
+    p2 = create_project("Order Dup B")
+
+    add_contact(p1["id"], name="Michaela Ablinger", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Ablinger, Michaela", is_shared=True)
+
+
+# ---------------------------------------------------------------------------
+# Near-match detection and force override
+# ---------------------------------------------------------------------------
+
+def test_add_shared_near_duplicate_raises(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Near Dup A")
+    p2 = create_project("Near Dup B")
+
+    add_contact(p1["id"], name="Mathias Quetz", is_shared=True)
+
+    with pytest.raises(ValueError, match="very similar name already exists"):
+        add_contact(p2["id"], name="Matthias Quetz", is_shared=True)
+
+
+def test_add_shared_near_duplicate_force_allows(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Force Dup A")
+    p2 = create_project("Force Dup B")
+
+    add_contact(p1["id"], name="Mathias Quetz", is_shared=True)
+    c = add_contact(p2["id"], name="Matthias Quetz", is_shared=True, force=True)
+
+    assert c["name"] == "Matthias Quetz"
+
+
+def test_force_does_not_override_exact_duplicate(tmp_path, monkeypatch):
+    # force is an escape hatch for false positives, not a way to create real duplicates
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Force Exact A")
+    p2 = create_project("Force Exact B")
+
+    add_contact(p1["id"], name="Jan Kalle Wulf", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Jan-Kalle Wulf", is_shared=True, force=True)
+
+
+def test_exact_match_wins_over_near_match(tmp_path, monkeypatch):
+    # An exact match must be reported even when a near match is scanned first
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p = create_project("Precedence Host")
+
+    add_contact(p["id"], name="Mathias Quetz", is_shared=True)
+    add_contact(p["id"], name="Matthias Quetz", is_shared=True, force=True)
+
+    existing, kind = _find_duplicate_shared_contact("Matthias Quetz")
+    assert kind == "exact"
+    assert existing["name"] == "Matthias Quetz"
+
+
+def test_update_near_duplicate_force_allows(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Update Force A")
+    p2 = create_project("Update Force B")
+
+    add_contact(p1["id"], name="Mathias Quetz", is_shared=True)
+    local = add_contact(p2["id"], name="Local Person", is_shared=False)
+
+    updated = update_contact(local["id"], name="Matthias Quetz", force=True)
+    assert updated["name"] == "Matthias Quetz"
+
+
+def test_unrelated_names_are_not_near_matches(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Unrelated A")
+    p2 = create_project("Unrelated B")
+
+    add_contact(p1["id"], name="Markus Ruppel", is_shared=True)
+    c = add_contact(p2["id"], name="Marius Westhaus", is_shared=True)
+
+    assert c["name"] == "Marius Westhaus"
+
+
+def test_non_shared_contacts_are_not_dedup_targets(tmp_path, monkeypatch):
+    # Only shared contacts are deduplicated; project-local contacts stay independent
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Local Dup A")
+    p2 = create_project("Local Dup B")
+
+    add_contact(p1["id"], name="Same Name", is_shared=False)
+    c = add_contact(p2["id"], name="Same Name", is_shared=False)
+
+    assert c["name"] == "Same Name"

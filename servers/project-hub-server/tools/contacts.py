@@ -1,9 +1,20 @@
 """Contact CRUD operations."""
 from __future__ import annotations
 
+import re
+import unicodedata
+from difflib import SequenceMatcher
 from typing import Optional
 
 from .db import db_connection
+
+# Names that differ by less than this are treated as the same person unless force=True.
+_NEAR_MATCH_THRESHOLD = 0.88
+
+_UMLAUT_MAP = str.maketrans({
+    "ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
+    "Ä": "ae", "Ö": "oe", "Ü": "ue",
+})
 
 
 def list_contacts(
@@ -65,42 +76,92 @@ def list_shared_contacts(limit: int = 50, offset: int = 0) -> dict:
         }
 
 
+def _normalize_name(name: str) -> str:
+    """Fold a person name to a comparable form.
+
+    Handles the variants that occur when the same person is entered from different
+    sources: casing, "Lastname, Firstname" order (Teams profile format), hyphens vs.
+    spaces, umlaut transliteration and accents.
+    """
+    n = name.strip()
+    if n.count(",") == 1:
+        last, first = (part.strip() for part in n.split(","))
+        if last and first:
+            n = f"{first} {last}"
+    n = n.translate(_UMLAUT_MAP)
+    # Umlauts are transliterated above, so NFKD here only strips remaining accents.
+    n = unicodedata.normalize("NFKD", n)
+    n = "".join(ch for ch in n if not unicodedata.combining(ch))
+    n = re.sub(r"[^a-z0-9]+", " ", n.lower())
+    return " ".join(n.split())
+
+
+def _name_key(name: str) -> str:
+    """Order-independent comparison key, so "Wulf Jan" matches "Jan Wulf"."""
+    return " ".join(sorted(_normalize_name(name).split()))
+
+
 def _find_duplicate_shared_contact(
     name: str, email: str = "", exclude_id: Optional[int] = None
-) -> Optional[dict]:
-    """Return the first shared contact that matches name or email (case-insensitive).
+) -> tuple[Optional[dict], str]:
+    """Find a shared contact that is likely the same person as (name, email).
 
-    Used to prevent duplicate shared contacts before insert or promote operations.
+    Returns (contact, kind) where kind is:
+      "exact" — same email, or same name once normalized (never a legitimate duplicate)
+      "near"  — name similarity above threshold, e.g. "Mathias" vs. "Matthias"
+      ""      — no match, contact is None
+
+    Comparison happens in Python rather than SQL because normalization (name order,
+    punctuation, umlauts) cannot be expressed in SQLite's LOWER(). The shared-contact
+    set is small enough that fetching it is cheaper than the alternative.
     exclude_id: ignore this contact id (needed when re-saving an already-shared contact).
     """
+    sql = """
+        SELECT c.*, p.name as project_name
+        FROM contacts c
+        JOIN projects p ON p.id = c.project_id
+        WHERE c.is_shared = 1
+    """
+    params: list = []
+    if exclude_id is not None:
+        sql += " AND c.id != ?"
+        params.append(exclude_id)
+
     with db_connection() as conn:
-        base = """
-            SELECT c.*, p.name as project_name
-            FROM contacts c
-            JOIN projects p ON p.id = c.project_id
-            WHERE c.is_shared = 1
-        """
-        conditions: list[str] = []
-        params: list = []
+        rows = [dict(r) for r in conn.execute(sql, params).fetchall()]
 
-        if exclude_id is not None:
-            conditions.append("c.id != ?")
-            params.append(exclude_id)
+    key = _name_key(name)
+    email_lower = email.strip().lower()
+    near: Optional[dict] = None
 
-        name_cond = "LOWER(c.name) = LOWER(?)"
-        if email:
-            match_cond = f"({name_cond} OR LOWER(c.email) = LOWER(?))"
-            match_params = [name, email]
-        else:
-            match_cond = name_cond
-            match_params = [name]
+    for row in rows:
+        if email_lower and (row["email"] or "").strip().lower() == email_lower:
+            return row, "exact"
+        row_key = _name_key(row["name"])
+        if not key or not row_key:
+            continue
+        if row_key == key:
+            return row, "exact"
+        if near is None and SequenceMatcher(None, key, row_key).ratio() >= _NEAR_MATCH_THRESHOLD:
+            near = row  # keep scanning — an exact match anywhere still wins
 
-        conditions.append(match_cond)
-        params.extend(match_params)
+    return (near, "near") if near else (None, "")
 
-        where = " AND ".join(conditions)
-        row = conn.execute(f"{base} AND {where} LIMIT 1", params).fetchone()
-        return dict(row) if row else None
+
+def _duplicate_message(existing: dict, kind: str) -> str:
+    where = f"(id={existing['id']}, project='{existing['project_name']}')"
+    if kind == "exact":
+        return (
+            f"A shared contact with this name or email already exists: "
+            f"'{existing['name']}' {where}. "
+            f"This contact is available in all projects — no need to add it again."
+        )
+    return (
+        f"A shared contact with a very similar name already exists: "
+        f"'{existing['name']}' {where}. "
+        f"If this is the same person, update that contact instead of creating a new one. "
+        f"If it is genuinely a different person, pass force=True."
+    )
 
 
 def add_contact(
@@ -113,22 +174,20 @@ def add_contact(
     company: str = "",
     notes: str = "",
     is_shared: bool = False,
+    force: bool = False,
 ) -> dict:
     """Add a contact to a project.
 
     is_shared: if True, the contact is available across all projects.
     Only internal contacts can be shared; external contacts are always project-specific.
-    Raises ValueError if a shared contact with the same name or email already exists.
+    Raises ValueError if a shared contact with the same or a very similar name exists.
+    force: allow creation despite a similar-name match. Exact matches are never forceable.
     """
     if is_shared and contact_type == "external":
         raise ValueError("External contacts cannot be shared across projects.")
-    existing = _find_duplicate_shared_contact(name, email)
-    if existing:
-        raise ValueError(
-            f"A shared contact with this name or email already exists: "
-            f"'{existing['name']}' (id={existing['id']}, project='{existing['project_name']}'). "
-            f"This contact is available in all projects — no need to add it again."
-        )
+    existing, kind = _find_duplicate_shared_contact(name, email)
+    if existing and not (force and kind == "near"):
+        raise ValueError(_duplicate_message(existing, kind))
     with db_connection() as conn:
         with conn:
             cursor = conn.execute(
@@ -141,10 +200,12 @@ def add_contact(
         return dict(row)
 
 
-def update_contact(contact_id: int, **fields) -> Optional[dict]:
+def update_contact(contact_id: int, force: bool = False, **fields) -> Optional[dict]:
     """Update fields on an existing contact.
 
     Raises ValueError if trying to share an external contact.
+    force: allow the update despite a similar-name match against an existing shared
+    contact. Exact matches are never forceable.
     """
     allowed = {"name", "role", "type", "email", "phone", "company", "notes", "is_shared"}
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
@@ -166,13 +227,11 @@ def update_contact(contact_id: int, **fields) -> Optional[dict]:
     if "name" in updates or "email" in updates or updates.get("is_shared"):
         effective_name = updates.get("name") or current_dict.get("name", "")
         effective_email = updates.get("email") or current_dict.get("email", "")
-        existing = _find_duplicate_shared_contact(effective_name, effective_email, exclude_id=contact_id)
-        if existing:
-            raise ValueError(
-                f"A shared contact with this name or email already exists: "
-                f"'{existing['name']}' (id={existing['id']}, project='{existing['project_name']}'). "
-                f"This contact is available in all projects."
-            )
+        existing, kind = _find_duplicate_shared_contact(
+            effective_name, effective_email, exclude_id=contact_id
+        )
+        if existing and not (force and kind == "near"):
+            raise ValueError(_duplicate_message(existing, kind))
 
     if not updates:
         with db_connection() as conn:
