@@ -1,19 +1,24 @@
 """Contact CRUD operations."""
 from __future__ import annotations
 
-import re
 import unicodedata
 from difflib import SequenceMatcher
 from typing import Optional
 
 from .db import db_connection
 
-# Names that differ by less than this are treated as the same person unless force=True.
+# Names this similar are reported as a near match. Deliberately below the 0.897 of
+# "Ben Zimmermann" vs. "Sven Zimmermann" — distinct people do score this high, which is
+# why a near match is forceable and an exact one is not.
 _NEAR_MATCH_THRESHOLD = 0.88
 
-_UMLAUT_MAP = str.maketrans({
-    "ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss",
+# Characters with no NFKD decomposition, which would otherwise be dropped and split a
+# token in half ("Søren" -> "s ren"). Transliterated to their conventional ASCII form.
+_TRANSLIT_MAP = str.maketrans({
+    "ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss", "ẞ": "ss",
     "Ä": "ae", "Ö": "oe", "Ü": "ue",
+    "ø": "oe", "Ø": "oe", "æ": "ae", "Æ": "ae", "å": "aa", "Å": "aa",
+    "ł": "l", "Ł": "l", "đ": "d", "Đ": "d",
 })
 
 
@@ -77,28 +82,58 @@ def list_shared_contacts(limit: int = 50, offset: int = 0) -> dict:
 
 
 def _normalize_name(name: str) -> str:
-    """Fold a person name to a comparable form.
+    """Fold a person name to a comparable form, preserving token order.
 
     Handles the variants that occur when the same person is entered from different
     sources: casing, "Lastname, Firstname" order (Teams profile format), hyphens vs.
     spaces, umlaut transliteration and accents.
+
+    Token order is preserved on purpose: two names folding to the same string here means
+    they are the same person, which is what makes an exact match non-forceable. Order
+    differences are a near match instead — see _match_kind.
     """
     n = name.strip()
     if n.count(",") == 1:
         last, first = (part.strip() for part in n.split(","))
         if last and first:
             n = f"{first} {last}"
-    n = n.translate(_UMLAUT_MAP)
-    # Umlauts are transliterated above, so NFKD here only strips remaining accents.
+    # NFC first: decomposed input ("u" + combining diaeresis) must become "ü" before
+    # transliteration, or the combining mark is stripped below and it folds to "u".
+    n = unicodedata.normalize("NFC", n).translate(_TRANSLIT_MAP)
     n = unicodedata.normalize("NFKD", n)
     n = "".join(ch for ch in n if not unicodedata.combining(ch))
-    n = re.sub(r"[^a-z0-9]+", " ", n.lower())
+    # isalnum() rather than [a-z0-9] so non-Latin scripts survive instead of folding to
+    # an empty key, which would silently disable duplicate detection for them.
+    n = "".join(ch if ch.isalnum() else " " for ch in n.lower())
     return " ".join(n.split())
 
 
-def _name_key(name: str) -> str:
-    """Order-independent comparison key, so "Wulf Jan" matches "Jan Wulf"."""
-    return " ".join(sorted(_normalize_name(name).split()))
+def _match_kind(a: str, b: str) -> str:
+    """Classify two raw names as "exact", "near" or "" (unrelated).
+
+    "exact" means the names are the same once spelling variants are folded away — there
+    is no legitimate reason to have both, so it cannot be forced.
+
+    "near" covers heuristics that are usually but not always the same person: token
+    permutations ("Thomas Michael" / "Michael Thomas"), subsets ("Jan Wulf" /
+    "Jan Kalle Wulf"), and high overall similarity ("Mathias" / "Matthias"). These are
+    forceable, because distinct people do legitimately land here.
+    """
+    na, nb = _normalize_name(a), _normalize_name(b)
+    if not na or not nb:
+        return ""
+    if na == nb:
+        return "exact"
+
+    ta, tb = na.split(), nb.split()
+    if sorted(ta) == sorted(tb):
+        return "near"  # same tokens, different order
+    shorter, longer = (set(ta), set(tb)) if len(ta) <= len(tb) else (set(tb), set(ta))
+    if shorter < longer:
+        return "near"  # dropped middle name, added double-barrelled surname
+    if SequenceMatcher(None, na, nb).ratio() >= _NEAR_MATCH_THRESHOLD:
+        return "near"
+    return ""
 
 
 def _find_duplicate_shared_contact(
@@ -106,10 +141,8 @@ def _find_duplicate_shared_contact(
 ) -> tuple[Optional[dict], str]:
     """Find a shared contact that is likely the same person as (name, email).
 
-    Returns (contact, kind) where kind is:
-      "exact" — same email, or same name once normalized (never a legitimate duplicate)
-      "near"  — name similarity above threshold, e.g. "Mathias" vs. "Matthias"
-      ""      — no match, contact is None
+    Returns (contact, kind) where kind is "exact", "near" or "" — see _match_kind.
+    An identical email always counts as exact, whatever the names look like.
 
     Comparison happens in Python rather than SQL because normalization (name order,
     punctuation, umlauts) cannot be expressed in SQLite's LOWER(). The shared-contact
@@ -130,22 +163,24 @@ def _find_duplicate_shared_contact(
     with db_connection() as conn:
         rows = [dict(r) for r in conn.execute(sql, params).fetchall()]
 
-    key = _name_key(name)
     email_lower = email.strip().lower()
-    near: Optional[dict] = None
+    best_near: Optional[dict] = None
+    best_ratio = -1.0
 
     for row in rows:
         if email_lower and (row["email"] or "").strip().lower() == email_lower:
             return row, "exact"
-        row_key = _name_key(row["name"])
-        if not key or not row_key:
-            continue
-        if row_key == key:
-            return row, "exact"
-        if near is None and SequenceMatcher(None, key, row_key).ratio() >= _NEAR_MATCH_THRESHOLD:
-            near = row  # keep scanning — an exact match anywhere still wins
+        kind = _match_kind(name, row["name"])
+        if kind == "exact":
+            return row, "exact"  # an exact match anywhere wins over any near match
+        if kind == "near":
+            # Report the closest near match, not whichever row SQLite happened to return
+            # first — the error names a specific contact, so it should name the likeliest.
+            ratio = SequenceMatcher(None, _normalize_name(name), _normalize_name(row["name"])).ratio()
+            if ratio > best_ratio:
+                best_near, best_ratio = row, ratio
 
-    return (near, "near") if near else (None, "")
+    return (best_near, "near") if best_near else (None, "")
 
 
 def _duplicate_message(existing: dict, kind: str) -> str:
@@ -160,7 +195,8 @@ def _duplicate_message(existing: dict, kind: str) -> str:
         f"A shared contact with a very similar name already exists: "
         f"'{existing['name']}' {where}. "
         f"If this is the same person, update that contact instead of creating a new one. "
-        f"If it is genuinely a different person, pass force=True."
+        f"Do not retry with force=True unless the user has explicitly confirmed that this "
+        f"is a different person."
     )
 
 
@@ -174,6 +210,7 @@ def add_contact(
     company: str = "",
     notes: str = "",
     is_shared: bool = False,
+    *,
     force: bool = False,
 ) -> dict:
     """Add a contact to a project.
@@ -186,6 +223,11 @@ def add_contact(
     if is_shared and contact_type == "external":
         raise ValueError("External contacts cannot be shared across projects.")
     existing, kind = _find_duplicate_shared_contact(name, email)
+    # A near match only blocks a contact that would itself be shared. Project-local
+    # contacts are legitimately scoped to their project, so a heuristic name similarity
+    # against a shared contact is not enough to refuse them.
+    if kind == "near" and not is_shared:
+        existing, kind = None, ""
     if existing and not (force and kind == "near"):
         raise ValueError(_duplicate_message(existing, kind))
     with db_connection() as conn:
@@ -200,12 +242,13 @@ def add_contact(
         return dict(row)
 
 
-def update_contact(contact_id: int, force: bool = False, **fields) -> Optional[dict]:
+def update_contact(contact_id: int, *, force: bool = False, **fields) -> Optional[dict]:
     """Update fields on an existing contact.
 
     Raises ValueError if trying to share an external contact.
     force: allow the update despite a similar-name match against an existing shared
-    contact. Exact matches are never forceable.
+    contact. Exact matches are never forceable. Keyword-only, so a positional second
+    argument stays a TypeError instead of being silently swallowed as a truthy force.
     """
     allowed = {"name", "role", "type", "email", "phone", "company", "notes", "is_shared"}
     updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
@@ -230,6 +273,10 @@ def update_contact(contact_id: int, force: bool = False, **fields) -> Optional[d
         existing, kind = _find_duplicate_shared_contact(
             effective_name, effective_email, exclude_id=contact_id
         )
+        # Mirror add_contact: a near match only blocks a contact that ends up shared.
+        effective_shared = updates.get("is_shared", current_dict.get("is_shared", 0))
+        if kind == "near" and not effective_shared:
+            existing, kind = None, ""
         if existing and not (force and kind == "near"):
             raise ValueError(_duplicate_message(existing, kind))
 

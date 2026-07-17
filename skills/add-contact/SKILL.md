@@ -65,6 +65,26 @@ External contacts are always project-specific and should never be shared.
 
 Use MCP `tool_add_contact(project_id, name, role, contact_type, email, phone, company, notes, is_shared)`.
 
+**Before adding a shared contact, search first:** `tool_search_contacts(query=<lastname>, project_id=0)`.
+Search by surname, not by the exact spelling in front of you — the same person often
+appears as "Jan Kalle Wulf" in one source and "Jan-Kalle Wulf" in another. If they
+already exist as a shared contact, update that contact instead of creating a new one.
+
+#### Duplicate warnings
+
+`tool_add_contact` refuses a contact whose name matches an existing shared contact:
+
+- **"A shared contact with this name or email already exists"** — the names are the same
+  once spelling variants are folded away. Use the existing contact; there is nothing to
+  add. This cannot be forced.
+- **"A shared contact with a very similar name already exists"** — a heuristic match
+  (e.g. `Mathias` / `Matthias`, or a dropped middle name). Usually the same person.
+
+**Important:** Never call with `force=True` without explicit user confirmation. Show the
+user the existing contact the error names and ask whether it is the same person. If they
+confirm it is someone else, retry with `force=True`. Never set `force=True` merely to
+make the error go away.
+
 ### 5. Output
 
 ```

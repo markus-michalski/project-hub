@@ -227,10 +227,12 @@ def tool_add_contact(
     contact_type: internal (own company) | external (merchant, client, partner, vendor)
     is_shared: set True for internal contacts available across all projects (e.g. own-company employees)
     role examples: Onboarding PM, Tech Lead, Account Manager, Legal, Merchant PM, etc.
-    force: only set after a similar-name error confirmed this is a different person.
+    force: bypass a similar-name duplicate warning. Only set this after the user has
+    explicitly confirmed it is a different person — never to silence the error on retry.
     """
     return add_contact(
-        project_id, name, role, contact_type, email, phone, company, notes, is_shared, force
+        project_id, name, role, contact_type, email, phone, company, notes, is_shared,
+        force=force,
     )
 
 
@@ -250,7 +252,8 @@ def tool_update_contact(
     """Update an existing contact. Only provided (non-empty) values are changed.
 
     is_shared: True = make contact globally available; False = make project-specific again.
-    force: only set after a similar-name error confirmed this is a different person.
+    force: bypass a similar-name duplicate warning. Only set this after the user has
+    explicitly confirmed it is a different person — never to silence the error on retry.
     """
     fields: dict[str, str | int] = {k: v for k, v in {
         "name": name, "role": role, "type": contact_type,
