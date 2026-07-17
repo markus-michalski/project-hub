@@ -220,14 +220,20 @@ def tool_add_contact(
     company: str = "",
     notes: str = "",
     is_shared: bool = False,
+    force: bool = False,
 ) -> dict:
     """Add a contact to a project.
 
     contact_type: internal (own company) | external (merchant, client, partner, vendor)
     is_shared: set True for internal contacts available across all projects (e.g. own-company employees)
     role examples: Onboarding PM, Tech Lead, Account Manager, Legal, Merchant PM, etc.
+    force: bypass a similar-name duplicate warning. Only set this after the user has
+    explicitly confirmed it is a different person — never to silence the error on retry.
     """
-    return add_contact(project_id, name, role, contact_type, email, phone, company, notes, is_shared)
+    return add_contact(
+        project_id, name, role, contact_type, email, phone, company, notes, is_shared,
+        force=force,
+    )
 
 
 @mcp.tool()
@@ -241,10 +247,13 @@ def tool_update_contact(
     company: str = "",
     notes: str = "",
     is_shared: bool | None = None,
+    force: bool = False,
 ) -> dict | None:
     """Update an existing contact. Only provided (non-empty) values are changed.
 
     is_shared: True = make contact globally available; False = make project-specific again.
+    force: bypass a similar-name duplicate warning. Only set this after the user has
+    explicitly confirmed it is a different person — never to silence the error on retry.
     """
     fields: dict[str, str | int] = {k: v for k, v in {
         "name": name, "role": role, "type": contact_type,
@@ -252,7 +261,7 @@ def tool_update_contact(
     }.items() if v}
     if is_shared is not None:
         fields["is_shared"] = int(is_shared)
-    return update_contact(contact_id, **fields)
+    return update_contact(contact_id, force=force, **fields)
 
 
 @mcp.tool()

@@ -1,6 +1,15 @@
 """Tests for contact CRUD operations."""
 import pytest
-from tools.contacts import add_contact, delete_contact, list_contacts, list_shared_contacts, update_contact
+from tools.contacts import (
+    _find_duplicate_shared_contact,
+    _match_kind,
+    _normalize_name,
+    add_contact,
+    delete_contact,
+    list_contacts,
+    list_shared_contacts,
+    update_contact,
+)
 from tools.projects import create_project
 from tools.search import search_contacts
 
@@ -312,3 +321,267 @@ def test_rename_contact_to_shared_name_raises(tmp_path, monkeypatch):
 
     with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
         update_contact(local["id"], name="Shared Alice")
+
+
+# ---------------------------------------------------------------------------
+# Name normalization
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "variant",
+    [
+        "Jan-Kalle Wulf",       # hyphen instead of space
+        "jan kalle wulf",       # casing
+        "Wulf, Jan Kalle",      # Teams "Lastname, Firstname" format
+        "Jan  Kalle   Wulf",    # collapsed whitespace
+        "Jan Kalle Wulf ",      # trailing whitespace
+    ],
+)
+def test_name_variants_fold_to_same_normalized_name(variant):
+    assert _normalize_name(variant) == _normalize_name("Jan Kalle Wulf")
+
+
+@pytest.mark.parametrize(
+    ("a", "b"),
+    [
+        ("Michaela Müller", "Michaela Mueller"),   # umlaut transliteration
+        ("Jörg Weiß", "Joerg Weiss"),              # umlaut + eszett
+        ("JÖRG WEIẞ", "Joerg Weiss"),              # capital eszett U+1E9E
+        ("José García", "Jose Garcia"),            # accents
+        ("Søren Kirkegård", "Soeren Kirkegaard"),  # slashed o, ring above
+        ("Michał Nowak", "Michal Nowak"),          # stroked l, no NFKD decomposition
+    ],
+)
+def test_normalize_folds_transliterations_and_accents(a, b):
+    assert _normalize_name(a) == _normalize_name(b)
+
+
+def test_normalize_handles_decomposed_unicode():
+    # NFD input ("u" + combining diaeresis) must fold like the precomposed form, not
+    # lose the diaeresis and become "muller"
+    nfd = "Michaela Müller"
+    assert _normalize_name(nfd) == _normalize_name("Michaela Müller")
+    assert _normalize_name(nfd) == "michaela mueller"
+
+
+@pytest.mark.parametrize("name", ["Иван Петров", "王伟", "محمد علي"])
+def test_normalize_keeps_non_latin_scripts(name):
+    # Stripping to [a-z0-9] would empty these out and silently disable dedup for them
+    assert _normalize_name(name) != ""
+
+
+def test_non_latin_duplicates_are_still_detected():
+    assert _match_kind("Иван Петров", "Иван Петров") == "exact"
+
+
+def test_normalize_keeps_different_people_apart():
+    assert _normalize_name("Markus Ruppel") != _normalize_name("Marius Westhaus")
+
+
+# ---------------------------------------------------------------------------
+# Match classification
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    ("a", "b"),
+    [
+        ("Jan Kalle Wulf", "Jan-Kalle Wulf"),
+        ("Jan Kalle Wulf", "Wulf, Jan Kalle"),
+        ("Michaela Ablinger", "Ablinger, Michaela"),
+    ],
+)
+def test_match_kind_exact(a, b):
+    assert _match_kind(a, b) == "exact"
+
+
+@pytest.mark.parametrize(
+    ("a", "b", "why"),
+    [
+        ("Thomas Michael", "Michael Thomas", "token permutation"),
+        ("Jan Kalle Wulf", "Jan Wulf", "dropped middle name"),
+        ("Anna Schmidt", "Anna Schmidt-Meyer", "double-barrelled surname"),
+        ("Mathias Quetz", "Matthias Quetz", "spelling variant"),
+        ("Ben Zimmermann", "Sven Zimmermann", "high similarity, distinct people"),
+    ],
+)
+def test_match_kind_near(a, b, why):
+    assert _match_kind(a, b) == "near", why
+
+
+def test_match_kind_unrelated():
+    assert _match_kind("Markus Ruppel", "Marius Westhaus") == ""
+
+
+def test_token_permutation_is_near_not_exact():
+    # Regression: sorting tokens for the exact comparison made "Thomas Michael" and
+    # "Michael Thomas" collide as exact, which force cannot override — leaving no way
+    # to add the second person at all.
+    assert _match_kind("Thomas Michael", "Michael Thomas") == "near"
+
+
+def test_permuted_distinct_person_can_be_added_with_force(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Permute A")
+    p2 = create_project("Permute B")
+
+    add_contact(p1["id"], name="Thomas Michael", is_shared=True)
+    c = add_contact(p2["id"], name="Michael Thomas", is_shared=True, force=True)
+    assert c["name"] == "Michael Thomas"
+
+
+def test_dropped_middle_name_is_detected(tmp_path, monkeypatch):
+    # "Jan Kalle Wulf" vs "Jan Wulf" scores 0.727 — below threshold, so plain similarity
+    # would miss it. Dropping a middle name is as common as hyphenating one.
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Subset A")
+    p2 = create_project("Subset B")
+
+    add_contact(p1["id"], name="Jan Kalle Wulf", is_shared=True)
+    with pytest.raises(ValueError, match="very similar name already exists"):
+        add_contact(p2["id"], name="Jan Wulf", is_shared=True)
+
+
+def test_add_shared_duplicate_hyphen_variant_raises(tmp_path, monkeypatch):
+    # The case that produced a real duplicate: SOP spells the name without a hyphen,
+    # Teams spells it with one.
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Hyphen Dup A")
+    p2 = create_project("Hyphen Dup B")
+
+    add_contact(p1["id"], name="Jan Kalle Wulf", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Jan-Kalle Wulf", is_shared=True)
+
+
+def test_add_shared_duplicate_lastname_first_raises(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Order Dup A")
+    p2 = create_project("Order Dup B")
+
+    add_contact(p1["id"], name="Michaela Ablinger", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Ablinger, Michaela", is_shared=True)
+
+
+# ---------------------------------------------------------------------------
+# Near-match detection and force override
+# ---------------------------------------------------------------------------
+
+def test_add_shared_near_duplicate_raises(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Near Dup A")
+    p2 = create_project("Near Dup B")
+
+    add_contact(p1["id"], name="Mathias Quetz", is_shared=True)
+
+    with pytest.raises(ValueError, match="very similar name already exists"):
+        add_contact(p2["id"], name="Matthias Quetz", is_shared=True)
+
+
+def test_add_shared_near_duplicate_force_allows(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Force Dup A")
+    p2 = create_project("Force Dup B")
+
+    add_contact(p1["id"], name="Mathias Quetz", is_shared=True)
+    c = add_contact(p2["id"], name="Matthias Quetz", is_shared=True, force=True)
+
+    assert c["name"] == "Matthias Quetz"
+
+
+def test_force_does_not_override_exact_duplicate(tmp_path, monkeypatch):
+    # force is an escape hatch for false positives, not a way to create real duplicates
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Force Exact A")
+    p2 = create_project("Force Exact B")
+
+    add_contact(p1["id"], name="Jan Kalle Wulf", is_shared=True)
+
+    with pytest.raises(ValueError, match="shared contact with this name or email already exists"):
+        add_contact(p2["id"], name="Jan-Kalle Wulf", is_shared=True, force=True)
+
+
+def test_exact_match_wins_over_near_match(tmp_path, monkeypatch):
+    # An exact match must be reported even when a near match is scanned first
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p = create_project("Precedence Host")
+
+    add_contact(p["id"], name="Mathias Quetz", is_shared=True)
+    add_contact(p["id"], name="Matthias Quetz", is_shared=True, force=True)
+
+    existing, kind = _find_duplicate_shared_contact("Matthias Quetz")
+    assert kind == "exact"
+    assert existing["name"] == "Matthias Quetz"
+
+
+def test_near_match_reports_closest_candidate(tmp_path, monkeypatch):
+    # With several near matches, the error must name the likeliest one, not whichever
+    # row SQLite returned first
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p = create_project("Closest Host")
+
+    add_contact(p["id"], name="Ben Zimmermann", is_shared=True)
+    add_contact(p["id"], name="Sven Zimmermann", is_shared=True, force=True)
+
+    existing, kind = _find_duplicate_shared_contact("Sven Zimmermanns")
+    assert kind == "near"
+    assert existing["name"] == "Sven Zimmermann"
+
+
+def test_update_near_duplicate_force_allows(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Update Force A")
+    p2 = create_project("Update Force B")
+
+    add_contact(p1["id"], name="Mathias Quetz", is_shared=True)
+    local = add_contact(p2["id"], name="Local Person", is_shared=False)
+
+    updated = update_contact(local["id"], name="Matthias Quetz", is_shared=True, force=True)
+    assert updated["name"] == "Matthias Quetz"
+
+
+def test_update_contact_rejects_positional_second_arg(project):
+    # force is keyword-only: a positional dict must stay a TypeError instead of being
+    # silently swallowed as a truthy force, leaving the update a no-op
+    c = add_contact(project["id"], name="Positional Guard")
+    with pytest.raises(TypeError):
+        update_contact(c["id"], {"name": "Ignored"})  # type: ignore[arg-type]
+
+
+def test_unrelated_names_are_not_near_matches(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Unrelated A")
+    p2 = create_project("Unrelated B")
+
+    add_contact(p1["id"], name="Markus Ruppel", is_shared=True)
+    c = add_contact(p2["id"], name="Marius Westhaus", is_shared=True)
+
+    assert c["name"] == "Marius Westhaus"
+
+
+def test_non_shared_contacts_are_not_dedup_targets(tmp_path, monkeypatch):
+    # Only shared contacts are deduplicated; project-local contacts stay independent
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Local Dup A")
+    p2 = create_project("Local Dup B")
+
+    add_contact(p1["id"], name="Same Name", is_shared=False)
+    c = add_contact(p2["id"], name="Same Name", is_shared=False)
+
+    assert c["name"] == "Same Name"
+
+
+def test_local_add_is_not_blocked_by_near_match_against_shared(tmp_path, monkeypatch):
+    # A heuristic name similarity must not refuse a legitimately project-scoped contact.
+    # An exact match still blocks — see test_add_non_shared_contact_with_shared_name_blocked.
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    p1 = create_project("Local Near A")
+    p2 = create_project("Local Near B")
+
+    add_contact(p1["id"], name="Mathias Quetz", is_shared=True)
+    c = add_contact(p2["id"], name="Matthias Quetz", is_shared=False)
+
+    assert c["name"] == "Matthias Quetz"
+    assert c["is_shared"] == 0

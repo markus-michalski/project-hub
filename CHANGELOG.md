@@ -8,10 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Nothing yet
+- `force` parameter (keyword-only) on `tool_add_contact` / `tool_update_contact` to
+  override a similar-name match when it is genuinely a different person. Exact matches
+  remain non-forceable. `add-contact` SKILL.md documents that `force=True` requires
+  explicit user confirmation.
 
 ### Changed
-- Nothing yet
+- Duplicate shared-contact detection now normalizes names before comparing:
+  case, `Lastname, Firstname` order, hyphens, punctuation, umlaut and Nordic
+  transliteration (`ü`/`ue`, `ø`/`oe`, `ß`/`ss` incl. capital `ẞ`) and accents.
+  Non-Latin scripts are preserved instead of folding to an empty key.
+- Near-matches are reported alongside exact ones: token permutations
+  (`Thomas Michael` / `Michael Thomas`), name subsets (`Jan Wulf` / `Jan Kalle Wulf`)
+  and high similarity (`Mathias` / `Matthias`). Near-matches only block a contact that
+  would itself be shared — project-local contacts are no longer refused by them.
 
 ### Deprecated
 - Nothing yet
@@ -20,7 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Fixed
-- Nothing yet
+- Duplicate shared contacts could be created when the same person was entered with a
+  different spelling, because the check compared names with exact string equality.
+  `Jan-Kalle Wulf` did not match the existing `Jan Kalle Wulf`.
 
 ### Security
 - Nothing yet
