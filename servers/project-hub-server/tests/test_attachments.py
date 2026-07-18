@@ -88,6 +88,51 @@ def test_attach_file_multiple_files(project, note, tmp_path):
     assert names == {"doc1.txt", "doc2.txt"}
 
 
+def test_attach_file_same_basename_different_sources_does_not_collide(project, note, tmp_path):
+    # Two different physical files sharing a basename (e.g. "invoice.pdf" from
+    # Downloads/ and Desktop/) must not silently overwrite each other on disk
+    # while the DB ends up with two entries pointing at the same, now-wrong file.
+    dir_a = tmp_path / "a"
+    dir_b = tmp_path / "b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+    f1 = dir_a / "invoice.pdf"
+    f2 = dir_b / "invoice.pdf"
+    f1.write_text("first invoice")
+    f2.write_text("second invoice")
+
+    result1 = attach_file(note["id"], str(f1), home_override=_HOME)
+    result2 = attach_file(note["id"], str(f2), home_override=_HOME)
+
+    assert result1["path"] != result2["path"]
+    assert result1["name"] != result2["name"]
+    assert Path(result1["path"]).read_text() == "first invoice"
+    assert Path(result2["path"]).read_text() == "second invoice"
+
+    attachments = list_attachments(note["id"])
+    assert len(attachments) == 2
+    assert {a["name"] for a in attachments} == {result1["name"], result2["name"]}
+
+
+def test_attach_file_same_basename_disambiguates_with_counter(project, note, tmp_path):
+    dir_a = tmp_path / "a"
+    dir_b = tmp_path / "b"
+    dir_c = tmp_path / "c"
+    dir_a.mkdir()
+    dir_b.mkdir()
+    dir_c.mkdir()
+    for d, content in [(dir_a, "one"), (dir_b, "two"), (dir_c, "three")]:
+        (d / "same.txt").write_text(content)
+
+    r1 = attach_file(note["id"], str(dir_a / "same.txt"), home_override=_HOME)
+    r2 = attach_file(note["id"], str(dir_b / "same.txt"), home_override=_HOME)
+    r3 = attach_file(note["id"], str(dir_c / "same.txt"), home_override=_HOME)
+
+    assert r1["name"] == "same.txt"
+    assert r2["name"] == "same-2.txt"
+    assert r3["name"] == "same-3.txt"
+
+
 def test_attach_file_note_not_found(tmp_path):
     f = tmp_path / "x.txt"
     f.write_text("x")
@@ -160,6 +205,27 @@ def test_remove_attachment_updates_db(project, note, sample_file):
     updated = get_note(note["id"])
     attachments = json.loads(updated["attachments"])
     assert attachments == []
+
+
+def test_remove_attachment_removes_only_the_matching_disambiguated_entry(project, note, tmp_path):
+    dir_a = tmp_path / "a"
+    dir_b = tmp_path / "b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+    (dir_a / "same.txt").write_text("first")
+    (dir_b / "same.txt").write_text("second")
+
+    r1 = attach_file(note["id"], str(dir_a / "same.txt"), home_override=_HOME)
+    r2 = attach_file(note["id"], str(dir_b / "same.txt"), home_override=_HOME)
+
+    remove_attachment(note["id"], r1["name"])
+
+    assert not Path(r1["path"]).exists()
+    assert Path(r2["path"]).exists()
+    assert Path(r2["path"]).read_text() == "second"
+    remaining = list_attachments(note["id"])
+    assert len(remaining) == 1
+    assert remaining[0]["name"] == r2["name"]
 
 
 def test_remove_attachment_deletes_markdown_sibling(project, note, tmp_path):
@@ -248,6 +314,40 @@ def test_attach_file_survives_broken_markitdown_constructor(project, note, tmp_p
 
 
 # --- _convert_to_markdown_sibling ---
+
+def test_markdown_sibling_never_overwrites_existing_file(tmp_path):
+    # Regression: a sibling write must not clobber a file that already occupies
+    # its exact target name — e.g. a real attachment literally named "notes.md"
+    # that was attached before some other attachment named "notes" whose
+    # generated sibling would otherwise land on the exact same path.
+    dest_dir = tmp_path / "attachments"
+    dest_dir.mkdir()
+    existing_md = dest_dir / "notes.md"
+    existing_md.write_text("pre-existing real attachment, do not touch")
+
+    dest = dest_dir / "notes"
+    dest.write_text("some other convertible content")
+
+    _convert_to_markdown_sibling(dest)
+
+    assert existing_md.read_text() == "pre-existing real attachment, do not touch"
+
+
+def test_attach_file_does_not_overwrite_attachment_via_sibling_collision(project, note, tmp_path):
+    # End-to-end version: attach a real "notes.md" file first, then attach an
+    # unrelated file named "notes" whose markdown sibling would collide with it.
+    md_source = tmp_path / "notes.md"
+    md_source.write_text("original markdown attachment")
+    plain_source = tmp_path / "notes"
+    plain_source.write_text("unrelated convertible content")
+
+    attach_file(note["id"], str(md_source), home_override=_HOME)
+    attach_file(note["id"], str(plain_source), home_override=_HOME)
+
+    attachments = list_attachments(note["id"])
+    md_attachment = next(a for a in attachments if a["name"] == "notes.md")
+    assert Path(md_attachment["path"]).read_text() == "original markdown attachment"
+
 
 def test_markdown_sibling_created_for_convertible_file(tmp_path):
     source = tmp_path / "notiz.txt"

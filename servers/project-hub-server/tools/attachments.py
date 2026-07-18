@@ -58,9 +58,15 @@ def _convert_to_markdown_sibling(dest: Path) -> None:
     """Best-effort: write `dest.name + '.md'` next to a copied attachment.
 
     Never raises — conversion failures only warn to stderr and must never abort
-    the attachment copy itself.
+    the attachment copy itself. Never overwrites an existing file at the sibling
+    path either: that path could already be occupied by an unrelated attachment
+    (e.g. a real file literally named "notes.md"), so a collision just means no
+    sibling gets written this time, rather than silently destroying user data.
     """
     if dest.suffix.lower() in _MARKDOWN_SKIP_EXTENSIONS:
+        return
+    sibling = dest.with_name(dest.name + ".md")
+    if sibling.exists():
         return
     markitdown = _get_markitdown()
     if markitdown is None:
@@ -69,7 +75,7 @@ def _convert_to_markdown_sibling(dest: Path) -> None:
         result = markitdown.convert(str(dest))
         markdown = result.markdown.strip()
         if markdown:
-            dest.with_name(dest.name + ".md").write_text(markdown, encoding="utf-8")
+            sibling.write_text(markdown, encoding="utf-8")
     except Exception as exc:
         print(
             f"[project-hub] WARNING: Markdown conversion failed for {dest.name}: {exc}",
@@ -82,6 +88,25 @@ def _get_attachments_dir(note: dict) -> Path:
     if not project or not project.get("docs_path"):
         raise ValueError(f"Project for note {note['id']} has no docs_path")
     return Path(project["docs_path"]) / "attachments"
+
+
+def _copy_with_disambiguation(source: Path, dest_dir: Path, dest_name: str) -> Path:
+    """Copy `source` into `dest_dir` as `dest_name`, never silently overwriting an
+    existing file that happens to share that name — disambiguates with a counter
+    suffix instead (`invoice-2.pdf`, `invoice-3.pdf`, ...). Returns the actual
+    destination path used.
+    """
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    name_path = Path(dest_name)
+    stem, suffix = name_path.stem, name_path.suffix
+    dest = dest_dir / dest_name
+    counter = 2
+    while dest.exists():
+        dest = dest_dir / f"{stem}-{counter}{suffix}"
+        counter += 1
+    shutil.copy2(source, dest)
+    _convert_to_markdown_sibling(dest)
+    return dest
 
 
 def attach_file(
@@ -120,12 +145,9 @@ def attach_file(
         )
 
     dest_dir = _get_attachments_dir(note)
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    dest = dest_dir / source.name
-    shutil.copy2(source, dest)
-    _convert_to_markdown_sibling(dest)
+    dest = _copy_with_disambiguation(source, dest_dir, source.name)
 
-    attachment = {"name": source.name, "path": str(dest), "size": size}
+    attachment = {"name": dest.name, "path": str(dest), "size": size}
 
     current = json.loads(note["attachments"])
     current.append(attachment)
