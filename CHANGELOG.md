@@ -45,6 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Duplicate shared contacts could be created when the same person was entered with a
   different spelling, because the check compared names with exact string equality.
   `Jan-Kalle Wulf` did not match the existing `Jan Kalle Wulf`.
+- `tool_attach_file` no longer silently overwrites an attachment when a second,
+  different source file shares the same basename as an existing one (e.g. two
+  `invoice.pdf` files from different folders) — the copy is now disambiguated with
+  a counter suffix instead. The generated `.md` text sibling also no longer
+  overwrites an unrelated file that happens to already occupy its target name.
 
 ### Security
 - Nothing yet
