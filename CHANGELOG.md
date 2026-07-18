@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   override a similar-name match when it is genuinely a different person. Exact matches
   remain non-forceable. `add-contact` SKILL.md documents that `force=True` requires
   explicit user confirmation.
+- Note attachments now generate a best-effort `<name>.md` sibling (via MarkItDown) so
+  the text content of PDFs/DOCX/XLSX etc. is available without re-parsing the binary.
+  Images are skipped. Adds `markitdown[pdf,docx,xlsx,xls]` as a dependency (~215 MB
+  transitive install, mostly pandas/numpy/onnxruntime) — existing installs need to
+  re-run `/project-hub:setup` to pick it up; the feature silently no-ops until then.
 
 ### Changed
 - Duplicate shared-contact detection now normalizes names before comparing:
