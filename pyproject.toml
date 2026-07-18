@@ -15,3 +15,11 @@ select = ["E", "F", "I"]
 [tool.mypy]
 python_version = "3.11"
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# markitdown pulls in pandas -> numpy, whose bundled stub uses Python 3.12+ `type`
+# statement syntax — a hard parse error under this project's 3.11 target. We only
+# ever call markitdown at runtime (see tools/attachments.py._get_markitdown), so
+# skip following it entirely rather than resolving its transitive type stubs.
+module = ["markitdown.*", "pandas.*", "numpy.*"]
+follow_imports = "skip"

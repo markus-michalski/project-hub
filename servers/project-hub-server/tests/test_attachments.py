@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import sys
 import tempfile
 from pathlib import Path
 
 import pytest
-from tools.attachments import attach_file, list_attachments, remove_attachment
+from tools import attachments as attachments_module
+from tools.attachments import _convert_to_markdown_sibling, attach_file, list_attachments, remove_attachment
 from tools.notes import add_note, get_note
 from tools.projects import create_project
 
@@ -160,6 +162,26 @@ def test_remove_attachment_updates_db(project, note, sample_file):
     assert attachments == []
 
 
+def test_remove_attachment_deletes_markdown_sibling(project, note, tmp_path):
+    f = tmp_path / "report.txt"
+    f.write_text("important content")
+    info = attach_file(note["id"], str(f), home_override=_HOME)
+    sibling = Path(info["path"]).with_name("report.txt.md")
+    assert sibling.exists()
+
+    remove_attachment(note["id"], "report.txt")
+
+    assert not sibling.exists()
+
+
+def test_remove_attachment_no_sibling_present_does_not_raise(project, note, sample_file):
+    # sample_file's fake "PDF" content produces no markdown sibling (not real PDF
+    # bytes) — removal must still succeed without erroring on a missing sibling.
+    attach_file(note["id"], str(sample_file), home_override=_HOME)
+
+    remove_attachment(note["id"], "report.pdf")  # must not raise
+
+
 def test_remove_attachment_not_found_raises(project, note):
     with pytest.raises(ValueError, match="[Nn]ot found"):
         remove_attachment(note["id"], "missing.pdf")
@@ -176,3 +198,132 @@ def test_get_note_includes_attachments_field(note):
     result = get_note(note["id"])
     assert "attachments" in result
     assert result["attachments"] == "[]"
+
+
+# --- _get_markitdown ---
+
+def test_get_markitdown_swallows_non_import_error(monkeypatch):
+    # Regression: a broken native dependency (e.g. onnxruntime failing to load
+    # its platform binary) raises OSError/RuntimeError from MarkItDown(), not
+    # ImportError — _get_markitdown() must swallow that too, not just ImportError,
+    # or attach_file() crashes after the file is already copied but before the
+    # DB write, leaving an orphaned attachment with no DB reference.
+    monkeypatch.setattr(attachments_module, "_markitdown", None)
+    monkeypatch.setattr(attachments_module, "_markitdown_load_attempted", False)
+
+    class _BrokenMarkItDown:
+        def __init__(self):
+            raise OSError("simulated broken onnxruntime native lib")
+
+    fake_module = type(sys)("markitdown")
+    fake_module.MarkItDown = _BrokenMarkItDown
+    monkeypatch.setitem(sys.modules, "markitdown", fake_module)
+
+    result = attachments_module._get_markitdown()
+
+    assert result is None
+
+
+def test_attach_file_survives_broken_markitdown_constructor(project, note, tmp_path, monkeypatch):
+    # End-to-end version of the above: attach_file must still succeed (file copied,
+    # DB updated) even if the markitdown backend is broken at instantiation time.
+    monkeypatch.setattr(attachments_module, "_markitdown", None)
+    monkeypatch.setattr(attachments_module, "_markitdown_load_attempted", False)
+
+    class _BrokenMarkItDown:
+        def __init__(self):
+            raise OSError("simulated broken onnxruntime native lib")
+
+    fake_module = type(sys)("markitdown")
+    fake_module.MarkItDown = _BrokenMarkItDown
+    monkeypatch.setitem(sys.modules, "markitdown", fake_module)
+
+    f = tmp_path / "report.txt"
+    f.write_text("important content")
+
+    result = attach_file(note["id"], str(f), home_override=_HOME)
+
+    assert Path(result["path"]).exists()
+    assert list_attachments(note["id"]) == [result]
+
+
+# --- _convert_to_markdown_sibling ---
+
+def test_markdown_sibling_created_for_convertible_file(tmp_path):
+    source = tmp_path / "notiz.txt"
+    source.write_text("Hallo Welt")
+    dest = tmp_path / "attachments" / "notiz.txt"
+    dest.parent.mkdir()
+    import shutil
+    shutil.copy2(source, dest)
+
+    _convert_to_markdown_sibling(dest)
+
+    sibling = dest.with_name("notiz.txt.md")
+    assert sibling.exists()
+    assert sibling.read_text().strip() == "Hallo Welt"
+
+
+def test_markdown_sibling_skipped_for_images(tmp_path):
+    dest = tmp_path / "foto.png"
+    dest.write_bytes(b"\x89PNG\r\n\x1a\nnot a real png")
+
+    _convert_to_markdown_sibling(dest)
+
+    assert not dest.with_name("foto.png.md").exists()
+
+
+def test_markdown_sibling_skipped_for_already_markdown_file(tmp_path):
+    dest = tmp_path / "bereits.md"
+    dest.write_text("# Schon Markdown")
+
+    _convert_to_markdown_sibling(dest)
+
+    assert not dest.with_name("bereits.md.md").exists()
+
+
+def test_markdown_conversion_failure_does_not_abort_copy(tmp_path, monkeypatch):
+    # Regression: _convert_to_markdown_sibling promises "never raises" — a broken
+    # markitdown install or a conversion error must not abort the attachment copy.
+    def _boom(_path):
+        raise RuntimeError("simulated conversion failure")
+
+    monkeypatch.setattr(attachments_module, "_markitdown", type("M", (), {"convert": staticmethod(_boom)})())
+
+    dest = tmp_path / "doc.pdf"
+    dest.write_text("not really a pdf")
+
+    _convert_to_markdown_sibling(dest)
+
+    assert dest.exists()
+    assert not dest.with_name("doc.pdf.md").exists()
+
+
+def test_markdown_sibling_skipped_for_empty_conversion_result(tmp_path, monkeypatch):
+    class _EmptyResult:
+        markdown = "   \n  "
+
+    monkeypatch.setattr(
+        attachments_module, "_markitdown",
+        type("M", (), {"convert": staticmethod(lambda _p: _EmptyResult())})(),
+    )
+
+    dest = tmp_path / "leer.pdf"
+    dest.write_text("irrelevant")
+
+    _convert_to_markdown_sibling(dest)
+
+    assert not dest.with_name("leer.pdf.md").exists()
+
+
+def test_attach_file_creates_markdown_sibling(project, note, tmp_path):
+    f = tmp_path / "report.txt"
+    f.write_text("important content")
+
+    attach_file(note["id"], str(f), home_override=_HOME)
+
+    attachments = list_attachments(note["id"])
+    copied_path = Path(attachments[0]["path"])
+    sibling = copied_path.with_name("report.txt.md")
+    assert sibling.exists()
+    assert sibling.read_text().strip() == "important content"
