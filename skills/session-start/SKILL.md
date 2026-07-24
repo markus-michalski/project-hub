@@ -91,7 +91,9 @@ Load all context in parallel:
 - MCP `tool_get_project(identifier)` — full project details
 - MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — all contacts
 - MCP `tool_list_notes(project_id, limit=5)` → iterate `result["items"]` — most recent 5 notes
-- If `project_type` is NOT `generic`: MCP `tool_get_all_knowledge(project_type)` — domain knowledge
+- If the project's `type` field (from step 1's `tool_get_project` result) is NOT `generic`: MCP
+  `tool_get_all_knowledge(project_type=<that type value>)` — domain knowledge (note: there is no
+  `project_type` key on the project object itself; `project_type` is only the tool's parameter name)
 
 ### 5. Set Session
 

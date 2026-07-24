@@ -23,18 +23,28 @@ Load a project and restore its full context for the current session.
 ### 1. Find Project
 
 If argument provided: Use MCP `tool_get_project(identifier)`.
-If no argument: Use MCP `tool_list_projects()` → iterate `result["items"]` and show numbered list, ask user to choose.
+If no argument: Use MCP `tool_list_projects()` → iterate `result["items"]` and show numbered list, ask
+user to choose, then use their chosen item directly — `tool_list_projects` rows already contain the
+full project record (`id`, `type`, description, etc.), same as `tool_get_project`.
 
 If no projects exist → suggest `/new-project`.
 
 ### 2. Load Context
 
-Load all relevant context in parallel:
-- MCP `tool_get_project_by_id(project_id)` — full project details
-- MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — project-specific contacts
+The project object from step 1 already has everything needed (`id`, `type`, description, ...) — do
+NOT re-fetch it via `tool_get_project_by_id`. Load the rest in parallel:
+- MCP `tool_list_contacts(project_id)` → iterate `result["items"]`; if `result["total"] > 50`, note
+  that older entries exist and suggest `/search`. Exclude items with `is_shared == 1` (those are shown
+  only under "Geteilte Kontakte" below, not here); split the remainder by `type` — `external` →
+  "Externe Kontakte", everything else (including the DB default `internal`) → "Interne Kontakte", so
+  an unexpected `type` value never silently drops a contact
 - MCP `tool_list_shared_contacts()` → iterate `result["items"]` — shared/global contacts available across all projects
 - MCP `tool_list_notes(project_id)` → iterate `result["items"]` — all notes (default limit=50); if `result["total"] > 50`, note that older entries exist and suggest `/search` for deep history
-- If `project_type` is NOT `generic`: MCP `tool_list_knowledge(project_type)` — check for knowledge files
+- If `type` is NOT `generic`: MCP `tool_get_all_knowledge(project_type=<that type value>)` — loads
+  the full content of every knowledge file for that type in one call
+
+Note: the project object's field is called `type` — there is no `project_type` key on it.
+`project_type` is only the *parameter name* the knowledge tools expect; pass the `type` value there.
 
 ### 3. Set Session
 
@@ -71,7 +81,7 @@ Present the full project context clearly:
 ### Docs-Ordner
 [docs_path]
 
-### Knowledge Base  ← only if project_type != generic AND knowledge files exist
+### Knowledge Base  ← only if `type` != generic AND knowledge files exist
 [List: topic — title]
 
 ---
@@ -80,9 +90,10 @@ Was soll ich tun?
 
 ## Knowledge Auto-Load
 
-If knowledge files are found for the project type:
+If `tool_get_all_knowledge` returned any items for the project type:
 
-1. Load them silently (do NOT dump full content into the output)
+1. Each returned item already includes the file's full `content` — it's loaded in the same call, no
+   separate Read needed. Keep this silent (do NOT dump the raw content into the visible output).
 2. Mention them briefly in the output: `Knowledge geladen: governance, process, roles`
 3. Use this knowledge to inform your responses during the session:
    - When answering questions about process steps, reference the process SOP
