@@ -386,3 +386,46 @@ def test_delete_project_last_project_still_deletes_its_shared_contacts(tmp_path,
     assert not any(
         c["name"] == "Last Shared Person" for c in list_shared_contacts()["items"]
     )
+
+
+def test_create_project_duplicate_name_returns_structured_error(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    create_project("Dup Project")
+    result = create_project("Dup Project")
+
+    assert result == {
+        "error": "A project with slug 'dup-project' already exists (existing project: 'Dup Project')"
+    }
+
+
+def test_create_project_duplicate_slug_different_name_reports_existing_name(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    create_project("Acme GmbH")
+    result = create_project("Acme  GmbH!")  # slugifies to the same "acme-gmbh"
+
+    assert result == {
+        "error": "A project with slug 'acme-gmbh' already exists (existing project: 'Acme GmbH')"
+    }
+
+
+def test_create_project_duplicate_name_case_insensitive_slug(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    create_project("Dup Project")
+    result = create_project("dup project")
+
+    assert "error" in result
+
+
+def test_create_project_after_duplicate_error_connection_still_usable(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    create_project("Dup Project")
+    error = create_project("Dup Project")
+    assert "error" in error
+
+    other = create_project("Other Project")
+    assert other["name"] == "Other Project"
+    assert list_projects()["total"] == 2

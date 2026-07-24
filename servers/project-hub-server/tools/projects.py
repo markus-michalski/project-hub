@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import sqlite3
 from pathlib import Path
 from typing import Optional
 
@@ -99,13 +100,20 @@ def create_project(
     docs_path = _ensure_docs_path(slug)
 
     with db_connection() as conn:
-        with conn:
-            conn.execute(
-                """INSERT INTO projects
-                   (slug, name, type, description, market, products, phase, go_live, budget, notes, docs_path)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (slug, name, project_type, description, market, products, phase, go_live, budget, notes, docs_path),
-            )
+        try:
+            with conn:
+                conn.execute(
+                    """INSERT INTO projects
+                       (slug, name, type, description, market, products, phase, go_live, budget, notes, docs_path)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (slug, name, project_type, description, market, products, phase, go_live, budget, notes, docs_path),
+                )
+        except sqlite3.IntegrityError as exc:
+            if exc.sqlite_errorname != "SQLITE_CONSTRAINT_UNIQUE":
+                raise
+            existing = conn.execute("SELECT name FROM projects WHERE slug = ?", (slug,)).fetchone()
+            existing_name = existing["name"] if existing else name
+            return {"error": f"A project with slug '{slug}' already exists (existing project: '{existing_name}')"}
         row = conn.execute("SELECT * FROM projects WHERE slug = ?", (slug,)).fetchone()
         return _row_to_dict(row)
 
