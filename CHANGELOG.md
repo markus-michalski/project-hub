@@ -26,12 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ON DELETE` action, so this previously crashed with an `IntegrityError`),
   and removing the project's docs folder from disk (DB cascade alone left
   note `.md` files and the docs directory orphaned). General-purpose and
-  irreversible — not restricted to `zz-sandbox-` data. **Deleting a project
-  that owns shared contacts (`is_shared=True`) removes those contacts for
-  every other project that surfaces them too** — a materially larger blast
-  radius than the existing `tool_delete_contact`/`tool_delete_note` (which
-  only ever remove one row), even though none of the three have a built-in
-  domain guard.
+  irreversible — not restricted to `zz-sandbox-` data, same trust model as
+  the existing `tool_delete_contact`/`tool_delete_note` (no built-in domain
+  guard). **Shared contacts (`is_shared=True`) are re-parented to another
+  surviving project instead of being deleted** — they are explicitly
+  cross-project, so deleting whichever project happens to own the row must
+  not remove it for every other project surfacing it too. Only cascade-deleted
+  if this is the last remaining project (nothing left to re-parent to).
 - `force` parameter (keyword-only) on `tool_add_contact` / `tool_update_contact` to
   override a similar-name match when it is genuinely a different person. Exact matches
   remain non-forceable. `add-contact` SKILL.md documents that `force=True` requires

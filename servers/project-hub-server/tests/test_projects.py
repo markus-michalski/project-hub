@@ -336,22 +336,53 @@ def test_delete_project_with_empty_docs_path(tmp_path, monkeypatch):
     assert get_project(project["slug"]) is None
 
 
-def test_delete_project_cascades_to_shared_contacts_from_other_projects(tmp_path, monkeypatch):
-    # Documents a real, intentionally-unguarded blast radius (see tool_delete_project's
-    # docstring): a shared contact is a single row owned by exactly one project. Deleting
-    # that owning project removes the shared contact for every other project surfacing it
-    # too, even though those other projects are otherwise untouched.
+def test_delete_project_reparents_shared_contacts_instead_of_deleting_them(tmp_path, monkeypatch):
+    # Shared contacts are explicitly cross-project — deleting whichever project happens
+    # to "own" the row must not destroy it for every other project surfacing it too.
+    # Re-parent to another surviving project before the cascade runs.
     monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
 
     owner = create_project("Shared Contact Owner")
     other = create_project("Unrelated Other Project")
-    add_contact(owner["id"], name="Cross-Project Shared Person", is_shared=True)
+    contact = add_contact(owner["id"], name="Cross-Project Shared Person", is_shared=True)
 
-    assert any(c["name"] == "Cross-Project Shared Person" for c in list_shared_contacts()["items"])
+    delete_project(owner["slug"])
+
+    assert any(
+        c["name"] == "Cross-Project Shared Person" for c in list_shared_contacts()["items"]
+    )
+    survivors = list_contacts(other["id"])["items"]
+    assert any(c["id"] == contact["id"] and c["project_id"] == other["id"] for c in survivors)
+    assert get_project(other["slug"]) is not None
+
+
+def test_delete_project_does_not_reparent_non_shared_contacts(tmp_path, monkeypatch):
+    # Only is_shared contacts get re-parented — project-local contacts are legitimately
+    # scoped to their project and must still be cascade-deleted with it.
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    owner = create_project("Local Contact Owner")
+    create_project("Unrelated Other Project")
+    add_contact(owner["id"], name="Local Only Person", is_shared=False)
 
     delete_project(owner["slug"])
 
     assert not any(
-        c["name"] == "Cross-Project Shared Person" for c in list_shared_contacts()["items"]
+        c["name"] == "Local Only Person" for c in list_shared_contacts()["items"]
     )
-    assert get_project(other["slug"]) is not None
+
+
+def test_delete_project_last_project_still_deletes_its_shared_contacts(tmp_path, monkeypatch):
+    # If the deleted project is the only project left, there is nowhere to re-parent a
+    # shared contact to — sharing is moot with zero other projects, so it is deleted too.
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+
+    only = create_project("Only Project")
+    add_contact(only["id"], name="Last Shared Person", is_shared=True)
+
+    result = delete_project(only["slug"])
+
+    assert result is True
+    assert not any(
+        c["name"] == "Last Shared Person" for c in list_shared_contacts()["items"]
+    )
