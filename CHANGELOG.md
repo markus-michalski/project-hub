@@ -8,50 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `create-testdata` / `reset-testdata` / `delete-testdata` skills implementing
-  skill-rollout's sandbox convention (issue #35 / project-hub#82): disposable
-  `zz-sandbox-`-prefixed test fixtures (one project, one contact, one note) for
-  live-tier rollout testing, created only via project-hub's own real MCP tools.
-  Each skill's first, unconditional step refuses any target that doesn't carry
-  the `zz-sandbox-` prefix. `delete-testdata` is idempotent/no-op-safe on an
-  empty sandbox. `disable-model-invocation: true` on all three — they are
-  machine-invoked test infrastructure, never triggered from conversation.
-- `tool_delete_project` MCP tool — the project table had no delete path before
-  (`tool_create_project`/`tool_update_project` only), which blocks the sandbox
-  convention above: `slug` is `UNIQUE`, so a soft-delete would prevent
-  `create-testdata` from ever re-provisioning after `delete-testdata` ran.
-  Deletes by slug/name, cascading to the project's contacts/notes/links via
-  the existing `ON DELETE CASCADE` schema, clearing the active session first
-  if it points at the deleted project (the `session` table's FK has no
-  `ON DELETE` action, so this previously crashed with an `IntegrityError`),
-  and removing the project's docs folder from disk (DB cascade alone left
-  note `.md` files and the docs directory orphaned). General-purpose and
-  irreversible — not restricted to `zz-sandbox-` data, same trust model as
-  the existing `tool_delete_contact`/`tool_delete_note` (no built-in domain
-  guard). **Shared contacts (`is_shared=True`) are re-parented to another
-  surviving project instead of being deleted** — they are explicitly
-  cross-project, so deleting whichever project happens to own the row must
-  not remove it for every other project surfacing it too. Only cascade-deleted
-  if this is the last remaining project (nothing left to re-parent to).
-- `force` parameter (keyword-only) on `tool_add_contact` / `tool_update_contact` to
-  override a similar-name match when it is genuinely a different person. Exact matches
-  remain non-forceable. `add-contact` SKILL.md documents that `force=True` requires
-  explicit user confirmation.
-- Note attachments now generate a best-effort `<name>.md` sibling (via MarkItDown) so
-  the text content of PDFs/DOCX/XLSX etc. is available without re-parsing the binary.
-  Images are skipped. Adds `markitdown[pdf,docx,xlsx,xls]` as a dependency (~215 MB
-  transitive install, mostly pandas/numpy/onnxruntime) — existing installs need to
-  re-run `/project-hub:setup` to pick it up; the feature silently no-ops until then.
+- Nothing yet
 
 ### Changed
-- Duplicate shared-contact detection now normalizes names before comparing:
-  case, `Lastname, Firstname` order, hyphens, punctuation, umlaut and Nordic
-  transliteration (`ü`/`ue`, `ø`/`oe`, `ß`/`ss` incl. capital `ẞ`) and accents.
-  Non-Latin scripts are preserved instead of folding to an empty key.
-- Near-matches are reported alongside exact ones: token permutations
-  (`Thomas Michael` / `Michael Thomas`), name subsets (`Jan Wulf` / `Jan Kalle Wulf`)
-  and high similarity (`Mathias` / `Matthias`). Near-matches only block a contact that
-  would itself be shared — project-local contacts are no longer refused by them.
+- Nothing yet
 
 ### Deprecated
 - Nothing yet
@@ -60,24 +20,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Fixed
-- `tool_add_note` no longer leaves an orphaned database row when writing the note
-  file to disk fails. The note file is now written before the database row is
-  inserted, so a write failure raises before any row is created instead of
-  silently returning a note with `file_path=None` (#75).
-- Note files and the action-items list are written/read as UTF-8 explicitly,
-  fixing a `UnicodeEncodeError` for non-cp1252 characters (arrows, checkmarks,
-  em-dashes, emoji) on Windows with a non-UTF-8 locale (#75).
-- Duplicate shared contacts could be created when the same person was entered with a
-  different spelling, because the check compared names with exact string equality.
-  `Jan-Kalle Wulf` did not match the existing `Jan Kalle Wulf`.
-- `tool_attach_file` no longer silently overwrites an attachment when a second,
-  different source file shares the same basename as an existing one (e.g. two
-  `invoice.pdf` files from different folders) — the copy is now disambiguated with
-  a counter suffix instead. The generated `.md` text sibling also no longer
-  overwrites an unrelated file that happens to already occupy its target name.
+- Nothing yet
 
 ### Security
 - Nothing yet
+
+## [2.5.0] - 2026-07-24
+
+### Added
+- add zz-sandbox testdata skills and tool_delete_project (#82)
+- generate .md sibling on attach (#78)
+
+### Changed
+- bump the pip-all group with 2 updates (#81)
+- bump actions/setup-python in the actions-all group (#80)
+- bump the pip-all group across 1 directory with 4 updates (#60)
+
+### Fixed
+- disambiguate colliding attachment names (#79)
+- persist unicode content safely and prevent orphaned rows (#75) (#77)
+- normalize names before duplicate detection (#76)
 
 ## [2.4.1] - 2026-07-16
 
@@ -247,7 +209,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.4.1...HEAD
+[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.5.0...HEAD
 [1.0.0]: https://github.com/markus-michalski/claude-agents-project-management/releases/tag/v1.0.0
 [1.1.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.1.0
 [1.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.3.0
@@ -264,3 +226,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.3.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.3.1
 [2.4.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.4.0
 [2.4.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.4.1
+[2.5.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.5.0
