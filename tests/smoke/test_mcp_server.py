@@ -15,6 +15,7 @@ EXPECTED_TOOLS = {
     "tool_get_project_by_id",
     "tool_create_project",
     "tool_update_project",
+    "tool_delete_project",
     "tool_list_docs",
     "tool_link_project",
     "tool_unlink_project",

@@ -28,6 +28,7 @@ from tools.project_types import (
 )
 from tools.projects import (
     create_project,
+    delete_project,
     get_project,
     get_project_by_id,
     list_docs,
@@ -149,6 +150,30 @@ def tool_update_project(
         }.items() if v
     }
     return update_project(identifier, **fields)
+
+
+@mcp.tool()
+def tool_delete_project(identifier: str) -> bool:
+    """Delete ANY project by slug or name — general-purpose, irreversible, no
+    built-in scope restriction to test/sandbox data.
+
+    Cascades to its non-shared contacts, notes, and project links; clears the
+    active session and removes the project's docs folder from disk. Shared
+    contacts (is_shared=True) are re-parented to another surviving project
+    first — they are explicitly cross-project, so deleting whichever project
+    happens to own the row must not remove it for every other project
+    surfacing it too. Only if this is the last remaining project (nothing to
+    re-parent to) are they cascade-deleted along with it. Callers (e.g. the
+    delete-testdata skill) are responsible for their own safety checks before
+    calling this — a materially larger blast radius than tool_delete_contact/
+    tool_delete_note (which only ever remove one row each), even though none
+    of the three have a built-in domain guard. Added for the
+    create-testdata/reset-testdata/delete-testdata sandbox convention
+    (project-hub#82) — there is no other way to fully remove a project, since
+    its slug is UNIQUE and a soft-delete would block re-creation — but it is
+    not restricted to that use.
+    """
+    return delete_project(identifier)
 
 
 @mcp.tool()

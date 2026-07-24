@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `create-testdata` / `reset-testdata` / `delete-testdata` skills implementing
+  skill-rollout's sandbox convention (issue #35 / project-hub#82): disposable
+  `zz-sandbox-`-prefixed test fixtures (one project, one contact, one note) for
+  live-tier rollout testing, created only via project-hub's own real MCP tools.
+  Each skill's first, unconditional step refuses any target that doesn't carry
+  the `zz-sandbox-` prefix. `delete-testdata` is idempotent/no-op-safe on an
+  empty sandbox. `disable-model-invocation: true` on all three — they are
+  machine-invoked test infrastructure, never triggered from conversation.
+- `tool_delete_project` MCP tool — the project table had no delete path before
+  (`tool_create_project`/`tool_update_project` only), which blocks the sandbox
+  convention above: `slug` is `UNIQUE`, so a soft-delete would prevent
+  `create-testdata` from ever re-provisioning after `delete-testdata` ran.
+  Deletes by slug/name, cascading to the project's contacts/notes/links via
+  the existing `ON DELETE CASCADE` schema, clearing the active session first
+  if it points at the deleted project (the `session` table's FK has no
+  `ON DELETE` action, so this previously crashed with an `IntegrityError`),
+  and removing the project's docs folder from disk (DB cascade alone left
+  note `.md` files and the docs directory orphaned). General-purpose and
+  irreversible — not restricted to `zz-sandbox-` data, same trust model as
+  the existing `tool_delete_contact`/`tool_delete_note` (no built-in domain
+  guard). **Shared contacts (`is_shared=True`) are re-parented to another
+  surviving project instead of being deleted** — they are explicitly
+  cross-project, so deleting whichever project happens to own the row must
+  not remove it for every other project surfacing it too. Only cascade-deleted
+  if this is the last remaining project (nothing left to re-parent to).
 - `force` parameter (keyword-only) on `tool_add_contact` / `tool_update_contact` to
   override a similar-name match when it is genuinely a different person. Exact matches
   remain non-forceable. `add-contact` SKILL.md documents that `force=True` requires

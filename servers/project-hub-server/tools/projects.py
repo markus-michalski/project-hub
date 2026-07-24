@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -132,6 +133,45 @@ def update_project(identifier: str, **fields) -> Optional[dict]:
                 values,
             )
         return get_project(identifier)
+
+
+def delete_project(identifier: str) -> bool:
+    """Delete a project by slug or name (case-insensitive).
+
+    Cascades to its non-shared contacts, notes, and project_links via ON DELETE
+    CASCADE. Shared contacts (is_shared=True) are re-parented to another
+    surviving project first, since they are explicitly cross-project — only if
+    this is the last remaining project (nothing to re-parent to, sharing is
+    moot with nothing else to share to) are they cascade-deleted too. Clears
+    the active session first if it points at this project — the session
+    table's FK has no ON DELETE action, so deleting the active project would
+    otherwise fail with a FOREIGN KEY constraint error. Also removes the
+    project's docs folder from disk (DB delete alone would orphan it, since
+    contacts/notes are cascade-deleted from the DB but their .md files on disk
+    are not).
+    """
+    with db_connection() as conn:
+        with conn:
+            row = conn.execute(
+                "SELECT id, docs_path FROM projects WHERE slug = ? OR LOWER(name) = LOWER(?)",
+                (identifier, identifier),
+            ).fetchone()
+            if not row:
+                return False
+            project_id, docs_path = row["id"], row["docs_path"]
+            other_project = conn.execute(
+                "SELECT id FROM projects WHERE id != ? ORDER BY id LIMIT 1", (project_id,)
+            ).fetchone()
+            if other_project:
+                conn.execute(
+                    "UPDATE contacts SET project_id = ? WHERE project_id = ? AND is_shared = 1",
+                    (other_project["id"], project_id),
+                )
+            conn.execute("UPDATE session SET project_id = NULL WHERE project_id = ?", (project_id,))
+            conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+    if docs_path:
+        shutil.rmtree(docs_path, ignore_errors=True)
+    return True
 
 
 def list_docs(project_id: int) -> dict:
