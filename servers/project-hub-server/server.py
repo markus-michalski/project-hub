@@ -120,6 +120,7 @@ def tool_create_project(
     phase: current project phase
     go_live: target go-live date
     budget: budget information
+    Returns the created project on success, or {"error": ...} if a project with this name already exists.
     """
     return create_project(name, project_type, description, market, products, phase, go_live, budget, notes)
 

@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from tools.project_types import (
+    create_project_from_template,
     create_project_type,
     delete_project_type,
     get_project_type,
@@ -230,4 +231,14 @@ def test_delete_builtin_returns_error(type_dirs):
 
 def test_delete_nonexistent_returns_error(type_dirs):
     result = delete_project_type("does-not-exist")
+    assert "error" in result
+
+
+def test_create_project_from_template_duplicate_name_returns_structured_error(tmp_path, monkeypatch):
+    monkeypatch.setattr("tools.projects.get_docs_root", lambda: tmp_path)
+    template = "---\nname: Dup Template Project\n---\n"
+
+    create_project_from_template(template_content=template)
+    result = create_project_from_template(template_content=template)
+
     assert "error" in result
