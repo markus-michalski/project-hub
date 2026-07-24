@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `tool_delete_project` MCP tool — the project table had no delete path before
+  (`tool_create_project`/`tool_update_project` only), which blocks the sandbox
+  convention above: `slug` is `UNIQUE`, so a soft-delete would prevent
+  `create-testdata` from ever re-provisioning after `delete-testdata` ran.
+  Deletes by slug/name, cascading to the project's contacts/notes/links via
+  the existing `ON DELETE CASCADE` schema, clearing the active session first
+  if it points at the deleted project (the `session` table's FK has no
+  `ON DELETE` action, so this previously crashed with an `IntegrityError`),
+  and removing the project's docs folder from disk (DB cascade alone left
+  note `.md` files and the docs directory orphaned). General-purpose and
+  irreversible — not restricted to `zz-sandbox-` data. **Deleting a project
+  that owns shared contacts (`is_shared=True`) removes those contacts for
+  every other project that surfaces them too** — a materially larger blast
+  radius than the existing `tool_delete_contact`/`tool_delete_note` (which
+  only ever remove one row), even though none of the three have a built-in
+  domain guard.
 - `force` parameter (keyword-only) on `tool_add_contact` / `tool_update_contact` to
   override a similar-name match when it is genuinely a different person. Exact matches
   remain non-forceable. `add-contact` SKILL.md documents that `force=True` requires
