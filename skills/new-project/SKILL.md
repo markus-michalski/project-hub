@@ -85,7 +85,8 @@ ask the next. Never list several remaining fields together in a single message.
 
 ### 4. Create Project
 
-Use MCP `tool_create_project()` with collected data.
+Use MCP `tool_create_project()` with collected data. If the result contains an `error` key, follow
+the "Name already exists" flow under Error Handling instead of continuing below.
 
 If `project_type` is `consulting` and a client name was collected in step 3: after the project is
 created, call `tool_add_contact(project_id=<new project's id>, name=<client name>,
@@ -117,12 +118,8 @@ Das Projekt ist jetzt aktiv. Was möchtest du als nächstes tun?
 
 ## Error Handling
 
-- Name already exists → Show existing project, ask if user wants to use it or create a new one with
-  different name. Note: `tool_create_project` signals this as a raised tool-execution error mentioning
-  a `UNIQUE constraint` on the slug, not a returned `{"error": ...}` dict. This also applies when
-  creating via `tool_create_project_from_template` with a duplicate name — that tool delegates to
-  `tool_create_project` internally, so a duplicate slug raises the same error there too (the template
-  tool only returns a `{"error": ...}` dict for its own validation failures, e.g. a bad file path or a
-  missing `name` field). Recognize this raised-error failure shape in both branches and follow this
-  flow; never show the raw technical error text to the user.
+- Name already exists → `tool_create_project` (and `tool_create_project_from_template`, which
+  delegates to it) returns `{"error": "A project with slug '<slug>' already exists (existing
+  project: '<name>')"}` — check the result for an `error` key before proceeding. Show the named
+  existing project and ask if the user wants to use it or create a new one with a different name.
 - Invalid project type → Show list again
