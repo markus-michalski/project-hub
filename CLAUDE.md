@@ -48,6 +48,11 @@ Never read the SQLite file directly — always go through MCP tools.
 | "Report erstellen" / "HTML-Report" / "Bericht exportieren" / "Projektbericht" / "all-projects report" / `/project-hub:report` | `/project-hub:report [full\|summary\|all-projects]` |
 | "Vorlage holen" / "Projektvorlage" / "Template für neues Projekt" / "gib mir die Vorlage" / "welche Felder brauche ich" / `/project-hub:get-template` | `/project-hub:get-template [type]` |
 
+`create-testdata` / `reset-testdata` / `delete-testdata` are intentionally **not** in this table —
+they are machine-invoked sandbox infrastructure for skill-rollout's live-tier testing
+(project-hub#82), never triggered from conversation (`disable-model-invocation: true`). See the
+Anti-Patterns section below.
+
 ## Anti-Patterns
 
 - **NEVER** activate `/project-hub:dashboard` on bare "Dashboard" / "Übersicht" — mm-dev-toolkit,
@@ -70,6 +75,12 @@ Never read the SQLite file directly — always go through MCP tools.
 - **NEVER** modify the database directly — all state changes go through MCP tools.
 - **NEVER** confuse hub projects (client/contact tracking) with dev projects (mm-dev-toolkit),
   books (storyforge), or videos (vidcraft).
+- **NEVER** treat `/project-hub:create-testdata`, `/project-hub:reset-testdata`, or
+  `/project-hub:delete-testdata` as conversational skills — they exist solely for
+  skill-rollout's live-tier sandbox testing (project-hub#82), gated by
+  `disable-model-invocation: true`, and operate only on the fixed `zz-sandbox-`-prefixed
+  fixture set. Never invoke them on a bare "Testdaten anlegen"/"reset" without that explicit
+  automation context, and never let them touch anything outside the `zz-sandbox-` prefix.
 
 ## Session Pattern (`/resume`)
 

@@ -103,3 +103,26 @@ def test_add_contact_checks_for_duplicates_before_creating():
         "check happens unconditionally, not only when the user explicitly asks to see "
         "existing contacts first"
     )
+
+
+def test_delete_testdata_prefix_gate_precedes_any_tool_call():
+    """Regression guard (project-hub#82): delete-testdata's zz-sandbox- prefix refusal
+    must be documented as step 1, before any MCP tool call — this is the exact ordering
+    skill-rollout's onboarding live-verifies (it calls this skill with a synthetic,
+    non-prefixed slug and expects refusal before any lookup happens). A future edit that
+    silently reorders the safety check after a tool call would defeat the whole guard.
+    """
+    body = (SKILLS_DIR / "delete-testdata" / "SKILL.md").read_text(encoding="utf-8")
+
+    gate_pos = body.find("Prefix gate")
+    get_project_pos = body.find("tool_get_project")
+    delete_project_pos = body.find("tool_delete_project")
+
+    assert gate_pos != -1, "delete-testdata must document a 'Prefix gate' step"
+    assert get_project_pos != -1, "delete-testdata must call tool_get_project"
+    assert delete_project_pos != -1, "delete-testdata must call tool_delete_project"
+    assert gate_pos < get_project_pos < delete_project_pos, (
+        "delete-testdata's prefix gate must be documented before tool_get_project, "
+        "which must in turn happen before tool_delete_project — refusing after a lookup "
+        "has already run defeats the safety property"
+    )

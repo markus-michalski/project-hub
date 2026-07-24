@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `create-testdata` / `reset-testdata` / `delete-testdata` skills implementing
+  skill-rollout's sandbox convention (issue #35 / project-hub#82): disposable
+  `zz-sandbox-`-prefixed test fixtures (one project, one contact, one note) for
+  live-tier rollout testing, created only via project-hub's own real MCP tools.
+  Each skill's first, unconditional step refuses any target that doesn't carry
+  the `zz-sandbox-` prefix. `delete-testdata` is idempotent/no-op-safe on an
+  empty sandbox. `disable-model-invocation: true` on all three — they are
+  machine-invoked test infrastructure, never triggered from conversation.
 - `tool_delete_project` MCP tool — the project table had no delete path before
   (`tool_create_project`/`tool_update_project` only), which blocks the sandbox
   convention above: `slug` is `UNIQUE`, so a soft-delete would prevent
