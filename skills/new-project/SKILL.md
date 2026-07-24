@@ -64,7 +64,8 @@ Show available types and ask user to choose:
 ### 3. Collect Project Details
 
 Based on project type, ask for relevant fields interactively.
-Do NOT ask for all fields at once — ask in a natural, conversational way.
+Do NOT ask for all fields at once — ask ONE field per message, wait for the user's reply, then
+ask the next. Never list several remaining fields together in a single message.
 
 **Always ask:**
 - Description (what is this project about?)
@@ -84,7 +85,14 @@ Do NOT ask for all fields at once — ask in a natural, conversational way.
 
 ### 4. Create Project
 
-Use MCP `tool_create_project()` with collected data.
+Use MCP `tool_create_project()` with collected data. If the result contains an `error` key, follow
+the "Name already exists" flow under Error Handling instead of continuing below.
+
+If `project_type` is `consulting` and a client name was collected in step 3: after the project is
+created, call `tool_add_contact(project_id=<new project's id>, name=<client name>,
+contact_type="external")` to actually store the client as an external contact (this is what step 3's
+"store as external contact after creation" means — the field must be persisted via `tool_add_contact`,
+not just collected).
 
 ### 5. Set Active Session
 
@@ -110,5 +118,8 @@ Das Projekt ist jetzt aktiv. Was möchtest du als nächstes tun?
 
 ## Error Handling
 
-- Name already exists → Show existing project, ask if user wants to use it or create a new one with different name
+- Name already exists → `tool_create_project` (and `tool_create_project_from_template`, which
+  delegates to it) returns `{"error": "A project with slug '<slug>' already exists (existing
+  project: '<name>')"}` — check the result for an `error` key before proceeding. Show the named
+  existing project and ask if the user wants to use it or create a new one with a different name.
 - Invalid project type → Show list again
