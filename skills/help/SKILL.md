@@ -49,7 +49,7 @@ Use MCP `tool_get_session()` to show active project (if any).
 | Skill | Beschreibung |
 |-------|-------------|
 | `/summarize [note-id]` | Summary aus E-Mail oder Meeting-Notizen erstellen |
-| `/compose [email\|slack\|teams]` | E-Mail, Slack- oder Teams-Nachricht verfassen |
+| `/compose [email\|slack\|teams\|export\|import]` | E-Mail/Slack/Teams verfassen, oder Projekt exportieren/importieren |
 
 ### Knowledge Base
 | Skill | Beschreibung |

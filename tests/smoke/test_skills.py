@@ -105,6 +105,53 @@ def test_add_contact_checks_for_duplicates_before_creating():
     )
 
 
+def test_edit_note_guards_against_missing_note_and_cross_project_note():
+    """Regression test: edit-note's Step 2 not-found guard must stop before Step 3, and
+    tool_get_note is not project-scoped server-side (SELECT * FROM notes WHERE id = ?,
+    no project_id filter — servers/project-hub-server/tools/notes.py), so the skill itself
+    must reject a note that doesn't belong to the active project rather than silently
+    editing it.
+    """
+    body = (SKILLS_DIR / "edit-note" / "SKILL.md").read_text(encoding="utf-8")
+
+    not_found_pos = body.find("nicht gefunden")
+    get_note_pos = body.find("tool_get_note(note_id)")
+    project_scope_pos = body.find("project_id")
+    step3_pos = body.find("### 3. Show Current Content")
+
+    assert get_note_pos != -1, "edit-note must call tool_get_note(note_id)"
+    assert not_found_pos != -1, "edit-note must document a 'nicht gefunden' guard"
+    assert project_scope_pos != -1, (
+        "edit-note must check the loaded note's project_id against the active project"
+    )
+    assert get_note_pos < not_found_pos < step3_pos, (
+        "the not-found guard must be documented between the tool_get_note call and Step 3"
+    )
+    assert get_note_pos < project_scope_pos < step3_pos, (
+        "the cross-project scoping check must be documented between the tool_get_note call "
+        "and Step 3, so a note from another project is rejected before it is ever displayed"
+    )
+
+
+def test_edit_note_type_whitelist_matches_server_subfolders():
+    """Regression test: the server never validates note_type (no CHECK constraint on
+    notes.type — servers/project-hub-server/tools/db.py), so the skill's whitelist in Step 4
+    is the only thing preventing garbage types from being written. It must keep listing
+    exactly the five types docs_writer.py knows how to file (_TYPE_TO_SUBFOLDER).
+    """
+    body = (SKILLS_DIR / "edit-note" / "SKILL.md").read_text(encoding="utf-8")
+    expected_types = {"note", "meeting-notes", "email", "decision", "action-item"}
+
+    whitelist_pos = body.find("exact match to one of the five documented types")
+    assert whitelist_pos != -1, (
+        "edit-note must document that type changes are restricted to an exact match "
+        "against the supported types"
+    )
+    window = body[whitelist_pos:whitelist_pos + 200]
+    for note_type in expected_types:
+        assert note_type in window, f"edit-note type whitelist is missing '{note_type}'"
+
+
 def test_delete_testdata_prefix_gate_precedes_any_tool_call():
     """Regression guard (project-hub#82): delete-testdata's zz-sandbox- prefix refusal
     must be documented as step 1, before any MCP tool call — this is the exact ordering
@@ -162,3 +209,37 @@ def test_status_contact_bucketing_uses_type_field():
         "status must clarify that `contact_type` is a tool parameter name, distinct from "
         "the `type` field on the returned contact row"
     )
+
+
+def test_search_scope_question_precedes_search_calls():
+    """Regression guard: when a project is active, the scope question must be documented
+    as happening before either search call runs — a future edit that silently reorders
+    this would reintroduce searching the active project by default before the user has
+    confirmed (or all-projects search on stale/implied scope).
+    """
+    body = (SKILLS_DIR / "search" / "SKILL.md").read_text(encoding="utf-8")
+
+    ask_pos = body.find("ask *first*, before running any search")
+    search_notes_pos = body.find("tool_search_notes(query, project_id)")
+    search_contacts_pos = body.find("tool_search_contacts(query, project_id)")
+
+    assert ask_pos != -1, "search must document asking the scope question before searching"
+    assert search_notes_pos != -1 and search_contacts_pos != -1, (
+        "search must document both tool_search_notes and tool_search_contacts calls"
+    )
+    assert ask_pos < search_notes_pos and ask_pos < search_contacts_pos, (
+        "the scope question must be documented as happening before the search calls, not after"
+    )
+
+
+def test_search_treats_whitespace_only_argument_as_no_argument():
+    """Regression guard: a whitespace-only argument must fall through to asking
+    'Wonach suchst du?' rather than being searched for literally — otherwise a stray
+    space silently becomes a zero-result query instead of a re-prompt.
+    """
+    body = (SKILLS_DIR / "search" / "SKILL.md").read_text(encoding="utf-8")
+    step1 = body.split("### 2. Determine Scope")[0]
+    assert "only whitespace" in step1, (
+        "search step 1 must explicitly treat a whitespace-only argument as no argument"
+    )
+    assert "Wonach suchst du?" in step1
