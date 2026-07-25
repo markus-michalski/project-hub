@@ -76,7 +76,7 @@ def tool_clear_session() -> dict:
 def tool_list_projects(status: str = "", limit: int = 50, offset: int = 0) -> dict:
     """List projects with pagination.
 
-    status: active | paused | completed (empty = all)
+    status: active | paused | completed | cancelled (empty = all)
     Returns {"items": [...], "total": N, "limit": L, "offset": O}.
     """
     return list_projects(status, limit, offset)

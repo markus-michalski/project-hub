@@ -175,6 +175,42 @@ def test_delete_testdata_prefix_gate_precedes_any_tool_call():
     )
 
 
+def test_status_update_identifier_must_be_slug_not_project_id():
+    """Regression guard: status's update step must document that
+    tool_update_project(identifier, ...) needs the project's slug/name — never the numeric
+    project_id from tool_get_session()/tool_get_project_by_id(). update_project() matches
+    via `WHERE slug = ? OR LOWER(name) = LOWER(?)` (servers/project-hub-server/tools/
+    projects.py), so a numeric identifier silently matches nothing.
+    """
+    body = (SKILLS_DIR / "status" / "SKILL.md").read_text(encoding="utf-8")
+
+    assert "never the numeric `project_id`" in body or "never the numeric project_id" in body, (
+        "status must explicitly warn that tool_update_project's identifier is the slug/name, "
+        "never the numeric project_id"
+    )
+    assert "None" in body and "gefunden" in body, (
+        "status must document what happens when tool_update_project returns None/empty "
+        "(wrong identifier) instead of unconditionally printing the success confirmation"
+    )
+
+
+def test_status_contact_bucketing_uses_type_field():
+    """Regression guard: status's contact table bucketing must key off the `type` field on
+    each contact row, not `contact_type` (which is only a tool parameter name on add/update/
+    list, never a field on the row itself). Mixing the two up would make every contact fail
+    the `type == "external"` check and pile into "Interne Kontakte" instead.
+    """
+    body = (SKILLS_DIR / "status" / "SKILL.md").read_text(encoding="utf-8")
+
+    assert 'type == "external"' in body, (
+        'status must document the contact bucketing rule as `type == "external"`'
+    )
+    assert "`contact_type` is" in body or "contact_type` is only" in body, (
+        "status must clarify that `contact_type` is a tool parameter name, distinct from "
+        "the `type` field on the returned contact row"
+    )
+
+
 def test_search_scope_question_precedes_search_calls():
     """Regression guard: when a project is active, the scope question must be documented
     as happening before either search call runs — a future edit that silently reorders

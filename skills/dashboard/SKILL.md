@@ -38,24 +38,24 @@ project — i.e. `session["project_id"]`, which may be missing or `null`
 
 ### 3. Output
 
-Group projects by their own `status` field (active/paused/completed) —
-independently of session. `status` is a free-text DB column with no fixed
-set of allowed values, so a project can carry a status outside these three
-(e.g. `archiviert` set via `/project-hub:status`'s German labels, or any
-other value written by `tool_update_project`). Put any project whose
-`status` is not exactly `active`, `paused`, or `completed` into a fourth
-**Sonstige** section — never drop it silently, and never fold it into one
-of the three known sections. Every loaded project must land in exactly one
-of the four sections, so the four section counts always sum to `[N]
-Projekte gesamt`.
+Group projects by their own `status` field (active/paused/completed/
+cancelled) — independently of session. `status` is a free-text DB column
+with no fixed set of allowed values, so a project can carry a status
+outside these four (e.g. `archiviert` set via `/project-hub:status`'s
+German labels, or any other value written by `tool_update_project`). Put
+any project whose `status` is not exactly `active`, `paused`, `completed`,
+or `cancelled` into a fifth **Sonstige** section — never drop it silently,
+and never fold it into one of the four known sections. Every loaded
+project must land in exactly one of the five sections, so the five section
+counts always sum to `[N] Projekte gesamt`.
 
 Then mark whichever project's `id` equals `session["project_id"]` with
 `← aktiv`, regardless of which status section it landed in. These are two
 unrelated things that happen to share the word "aktiv": a project can be
 the current session's active project while its own `status` is `paused` or
 `completed` (e.g. you loaded it, then paused it) — it still gets `← aktiv`
-in the Pausierte/Abgeschlossene/Sonstige section, it does not move to the
-Aktive Projekte section.
+in the Pausierte/Abgeschlossene/Abgebrochene/Sonstige section, it does not
+move to the Aktive Projekte section.
 
 Each project item from `tool_list_projects` includes a `links` list (see
 `tool_link_project`), shaped as
@@ -90,12 +90,15 @@ empty.
 ### Abgeschlossene Projekte
 [same table format or "Keine"]
 
+### Abgebrochene Projekte
+[same table format or "Keine"]
+
 ### Sonstige
 [same table format or "Keine" — projects whose `status` is none of
-active/paused/completed]
+active/paused/completed/cancelled]
 
 ---
-**[N] Projekte gesamt** — Aktiv: [N] | Pausiert: [N] | Abgeschlossen: [N] | Sonstige: [N]
+**[N] Projekte gesamt** — Aktiv: [N] | Pausiert: [N] | Abgeschlossen: [N] | Abgebrochen: [N] | Sonstige: [N]
 
 Tipp: `/resume [Projektname]` um ein Projekt zu laden
 ```
