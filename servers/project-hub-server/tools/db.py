@@ -142,6 +142,7 @@ def init_db() -> None:
                 "UPDATE notes SET updated_at = created_at WHERE updated_at = ''",
             ),
             ("ALTER TABLE notes ADD COLUMN attachments TEXT NOT NULL DEFAULT '[]'", None),
+            ("ALTER TABLE notes ADD COLUMN file_path TEXT NOT NULL DEFAULT ''", None),
             ("ALTER TABLE contacts ADD COLUMN is_shared INTEGER NOT NULL DEFAULT 0", None),
         ):
             try:
