@@ -69,9 +69,24 @@ Setup unvollständig. Bitte `/project-hub:setup` ausführen und danach Claude Co
 
 ### 2. Load Active Projects
 
-Use MCP `tool_list_projects(status="active")` → iterate `result["items"]`.
+If the user already passed a non-empty project name as an argument (ignoring surrounding
+whitespace) when invoking this skill: skip the active-project listing below and the picker in
+Step 3 — there is nothing to list or pick from when the target project is already known. Go
+straight to `tool_get_project(<argument>)`:
+- If it resolves → continue at Step 4 with that project.
+- If it returns nothing (no match) → tell the user the given project name wasn't found. The
+  argument only matches an exact slug or exact case-insensitive name, so a near-miss (e.g.
+  "Acme" for "Acme GmbH") also lands here even though a matching project exists — don't assume
+  not-found means "doesn't exist". Fall through to MCP `tool_list_projects()` (no status filter,
+  so paused/completed/archived projects the user may have meant are included too) → iterate
+  `result["items"]` and let them pick from that instead of the flow silently continuing with no
+  project.
 
-If no active projects exist → suggest:
+Otherwise (no argument given, or it was only whitespace): use MCP
+`tool_list_projects(status="active")` → iterate `result["items"]`.
+
+If no active projects exist (and this is the no-argument path, not the not-found fallback
+above) → suggest:
 ```
 Noch keine Projekte vorhanden. Starte mit `/project-hub:new-project` um dein erstes Projekt anzulegen.
 ```
@@ -79,21 +94,28 @@ Noch keine Projekte vorhanden. Starte mit `/project-hub:new-project` um dein ers
 
 ### 3. Pick Project
 
-Use `AskUserQuestion` with the list of active project names plus "Neues Projekt anlegen".
-
-If the user already passed a project name as an argument → skip this step and use it directly.
+Use `AskUserQuestion` with the list of project names from whichever call populated it in Step 2
+(the active-only list on the no-argument path, or the unfiltered not-found-fallback list) plus
+"Neues Projekt anlegen".
 
 On "Neues Projekt anlegen" → hand off to `/project-hub:new-project` and STOP.
 
 ### 4. Load Full Context
 
-Load all context in parallel:
-- MCP `tool_get_project(identifier)` — full project details
+If the project was resolved via Step 2's argument branch, reuse that `tool_get_project` result
+— no need to call it a second time. If it was resolved via Step 3's picker instead, call MCP
+`tool_get_project(identifier)` here to get the full project object (`id`, `type`, description,
+...).
+
+Load the rest in parallel:
 - MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — all contacts
 - MCP `tool_list_notes(project_id, limit=5)` → iterate `result["items"]` — most recent 5 notes
-- If the project's `type` field (from step 1's `tool_get_project` result) is NOT `generic`: MCP
+- If the project object's `type` field (from the project object resolved above, either reused
+  from Step 2 or freshly fetched here) is NOT `generic`: MCP
   `tool_get_all_knowledge(project_type=<that type value>)` — domain knowledge (note: there is no
-  `project_type` key on the project object itself; `project_type` is only the tool's parameter name)
+  `project_type` key on the project object itself; `project_type` is only the tool's parameter
+  name). For a `generic`-type project, this call is skipped entirely — see Step 6's output
+  template for what to show in that case.
 
 ### 5. Set Session
 
@@ -121,11 +143,25 @@ Use MCP `tool_set_session(identifier, last_skill="session-start")`.
 | [Datum] | [Titel] | [Typ] |
 
 ### Knowledge geladen
-[List: topic — title — oder "Keine Knowledge-Dokumente für diesen Projekttyp"]
+[List: topic — title — oder "Keine Knowledge-Dokumente für diesen Projekttyp" (non-generic type,
+`tool_get_all_knowledge` ran and returned nothing) — oder "Knowledge-Laden für `generic`-Projekte
+wird standardmäßig übersprungen — `/knowledge` zeigt installierte Dokumente" (generic type, see
+below)]
 
 ---
 Was soll ich tun?
 ```
+
+For a `generic`-type project, Step 4 never calls `tool_get_all_knowledge` at all — this is a
+pre-existing convention shared with `/resume` and CLAUDE.md's Session Pattern, not something this
+skill decides. It does **not** mean `generic` projects have no knowledge base: the plugin ships
+`knowledge/generic/charter.md` as a template, `sync_knowledge_templates()` installs it into
+`~/.project-hub/knowledge/generic/` like any other type, and `tool_get_all_knowledge("generic")`
+works normally server-side — there is no special-casing there. The skip is purely a session-start
+convention. Since the call never runs, this skill has no data on whether generic knowledge files
+exist, so the "Knowledge geladen" line must NOT claim "Keine Knowledge-Dokumente" (that asserts a
+fact this skill never checked) — use the skipped-load wording above instead, and point to
+`/knowledge` so the user can see what's actually installed.
 
 #### Kontextuelle Hinweise
 
@@ -136,4 +172,9 @@ After the session header, add relevant suggestions based on the loaded data:
 - Open action items in recent notes → "Offene Action-Items vorhanden — `/next-step` für priorisierte Übersicht."
 - Go-live within 14 days → "Go-Live in [N] Tagen — check ob alle Aufgaben erledigt sind."
 - No activity in last 7 days → "Letztes Update vor [N] Tagen — alles aktuell?"
-- No knowledge files for non-generic type → "Noch keine Knowledge-Dokumente. `/knowledge` zum Einrichten."
+- No knowledge files for non-generic type (i.e. `tool_get_all_knowledge` ran and returned
+  nothing) → "Noch keine Knowledge-Dokumente. `/knowledge` zum Einrichten."
+- `generic`-type project (knowledge loading was skipped in Step 4, so this skill has no data on
+  whether files exist — see the note above the Kontextuelle-Hinweise heading) →
+  "Nutze `/knowledge`, um zu sehen, welche Knowledge-Dokumente für dieses Projekt bereits
+  installiert sind."
