@@ -173,3 +173,37 @@ def test_delete_testdata_prefix_gate_precedes_any_tool_call():
         "which must in turn happen before tool_delete_project — refusing after a lookup "
         "has already run defeats the safety property"
     )
+
+
+def test_search_scope_question_precedes_search_calls():
+    """Regression guard: when a project is active, the scope question must be documented
+    as happening before either search call runs — a future edit that silently reorders
+    this would reintroduce searching the active project by default before the user has
+    confirmed (or all-projects search on stale/implied scope).
+    """
+    body = (SKILLS_DIR / "search" / "SKILL.md").read_text(encoding="utf-8")
+
+    ask_pos = body.find("ask *first*, before running any search")
+    search_notes_pos = body.find("tool_search_notes(query, project_id)")
+    search_contacts_pos = body.find("tool_search_contacts(query, project_id)")
+
+    assert ask_pos != -1, "search must document asking the scope question before searching"
+    assert search_notes_pos != -1 and search_contacts_pos != -1, (
+        "search must document both tool_search_notes and tool_search_contacts calls"
+    )
+    assert ask_pos < search_notes_pos and ask_pos < search_contacts_pos, (
+        "the scope question must be documented as happening before the search calls, not after"
+    )
+
+
+def test_search_treats_whitespace_only_argument_as_no_argument():
+    """Regression guard: a whitespace-only argument must fall through to asking
+    'Wonach suchst du?' rather than being searched for literally — otherwise a stray
+    space silently becomes a zero-result query instead of a re-prompt.
+    """
+    body = (SKILLS_DIR / "search" / "SKILL.md").read_text(encoding="utf-8")
+    step1 = body.split("### 2. Determine Scope")[0]
+    assert "only whitespace" in step1, (
+        "search step 1 must explicitly treat a whitespace-only argument as no argument"
+    )
+    assert "Wonach suchst du?" in step1
