@@ -106,6 +106,14 @@ class TestGenerateReportFull:
         assert "reports" in result["path"]
         assert "acme-gmbh" in result["path"]
 
+    def test_full_and_summary_default_paths_differ(self, populated_project, tmp_path, monkeypatch):
+        monkeypatch.setattr("tools.report.Path.home", lambda: tmp_path)
+        full = generate_report(populated_project["id"], report_type="full")
+        summary = generate_report(populated_project["id"], report_type="summary")
+        assert full["path"] != summary["path"]
+        assert "full" in full["path"]
+        assert "summary" in summary["path"]
+
     def test_nonexistent_project_raises(self):
         with pytest.raises(ValueError, match="not found"):
             generate_report(99999, report_type="full", output_path="/tmp/nope.html")

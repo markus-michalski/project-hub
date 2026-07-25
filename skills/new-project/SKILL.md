@@ -53,18 +53,26 @@ If not: ask the user for a project name.
 
 ### 2. Select Project Type
 
-Call MCP `tool_list_project_types()` and show the returned types (built-in + any custom ones) for
-the user to choose from — do NOT hardcode a static list, custom types created via
-`/project-hub:type-creator` must show up here too. Typical built-in types:
+Call `tool_list_project_types()` to get the current list (built-in + any custom types the user
+has created via `/project-hub:type-creator`). Show all returned types and ask the user to choose.
+
+Use the `name` field as the type identifier (the slug that `tool_create_project(project_type=...)`
+expects) — NOT `label`. Show `description` after the dash; derive the source marker from the
+`source` field ("built-in" or "custom"):
+
+```
+Verfügbare Projekttypen:
+- `<name>` — <description>   [<source>]
+...
+```
+
+If `tool_list_project_types()` fails or returns an empty list, fall back to the built-in defaults:
 - `merchant-onboarding` — Merchant Onboarding (BNPL, Direct Debit, ...)
 - `it-project` — IT / Software Project
 - `marketing` — Marketing Campaign
 - `consulting` — Consulting Engagement
 - `event` — Event Planning
 - `generic` — General Purpose
-
-Any additional `custom` rows returned by `tool_list_project_types()` are user-defined types — list
-them alongside the built-ins.
 
 Exception: if this step's answer was already pre-supplied by the caller (e.g. type-creator's Step 8
 handoff names the type just created) — use that type directly and skip the question.
