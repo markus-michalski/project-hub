@@ -8,7 +8,7 @@ description: |
   Reads/writes Markdown files from ~/.project-hub/knowledge/<project-type>/.
 model: claude-sonnet-4-6
 user-invocable: true
-argument-hint: "[list|show <topic>|update <topic>|export <topic>|delete <topic>|sync [--force]]"
+argument-hint: "[list [project-type]|show <topic>|update <topic>|export <topic>|delete <topic>|sync [--force]]"
 ---
 
 # Knowledge Management Skill
@@ -47,6 +47,10 @@ Delete a knowledge topic after confirmation.
 
 Compare bundled plugin templates with your installed knowledge files.
 Shows what's new or changed. Use `--force` to apply updates after confirmation.
+**Even when `--force` is already in the command, a dry-run report and an explicit user
+confirmation are still required before anything is written (unless the report finds nothing to
+sync, in which case nothing is written and no confirmation is needed) — see SYNC steps 3–4
+below.**
 
 ---
 
@@ -55,9 +59,20 @@ Shows what's new or changed. Use `--force` to apply updates after confirmation.
 ### Step 1: Resolve project type
 
 - Get active session: `tool_get_session()`
-- If session has active project: use its `project_type`
-- If command includes a project-type override (e.g. `/knowledge list it-project`): use that
-- If no project active and no override: ask user which project type
+- Resolve `project_type` using this priority order (not a set of independent conditions —
+  check them in order and stop at the first match):
+  1. **Command-level override — `list` only** (e.g. `/knowledge list it-project`). `list` is the
+     only subcommand whose second token is a project-type; if given, it always wins, even when a
+     session has an active project of a *different* type. An explicit argument in the command is
+     a deliberate, specific instruction and must never be silently replaced by the session's
+     default. **Do not apply this rule to `show <topic>`, `update <topic>`, `export <topic>`, or
+     `delete <topic>`** — their second token is always a topic name, never a project-type
+     override, even if it happens to match a project-type name (e.g. `/knowledge delete
+     governance` must resolve `project_type` from the session, not from the word "governance").
+  2. **Active session's `project_type`** — used for every subcommand other than `list` with an
+     explicit override, and for `list` when no override was given.
+  3. **Ask the user** which project type to use — only if neither of the above applies (no
+     override, no active project).
 
 ### Step 2: Execute command
 
@@ -89,8 +104,7 @@ If list is empty:
 ```
 Noch keine Knowledge-Dokumente für [project-type].
 
-Initiale Templates installieren?
-Kopiere sie von ${CLAUDE_PLUGIN_ROOT}/knowledge/[project-type]/ nach ~/.project-hub/knowledge/[project-type]/
+Initiale Templates installieren? Nutze /knowledge sync, um alle Templates zu installieren.
 ```
 
 ---
@@ -122,7 +136,18 @@ Befehle: /knowledge update [topic] | /knowledge export [topic]
 
 **A) User pastes new document content** (e.g. "hier ist das neue Growth-Dokument: [...]")
 
-1. Call `tool_get_knowledge(project_type, topic)` to load existing file
+1. Call `tool_get_knowledge(project_type, topic)` to load existing file.
+   - **If it returns `None`** (no file exists yet for this topic): do not assume this is a
+     new topic — it may be a typo of an existing one (e.g. `update governnace` instead of
+     `governance`). Call `tool_list_knowledge(project_type)`, show the available topics, and ask
+     the user to confirm: either pick an existing topic, or explicitly confirm that `[topic]`
+     should be created as a **new** file. Only proceed once the user has confirmed.
+   - **Once confirmed as a new topic**: there is nothing to merge against, so skip steps 2, 3
+     and 5 below. Ensure the saved content starts with a level-1 `# Title` heading (add one from
+     the topic name if the pasted content doesn't have one — `list_knowledge`/`get_knowledge`
+     derive the display title from this H1). Save it directly as the new file's content (step 4),
+     then confirm to the user that a **new** file was created (not "aktualisiert"/"updated" — no
+     diff summary, since there was nothing to diff against).
 2. Analyze: what does the new doc add, change, or contradict?
 3. Merge strategy:
    - Preserve existing structure (headings, RACI tables, etc.)
@@ -154,7 +179,9 @@ Datei gespeichert: ~/.project-hub/knowledge/[project-type]/[topic].md
 
 #### EXPORT `<topic>`
 
-1. Call `tool_get_knowledge(project_type, topic)`
+1. Call `tool_get_knowledge(project_type, topic)`.
+   If not found: same handling as SHOW — list available topics (`tool_list_knowledge`) and ask
+   the user to choose. Never fabricate an export block for a topic that doesn't exist.
 2. Clean up the Markdown for Confluence compatibility:
    - Keep H1 as page title
    - Keep H2/H3 as section headings
@@ -182,8 +209,14 @@ Prüfe nach dem Einfügen, ob die Tabellen korrekt formatiert sind.
 #### DELETE `<topic>`
 
 1. Confirm: "Möchtest du `[topic].md` wirklich löschen? Das kann nicht rückgängig gemacht werden. (ja/nein)"
-2. On confirmation: call `tool_delete_knowledge(project_type, topic)`
-3. Confirm deletion.
+2. Branch on the answer:
+   - **If the user does not confirm** ("nein" or similar): do **not** call
+     `tool_delete_knowledge` at all; acknowledge that nothing was deleted. Stop here.
+   - **If the user confirms**: call `tool_delete_knowledge(project_type, topic)` — this returns
+     `True`/`False`.
+     - `True`: confirm the deletion to the user.
+     - `False` (topic didn't actually exist): tell the user the topic wasn't found — never
+       present this as a successful deletion.
 
 ---
 
@@ -201,13 +234,18 @@ Checking templates...
   consulting/engagement.md   — NEWER VERSION AVAILABLE (plugin: 3.2KB, local: 1.8KB)
   ...
 
-2 Dateien können aktualisiert werden.
+[N] Dateien können aktualisiert werden.
 ```
 
-3. If everything is up-to-date: "Alle Templates sind aktuell."
+(`[N]` is the actual count of NEW/NEWER-VERSION entries from the report — never a hardcoded
+number.)
 
-4. If `--force` was given OR if there are files to sync: ask for confirmation:
-   "Soll ich die 2 Dateien jetzt synchronisieren? Bestehende Dateien werden überschrieben. (ja/nein)"
+3. If everything is up-to-date (`N` = 0): report "Alle Templates sind aktuell." and stop — this
+   applies even if `--force` was given, since there is nothing to sync. Do not proceed to step 4.
+
+4. Otherwise (`N` > 0, regardless of whether `--force` was given): ask for confirmation, with
+   `[N]` interpolated from the actual count:
+   "Soll ich die [N] Dateien jetzt synchronisieren? Bestehende Dateien werden überschrieben. (ja/nein)"
 
 5. On confirmation: call `tool_sync_knowledge_templates(force=True)`
 6. Report what was synced:
