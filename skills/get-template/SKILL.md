@@ -19,15 +19,14 @@ Output a fillable template for a project type so it can be prepared outside the 
 
 ### 1. Determine Project Type
 
-If argument provided: use it directly.
+Call `tool_list_project_types()` first — returns every available type (built-in and custom, e.g.
+one created via `/project-hub:type-creator`), each with `name`, `label`, `description`, `source`.
+Keep this list around; Step 3 needs it too.
 
-If not: use `AskUserQuestion` with available types:
-- `merchant-onboarding` — Merchant Onboarding
-- `it-project` — IT / Software Project
-- `marketing` — Marketing Campaign
-- `consulting` — Consulting Engagement
-- `event` — Event Planning
-- `generic` — General Purpose
+If argument provided: use it directly as the project type.
+
+If not: use `AskUserQuestion` with options built from the list above (value = `name`, display =
+`label`, hint = `description`) — this makes custom types selectable too, not just the built-ins.
 
 ### 2. Load Template
 
@@ -36,8 +35,15 @@ Use MCP `tool_get_project_template(project_type)`.
 If result contains `"error"` → show error message and STOP.
 
 If result contains `"fallback": true` → note: "Kein spezifisches Template für diesen Typ — generisches Template verwendet."
+The effective type for Step 3's heading is now this response's own `"project_type"` field
+(`"generic"`), not the type originally requested — the delivered body is the generic template, so
+the heading must say so too.
 
 ### 3. Output Template
+
+Resolve the heading label: look up the effective type (the requested type, or `"generic"` on the
+fallback case above) in the list fetched in Step 1 and use its `"label"` field. If it isn't in the
+list for some reason, use the raw type string itself as the label.
 
 Show the template as a fenced markdown code block so it can be copied cleanly:
 
