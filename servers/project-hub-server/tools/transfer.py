@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .db import db_connection
 from .project_links import get_links_for_project, link_project
+from .projects import _ensure_docs_path, delete_project
 
 _EXPORT_VERSION = 1
 
@@ -128,35 +129,42 @@ def import_project(json_path: str, merge_strategy: str = "skip") -> dict:
     contacts: list[dict] = raw.get("contacts", [])
     notes: list[dict] = raw.get("notes", [])
 
+    # Phase 1: check for conflicts and handle merge strategy before inserting.
+    # Overwrite calls delete_project() (which handles session-FK nullout, shared-contact
+    # re-parenting, and docs-folder removal) rather than a raw DELETE that would bypass
+    # those safeguards (#101).
+    existing_found: bool = False
     with db_connection() as conn:
-        existing = conn.execute(
-            "SELECT id FROM projects WHERE slug = ?", (project["slug"],)
-        ).fetchone()
+        existing_found = bool(
+            conn.execute(
+                "SELECT id FROM projects WHERE slug = ?", (project["slug"],)
+            ).fetchone()
+        )
 
-        if existing:
-            if merge_strategy == "skip":
-                return {
-                    "imported": False,
-                    "reason": f"project with slug '{project['slug']}' already exists",
-                    "project": project["name"],
-                    "contacts": 0,
-                    "notes": 0,
-                    "links": 0,
-                    "links_not_restored": [],
-                }
-            elif merge_strategy == "overwrite":
-                conn.execute("DELETE FROM projects WHERE slug = ?", (project["slug"],))
-                conn.commit()
-            elif merge_strategy == "rename":
-                suffix = datetime.now().strftime("%Y%m%d%H%M%S")
-                project["slug"] = f"{project['slug']}_imported_{suffix}"
-                project["name"] = f"{project['name']} (imported {suffix})"
+    if existing_found:
+        if merge_strategy == "skip":
+            return {
+                "imported": False,
+                "reason": f"project with slug '{project['slug']}' already exists",
+                "project": project["name"],
+                "contacts": 0,
+                "notes": 0,
+                "links": 0,
+                "links_not_restored": [],
+            }
+        elif merge_strategy == "overwrite":
+            delete_project(project["slug"])
+        elif merge_strategy == "rename":
+            suffix = datetime.now().strftime("%Y%m%d%H%M%S")
+            project["slug"] = f"{project['slug']}_imported_{suffix}"
+            project["name"] = f"{project['name']} (imported {suffix})"
 
-        # Strip the old primary key and docs_path — both will be reassigned
-        project.pop("id", None)
-        project.pop("docs_path", None)
-        project["docs_path"] = ""
+    # Strip the old primary key and docs_path — docs_path is created after insert (#96).
+    project.pop("id", None)
+    project.pop("docs_path", None)
 
+    # Phase 2: insert the new project record and its contacts / notes.
+    with db_connection() as conn:
         cols = ", ".join(project.keys())
         placeholders = ", ".join("?" for _ in project)
         conn.execute(
@@ -168,6 +176,14 @@ def import_project(json_path: str, merge_strategy: str = "skip") -> dict:
         new_project_id: int = conn.execute(
             "SELECT id FROM projects WHERE slug = ?", (project["slug"],)
         ).fetchone()[0]
+
+        # Create the docs folder and persist the real path (#96).
+        real_docs_path = _ensure_docs_path(project["slug"])
+        conn.execute(
+            "UPDATE projects SET docs_path = ? WHERE id = ?",
+            (real_docs_path, new_project_id),
+        )
+        conn.commit()
 
         imported_contacts = 0
         for c in contacts:
@@ -181,6 +197,7 @@ def import_project(json_path: str, merge_strategy: str = "skip") -> dict:
         imported_notes = 0
         for n in notes:
             n.pop("id", None)
+            n.pop("file_path", None)  # file_path from source DB is meaningless on this machine
             n["project_id"] = new_project_id
             cols_n = ", ".join(n.keys())
             ph_n = ", ".join("?" for _ in n)
