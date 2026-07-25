@@ -25,6 +25,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing yet
 
+## [2.5.1] - 2026-07-25
+
+### Fixed
+- repair report filename collision, setup config guard, new-project types, configure write-order (#117)
+- resolve project type label via list-types call (#114)
+- tighten argument parsing and fix doc drift in SKILL.md (#113)
+- resolve Step 0 interpreter contradiction and report-template ambiguity (#111)
+- complete skill inventory and fix namespacing/argument-hint inconsistencies (#110)
+- fix new-project handoff and cross-file type visibility (#109)
+- fix db_path warning duplication, template leakage, and MCP wrapping doc drift (#107)
+- harden completion-marker detection and overdue precedence (#106)
+- correct argument routing, generic-knowledge claims, and not-found fallback (#105)
+- create docs_path on import and use delete_project for overwrite (#104)
+- store file_path in DB and delete companion file on note delete (#103)
+- fix Session Pattern and document type/project_type asymmetry (#102)
+- fix contact visibility, pagination, and status gaps (#91)
+- harden UPDATE/DELETE/SYNC confirmation flows and clarify project-type resolution (#100)
+- remove scope/id ambiguities in search skill and add regression guards (#99)
+- guard no-project handling, paginate contacts (#98)
+- guard no-project save/import paths, fix stale docs (#97)
+- scope note lookup to active project, fix agenda/type-change gaps (#95)
+- fix type inference order, tilde paths, duplicate tip (#94)
+- close duplicate-warning gaps found in skill review (#92)
+- add status fallback, page dedupe, clarify edge cases (#90)
+- use tool_get_all_knowledge, exclude shared contacts from split (#89)
+- wire contact persistence, fix error-handling note (#85)
+- return structured error on duplicate project name instead of raw exception (#86)
+
 ## [2.5.0] - 2026-07-24
 
 ### Added
@@ -209,7 +237,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.5.1...HEAD
 [1.0.0]: https://github.com/markus-michalski/claude-agents-project-management/releases/tag/v1.0.0
 [1.1.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.1.0
 [1.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.3.0
@@ -227,3 +255,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.4.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.4.0
 [2.4.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.4.1
 [2.5.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.5.0
+[2.5.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.5.1
