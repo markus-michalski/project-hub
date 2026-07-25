@@ -35,7 +35,7 @@ Never read the SQLite file directly — always go through MCP tools.
 | "Kontakt hinzufügen" / "Person anlegen" / "Stakeholder eintragen" / "add contact" / `/project-hub:add-contact` | `/project-hub:add-contact` |
 | "Notiz hinzufügen" / "Meeting-Protokoll" / "E-Mail einfügen" / "Entscheidung dokumentieren" / "add note" / `/project-hub:add-note` | `/project-hub:add-note` |
 | "Notiz bearbeiten" / "edit note" / "korrigiere Notiz" / "update note" / `/project-hub:edit-note` | `/project-hub:edit-note` |
-| "E-Mail schreiben" / "Slack-Nachricht" / "Teams-Nachricht" / "Draft email" / "compose" / `/project-hub:compose` | `/project-hub:compose` |
+| "E-Mail schreiben" / "Slack-Nachricht" / "Teams-Nachricht" / "Draft email" / "compose" / "Projekt exportieren" / "Projekt importieren" / `/project-hub:compose` | `/project-hub:compose` |
 | "fasse zusammen" / "Summary erstellen" / "summarize" / "Meeting zusammenfassen" / `/project-hub:summarize` | `/project-hub:summarize` |
 | "suche" / "finde" / "search" / "wo steht" / "wer ist zuständig für" / "gibt es eine Notiz" / `/project-hub:search` | `/project-hub:search` |
 | "Governance aktualisieren" / "Prozess zeigen" / "Wissen laden" / "knowledge" / `/project-hub:knowledge` | `/project-hub:knowledge` |
