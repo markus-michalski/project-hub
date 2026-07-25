@@ -59,11 +59,13 @@ For `merchant-onboarding` projects, suggest standard roles based on type:
 - If yes → set `is_shared=True` so they appear in all projects automatically
 - If no → leave default (`is_shared=False`)
 
-External contacts are always project-specific and should never be shared.
+External contacts are always project-specific and should never be shared — do not ask
+the multi-project question for external contacts; save with `is_shared=False` without
+raising it.
 
 ### 4. Save Contact
 
-Use MCP `tool_add_contact(project_id, name, role, contact_type, email, phone, company, notes, is_shared)`.
+Use MCP `tool_add_contact(project_id, name, role, contact_type, email, phone, company, notes, is_shared, force)`.
 
 **Before adding a shared contact, search first:** `tool_search_contacts(query=<lastname>, project_id=0)`.
 Search by surname, not by the exact spelling in front of you — the same person often
@@ -72,18 +74,50 @@ already exist as a shared contact, update that contact instead of creating a new
 
 #### Duplicate warnings
 
-`tool_add_contact` refuses a contact whose name matches an existing shared contact:
+`tool_add_contact` refuses a contact whose name or email matches an existing shared
+contact — and **`tool_update_contact` raises the identical two errors under the same
+conditions**, so if step 2 routed you to `tool_update_contact` instead (because the search
+there found a match), read the two bullets below as applying to that call too. The one
+difference: for `tool_update_contact` the near-match check's "is this save shared"
+question is decided by the *target* contact's stored `is_shared` value (after applying any
+update to it), not by anything answered in step 3 of this workflow — step 3 only ever
+governs a brand-new `tool_add_contact` call.
 
-- **"A shared contact with this name or email already exists"** — the names are the same
-  once spelling variants are folded away. Use the existing contact; there is nothing to
-  add. This cannot be forced.
+- **"A shared contact with this name or email already exists"** — either the names match
+  once spelling variants are folded away, **or the email alone is identical to an existing
+  shared contact's email, regardless of how different the names are.** This second case
+  matters: a shared team mailbox (e.g. `info@firma.de`) or a typo'd address will trigger
+  this for a genuinely different person. Fires regardless of the new contact's own
+  `is_shared` value. This specific error cannot be forced — but that only means "don't
+  retry this exact call with `force=True`", not "give up". If the names are clearly
+  unrelated, the collision is on the email: tell the user, and either correct/remove the
+  email and retry, or confirm they mean the existing contact and stop there. Only treat it
+  as "nothing to add" when the names *and* the email both point to the same person.
 - **"A shared contact with a very similar name already exists"** — a heuristic match
   (e.g. `Mathias` / `Matthias`, or a dropped middle name). Usually the same person.
+  **Only fires when the effective `is_shared` of the save is `True`** — a project-local
+  (non-shared) contact is never blocked by this check server-side. Don't read that as "so
+  it's fine": the point of the step-2 search is to catch exactly this case *before* saving,
+  because the server will not. A project-local near-duplicate of a shared contact (e.g.
+  "Mathias Weber" saved locally next to a shared "Matthias Weber") still shows up
+  side-by-side the next time someone resumes this project — `tool_list_contacts` and
+  `tool_list_shared_contacts` are both loaded into the same view — which is the exact
+  duplicate-contact problem
+  [project-hub#56](https://github.com/markus-michalski/project-hub/issues/56) exists to
+  prevent. So: if step 2's search turned up a near match and the user is saving
+  non-shared, still raise it with the user before saving — do not rely on the server to
+  block it, because for a non-shared save it won't.
 
 **Important:** Never call with `force=True` without explicit user confirmation. Show the
-user the existing contact the error names and ask whether it is the same person. If they
-confirm it is someone else, retry with `force=True`. Never set `force=True` merely to
-make the error go away.
+user the existing contact the error names and ask directly whether this is the same
+person or a different one (in the user's configured `default_language` — e.g. in German:
+"Ist das dieselbe Person oder jemand anderes?"). If they confirm it is someone else, retry
+with `force=True`. Never set `force=True` merely to make the error go away — a vague or
+evasive answer (e.g. German "ist mir egal", "leg einfach an", or their English
+equivalents) is not confirmation; ask once more, explicitly stating you need a clear
+same-person/different-person answer to proceed. If the second answer is still evasive,
+stop asking — do not save, do not set `force=True`, tell the user the contact was not
+saved and why, and leave it to them to re-raise it once they have a clear answer.
 
 ### 5. Output
 
