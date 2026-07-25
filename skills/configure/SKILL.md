@@ -46,6 +46,7 @@ Show the user their current settings before asking what to change:
 | E-Mail | [user.email] |
 | Organisation | [user.organization] |
 | Docs-Pfad | [docs_root] |
+| Datenbank-Pfad | [db_path] |
 | Sprache | [default_language] (de = Deutsch, en = Englisch) |
 | E-Mail-Ton | [communication.default_tone] |
 | E-Mail-Signatur | [erste Zeile der Signatur oder "nicht gesetzt"] |
@@ -78,7 +79,9 @@ Neuer Wert:
 - `user.email`: must contain `@`
 - `docs_root`: accept `~`-paths, do NOT expand them (keep as-is in YAML)
 - `db_path`: accept any path including `~` and network paths; do NOT expand `~` in YAML.
-  After saving, check the new path against two categories (do NOT treat them the same):
+  The two categories below are reference material for Step 6, which runs the actual check once
+  the value has been saved (Step 5) — do NOT run this check here in Step 4, and do NOT treat the
+  two categories the same:
   - **Cloud-sync folder** (contains `Dropbox`, `OneDrive`, `Google Drive`, `My Drive`,
     `iCloud`, `Mobile Documents` — the latter two catch macOS iCloud Drive's real path,
     `~/Library/Mobile Documents/...`, which doesn't contain the literal word "iCloud"):
@@ -144,12 +147,22 @@ print('OK')
 
 ### 6. Confirm Change
 
+Print the confirmation:
+
 ```
 ✅ [Setting-Name] aktualisiert:
    [alter Wert] → [neuer Wert]
-
-Weitere Einstellung ändern? `/project-hub:configure`
 ```
+
+If the setting just changed was **Datenbank-Pfad** (`db_path`): Step 6 is the only place the
+cloud-sync/network-share check actually runs — Step 4 only defines the two categories, it does
+not run the check. Check the new value against those two categories now (the value has already
+been written by Step 5) and, if either matched, append that exact warning block directly below
+the ✅ line, in this same response.
+
+Then continue to Step 8, which asks interactively whether to change another setting — do not also
+print a separate static "Weitere Einstellung ändern? `/project-hub:configure`" hint here, that
+question is Step 8's job.
 
 ### 7. Handle "Projekttypen verwalten"
 
@@ -157,7 +170,8 @@ If the user selected **Projekttypen verwalten**:
 
 **7a. Load and display types**
 
-Call `tool_list_project_types()` and show a table:
+Call `tool_list_project_types()` — the response is wrapped, `{"result": [...]}`; iterate
+`response["result"]`, not the raw response object — and show a table:
 
 ```
 ## Projekttypen
@@ -178,10 +192,24 @@ Use `AskUserQuestion`:
 **7c. Delete a custom type**
 
 - Ask user: "Welchen Typ möchtest du löschen?" (free text)
-- Check: call `tool_get_project_type(name)` — if `source == "built-in"`, show error "Built-in Typen können nicht gelöscht werden" and offer to pick again
+- Check: call `tool_get_project_type(name)`. This response is also wrapped, `{"result": ... | null}`
+  — read `response["result"]` (which is itself `None` for a nonexistent type, not the string
+  `"null"` or a missing key).
+  - `response["result"]` is `None` (no type with that name exists at all) → show "Typ '{name}'
+    nicht gefunden." and re-ask "Welchen Typ möchtest du löschen?" (loop back to the start of
+    7c's free-text prompt, not the 7b menu). Do **not** proceed to the confirmation dialog and do
+    **not** call `tool_delete_project_type` — there is nothing to delete.
+  - `response["result"]` is a dict with `source == "built-in"` → show error "Built-in Typen können
+    nicht gelöscht werden" and re-ask "Welchen Typ möchtest du löschen?" (loop back to the start
+    of 7c's free-text prompt, not the 7b menu).
+  - Otherwise (a dict with `source == "custom"`) → proceed to confirm deletion below.
 - Confirm deletion: "Typ '{name}' wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden."
   - Use `AskUserQuestion`: **Ja, löschen** / **Abbrechen**
-- Call `tool_delete_project_type(name)` and confirm result
+- Call `tool_delete_project_type(name)` — **unlike the two calls above, this response is NOT
+  wrapped** — the return value itself is directly `{"deleted": true, "name": ...}` or
+  `{"error": ...}`, not `{"result": {...}}`. Confirm the result to the user accordingly.
+- Either way (deleted or cancelled at the Ja/Abbrechen step), continue to Step 8 afterward — same
+  as the normal setting-change path.
 
 ### 8. Offer Another Change
 

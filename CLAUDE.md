@@ -86,12 +86,15 @@ Anti-Patterns section below.
 
 ```
 1. Find project
-   - With argument: tool_get_project(identifier)
-   - Without argument: tool_list_projects()  ← no status filter; returns all statuses
+   - With argument: tool_get_project(identifier) — response is wrapped, `None` means not
+     found; unwrap with `project = response["result"]` (see "Response wrapping" under
+     "MCP Tool API Notes" below)
+   - Without argument: tool_list_projects()  ← no status filter; returns all statuses;
+     NOT wrapped (see "Response wrapping" below) — read `response["items"]` directly
      Show numbered list, ask user to pick.
      The returned rows already have full project data — no second fetch needed.
 
-2. Load context in parallel (use the project object from step 1 directly, do NOT re-fetch):
+2. Load context in parallel (use the unwrapped project object from step 1 directly, do NOT re-fetch):
    - tool_list_contacts(project_id)       → project-specific contacts
    - tool_list_shared_contacts()          → shared contacts (cross-project)
    - tool_list_notes(project_id)          → all notes (default limit=50; check total for overflow)
@@ -106,6 +109,20 @@ On explicit project name (e.g. `/project-hub:resume Acme`):
 - Go directly to `tool_get_project("Acme")`, skip the list step.
 
 ## MCP Tool API Notes
+
+**Response wrapping — unwrap before indexing:**
+
+FastMCP wraps a tool's return value in `{"result": ...}` whenever its Python return annotation is
+anything other than a plain `dict` — that covers `list[dict]`, `dict | None`, and `bool` alike. A
+bare `dict` return type is passed through as-is (it's already a valid top-level JSON object, so
+FastMCP doesn't add another envelope). The rule tracks the *annotation*, not the runtime shape, so
+it can silently change if a signature changes — when in doubt, check the `-> ...` annotation on
+the tool's `def` in `server.py` rather than assume from a past call.
+
+Examples: `tool_get_project(identifier)` is declared `-> dict | None`, so its result is
+`response["result"]` (itself `{...}` or `None`) — **not** the top-level `response`. By contrast
+`tool_list_projects(...)` is declared `-> dict` (`{"items": [...], "total": N, ...}`), so it is
+**not** wrapped — read `response["items"]` directly, never `response["result"]["items"]`.
 
 **`type` vs `project_type`/`contact_type`/`note_type` asymmetry:**
 
@@ -125,6 +142,8 @@ tool_list_notes(note_type=...)
 tool_get_all_knowledge(project_type=...)
 ```
 
-When reading a project object and branching on its type (e.g. for knowledge loading), use
-`project["type"]` — **not** `project["project_type"]` (that key does not exist).
+When reading a project object and branching on its type (e.g. for knowledge loading), first
+unwrap the tool response per "Response wrapping" above, then use `project["type"]` — **not**
+`project["project_type"]` (that key does not exist) and **not** the raw, still-wrapped
+`tool_get_project(...)` return value.
 Pass the value to tools as their `project_type` parameter.

@@ -242,3 +242,36 @@ def test_create_project_from_template_duplicate_name_returns_structured_error(tm
     result = create_project_from_template(template_content=template)
 
     assert "error" in result
+
+
+# ---------------------------------------------------------------------------
+# MCP response wrapping contract (see CLAUDE.md "Response wrapping")
+#
+# FastMCP wraps a tool's return value in {"result": ...} for any return
+# annotation other than a plain `dict` (list[dict], dict | None, bool, ...).
+# skills/configure/SKILL.md hard-codes this per-tool for the three
+# project-type tools it calls: tool_list_project_types and
+# tool_get_project_type ARE wrapped, tool_delete_project_type is NOT
+# (it is declared `-> dict`). These tests pin that contract at the
+# `def tool_*(...) -> ...` annotation level so a signature change that
+# would silently break the skill's guidance fails CI instead.
+# ---------------------------------------------------------------------------
+
+def _output_schema(tool_name: str):
+    from server import mcp
+
+    tool = mcp._tool_manager.get_tool(tool_name)
+    assert tool is not None, f"tool {tool_name!r} is not registered on the MCP server"
+    return tool.output_schema
+
+
+def test_list_project_types_tool_is_wrapped():
+    assert _output_schema("tool_list_project_types") is not None
+
+
+def test_get_project_type_tool_is_wrapped():
+    assert _output_schema("tool_get_project_type") is not None
+
+
+def test_delete_project_type_tool_is_not_wrapped():
+    assert _output_schema("tool_delete_project_type") is None
