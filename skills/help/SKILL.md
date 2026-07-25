@@ -21,7 +21,12 @@ Show all available skills and current project context.
 
 Use MCP `tool_get_session()` to show active project (if any).
 
-### 2. Output
+### 2. Load Project Types
+
+Use MCP `tool_list_project_types()` to get the full list of project types (built-in and
+custom, e.g. created via `/project-hub:type-creator`) for the "Projekttypen" section below.
+
+### 3. Output
 
 ```
 ## Project Hub — Hilfe
@@ -34,34 +39,55 @@ Use MCP `tool_get_session()` to show active project (if any).
 ### Projekte verwalten
 | Skill | Beschreibung |
 |-------|-------------|
-| `/new-project [name]` | Neues Projekt anlegen |
-| `/resume [name]` | Projekt laden / wechseln |
-| `/dashboard` | Alle Projekte in der Übersicht |
-| `/status` | Aktuelles Projekt anzeigen & aktualisieren |
+| `/project-hub:new-project [name]` | Neues Projekt anlegen |
+| `/project-hub:resume [name]` | Projekt laden / wechseln |
+| `/project-hub:dashboard` | Alle Projekte in der Übersicht |
+| `/project-hub:status` | Aktuelles Projekt anzeigen & aktualisieren |
+| `/project-hub:session-start` | Geführte Session-Initialisierung: Setup prüfen, Projekt wählen, Kontext laden |
+| `/project-hub:next-step` | Nächsten Schritt für aktives Projekt anzeigen (offene Action-Items, Fristen) |
 
 ### Daten erfassen
 | Skill | Beschreibung |
 |-------|-------------|
-| `/add-contact` | Kontakt hinzufügen (intern oder extern) |
-| `/add-note [type]` | Notiz, Meeting-Protokoll, E-Mail oder Entscheidung speichern |
+| `/project-hub:add-contact` | Kontakt hinzufügen (intern oder extern) |
+| `/project-hub:add-note [type]` | Notiz, Meeting-Protokoll, E-Mail oder Entscheidung speichern |
+| `/project-hub:edit-note [note-id]` | Bestehende Notiz korrigieren oder aktualisieren |
 
 ### Kommunikation
 | Skill | Beschreibung |
 |-------|-------------|
-| `/summarize [note-id]` | Summary aus E-Mail oder Meeting-Notizen erstellen |
-| `/compose [email\|slack\|teams\|export\|import]` | E-Mail/Slack/Teams verfassen, oder Projekt exportieren/importieren |
+| `/project-hub:summarize [note-id]` | Summary aus E-Mail oder Meeting-Notizen erstellen |
+| `/project-hub:compose [email\|slack\|teams\|export\|import]` | E-Mail/Slack/Teams verfassen, oder Projekt exportieren/importieren |
+| `/project-hub:report [full\|summary\|all-projects]` | HTML-Report für aktuelles Projekt oder alle Projekte erstellen |
 
 ### Knowledge Base
 | Skill | Beschreibung |
 |-------|-------------|
-| `/knowledge` | Alle Knowledge-Dokumente anzeigen |
-| `/knowledge show <topic>` | Governance / Prozess / Rollen anzeigen |
-| `/knowledge update <topic>` | Dokument mit neuen Inhalten aktualisieren |
-| `/knowledge export <topic>` | Confluence-fertigen Export erstellen |
+| `/project-hub:knowledge` | Übersicht aller Topics für den aktuellen Projekttyp |
+| `/project-hub:knowledge list [project-type]` | Knowledge-Topics auflisten |
+| `/project-hub:knowledge show <topic>` | Governance / Prozess / Rollen anzeigen |
+| `/project-hub:knowledge update <topic>` | Dokument mit neuen Inhalten aktualisieren |
+| `/project-hub:knowledge export <topic>` | Confluence-fertigen Export erstellen |
+| `/project-hub:knowledge delete <topic>` | Knowledge-Topic löschen (nach Bestätigung) |
+| `/project-hub:knowledge sync [--force]` | Installierte Knowledge mit gebündelten Plugin-Templates abgleichen |
+
+### Suche
+| Skill | Beschreibung |
+|-------|-------------|
+| `/project-hub:search <query>` | Notizen und Kontakte projektübergreifend durchsuchen |
+
+### Einrichtung & Sonstiges
+| Skill | Beschreibung |
+|-------|-------------|
+| `/project-hub:configure` | Hub-Einstellungen ändern (Name, Sprache, docs-Pfad, ...) |
+| `/project-hub:type-creator` | Neuen eigenen Projekttyp anlegen |
+| `/project-hub:get-template [project-type]` | Ausfüllbare Projektvorlage holen (außerhalb des Chats befüllen, später importieren) |
+| `/project-hub:setup` | Erstmaliges Setup für project-hub (venv, Dependencies, Config) |
+| `/project-hub:help` | Diese Übersicht erneut anzeigen |
 
 ---
 
-### Note-Typen für `/add-note`
+### Note-Typen für `/project-hub:add-note`
 - `note` — allgemeine Notiz
 - `meeting-notes` — Meeting-Protokoll (kann Agenda enthalten)
 - `email` — E-Mail-Korrespondenz ablegen
@@ -69,15 +95,11 @@ Use MCP `tool_get_session()` to show active project (if any).
 - `action-item` — Aufgabe mit Verantwortlichem
 
 ### Projekttypen
-- `merchant-onboarding` — Merchant Onboarding (BNPL, Direct Debit, ...)
-- `it-project` — IT / Software Projekt
-- `marketing` — Marketing Kampagne
-- `consulting` — Consulting Engagement
-- `event` — Veranstaltungsplanung
-- `generic` — Allgemeines Projekt
+[Aus tool_list_project_types() rendern, eine Zeile pro Eintrag: `- \`{name}\` — {description}`,
+custom Typen (z. B. via `/project-hub:type-creator` angelegt) zusätzlich mit „(custom)" markieren.]
 
 ---
 
 Alle Skills arbeiten im Kontext des aktiven Projekts.
-Starte mit `/new-project` oder `/resume` um ein Projekt zu laden.
+Starte mit `/project-hub:new-project`, `/project-hub:resume` oder `/project-hub:session-start` um ein Projekt zu laden.
 ```
