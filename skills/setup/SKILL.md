@@ -26,7 +26,12 @@ PowerShell. Instead, for any script longer than one line:
    directory instead — resolve it with the single-line (newline-free, so
    safe everywhere) command `<PY> -c "import tempfile; print(tempfile.gettempdir())"`.
 2. Run it as `<PY> <path-to-that-file>` — a plain file-path argument,
-   portable across every shell, no quoting concerns at all.
+   portable across every shell, no quoting concerns at all. **Exception:**
+   this is the system-level interpreter and only has the standard library.
+   Any script that imports a venv-only dependency (pyyaml, etc. — see Step 4)
+   must instead run under the venv's own interpreter, even where the
+   write-then-run mechanics of this pattern still apply. Step 0 spells out
+   exactly which scripts that affects.
 
 Single-line `<PY> -c "..."` commands (Step 2, Step 5's config-copy) are
 unaffected by this — the newline-parsing problem only applies to multi-line
@@ -63,9 +68,15 @@ locatable — see Error Handling.
 
 Call whichever command succeeded `<PY>` — use it verbatim (not the literal
 text `<PY>`) for every subsequent system-level Python invocation in this skill
-(Steps 1, 2, 3, 5), until the venv exists in Step 3. From Step 4 onward the
-venv's *own* interpreter is used instead, which is already resolved separately
-via the OS branch below and unaffected by this detection.
+that has no dependency beyond the standard library: Steps 1, 2, 3, and Step
+5's config-copy command. This is not simply "everything before Step 4" —
+Step 5's config-copy command runs *after* Step 4 but still uses `<PY>`,
+because it only needs `shutil`/`pathlib`. What actually decides the choice is
+whether a script imports a venv-only dependency (installed in Step 4): if it
+does — the network-path-check script inside Step 5, and everything in Steps
+5b and 6 — it runs under the venv's *own* interpreter instead, which is
+already resolved separately via the OS branch below and unaffected by this
+detection.
 
 **Windows quoting note:** `python3`/`python`/`py -3` need no special handling.
 But if `<PY>` came from the known-install-path fallback, it's a full path that
@@ -135,7 +146,8 @@ Du kannst folgende Einstellungen anpassen:
 - `default_language` — Sprache für generierte Texte (`en` oder `de`)"
 
 After copying the config, check whether the user's existing config already has a `db_path`
-set to a network path. This script is multi-line — follow the write-then-run
+set to a cloud-sync folder (Dropbox/OneDrive/Google Drive/iCloud — the more severe case, see
+below) or a plain network share. This script is multi-line — follow the write-then-run
 pattern from above (save as `~/.project-hub/_setup_scratch.py`, then run it
 via the venv's Python — POSIX: `~/.project-hub/venv/bin/python3 <path>`,
 Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\python.exe" <path>`):
@@ -256,6 +268,11 @@ print('DB: OK')
 
 ### Step 7: Report
 
+The block below is a template, not literal output: every line with ` / `-separated
+alternatives (`OK / ERSTELLT`, `OK / INSTALLIERT (...) / ÜBERSPRUNGEN (...)`, etc.)
+lists every possible state — replace it with the single alternative that actually
+happened in this run. Never print more than one alternative on a line.
+
 ```
 ## Project Hub Setup
 
@@ -263,7 +280,7 @@ print('DB: OK')
 - Venv:             OK / ERSTELLT  (~/.project-hub/venv)
 - Dependencies:     SYNCHRONISIERT
 - Config:           OK / ERSTELLT  (~/.project-hub/config.yaml)
-- Knowledge:        OK / INSTALLIERT (~/.project-hub/knowledge/[gewählte Types])
+- Knowledge:        OK / INSTALLIERT (~/.project-hub/knowledge/[gewählte Types]) / ÜBERSPRUNGEN (auf Nutzerwunsch)
 - Datenbank:        OK / INITIALISIERT
 
 Starte Claude Code neu, damit der MCP Server geladen wird.
@@ -272,6 +289,10 @@ Danach kannst du loslegen:
 - `/knowledge`    — Knowledge-Templates mit echten Inhalten befüllen
 - `/help`         — Alle Skills anzeigen
 ```
+
+If the user chose "skip" in Step 5b, report the Knowledge line as ÜBERSPRUNGEN
+(auf Nutzerwunsch) — never OK or INSTALLIERT, since neither is true: nothing
+was verified present and nothing was installed.
 
 ## Error Handling
 
