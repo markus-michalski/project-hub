@@ -36,9 +36,15 @@ Use MCP tool `tool_list_project_types()` and display a compact overview:
 
 Use `AskUserQuestion`:
 - Free text: "Wie soll der neue Projekttyp heißen?"
-- Note: The name will be slugified (e.g. "HR Onboarding" → "hr-onboarding")
+- Note: The name will be slugified using the same rule as the server: lowercase the name, strip
+  everything except Unicode word characters (letters — including umlauts like ä/ö/ü —, digits,
+  underscore), whitespace, and hyphens, then collapse runs of whitespace/underscore/hyphen into a
+  single `-` and trim leading/trailing `-`. Do NOT transliterate umlauts: "Bürgeramt" → "bürgeramt",
+  not "buergeramt". Example: "HR Onboarding" → "hr-onboarding".
 
-If the slugified name already exists → show error and ask again.
+If the slugified name matches an existing **custom** type (from the Step 1 listing's `custom` rows) →
+show error and ask again. A match against a **built-in** type name is allowed — that is a deliberate
+override, not a collision; proceed to Step 3 and let Step 7 report `overrides_builtin` after creation.
 
 ### 3. Ask for description
 
@@ -116,6 +122,13 @@ On error:
 ### 8. Offer next step
 
 Use `AskUserQuestion`:
-- **Weiteren Typ erstellen** — Back to step 2
-- **Neues Projekt mit diesem Typ anlegen** → invoke `/project-hub:new-project`
+- **Weiteren Typ erstellen** — Back to step 1 (re-list types first, so the custom-type collision
+  check in step 2 sees the type just created in this pass — a stale listing would otherwise let a
+  duplicate name through the pre-check)
+- **Neues Projekt mit diesem Typ anlegen** → tell the user the type just created (its slug) is now
+  available, then invoke `/project-hub:new-project`. When it asks its Step 0 ("Check for Template"),
+  choose **Interaktiv anlegen** (Branch C) — the template branches (A/B) derive `project_type` from
+  the pasted/loaded template's own frontmatter and would silently discard the type just created.
+  Once on Branch C, treat that skill's Step 2 (type selection) as already answered with this type —
+  do not let it re-ask the user to pick a type from its list.
 - **Fertig** — End skill
