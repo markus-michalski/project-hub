@@ -569,7 +569,7 @@ def tool_generate_report(
       full          — all sections: header, contacts, charts, action items, full notes timeline
       summary       — header, open action items, last 5 activities (1-page executive view)
       all-projects  — cross-project table with status/type charts (project_id ignored)
-    output_path: destination file path; defaults to ~/.project-hub/reports/{slug}-{date}.html
+    output_path: destination file path; defaults to ~/.project-hub/reports/{slug}-{report_type}-{date}.html
     offline: reserved for future offline CDN-inlining support (currently ignored)
 
     Returns {"path": str, "project": str}.

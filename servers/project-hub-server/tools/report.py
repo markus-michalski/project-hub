@@ -52,7 +52,10 @@ def _default_path(slug: str, report_type: str) -> Path:
     date_str = datetime.now().strftime("%Y%m%d")
     reports_dir = Path.home() / ".project-hub" / "reports"
     reports_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"{slug}-{date_str}.html" if report_type != "all-projects" else f"all-projects-{date_str}.html"
+    if report_type == "all-projects":
+        filename = f"all-projects-{date_str}.html"
+    else:
+        filename = f"{slug}-{report_type}-{date_str}.html"
     return reports_dir / filename
 
 
@@ -66,7 +69,7 @@ def generate_report(
 
     project_id: numeric project ID (None for all-projects report)
     report_type: "full" | "summary" | "all-projects"
-    output_path: destination file; defaults to ~/.project-hub/reports/{slug}-{date}.html
+    output_path: destination file; defaults to ~/.project-hub/reports/{slug}-{report_type}-{date}.html
     offline: reserved for future CDN-inlining support
 
     Returns {"path": str, "project": str}.

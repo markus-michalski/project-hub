@@ -135,10 +135,15 @@ cache (~1s). This ensures new deps added in later releases are never silently sk
 Use `<PY>` (still the Step 0 interpreter — this step doesn't need the venv):
 
 ```bash
-<PY> -c "import shutil; from pathlib import Path; shutil.copy2(r'${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml', Path.home() / '.project-hub' / 'config.yaml')"
+<PY> -c "import shutil; from pathlib import Path; cfg = Path.home() / '.project-hub' / 'config.yaml'; exists = cfg.exists(); shutil.copy2(r'${CLAUDE_PLUGIN_ROOT}/config/config.example.yaml', cfg) if not exists else None; print('EXISTS' if exists else 'COPIED')"
 ```
 
-Then tell the user: "Die Config wurde nach `~/.project-hub/config.yaml` kopiert.
+If the output is `EXISTS`: do NOT copy and do NOT show the config explanation below — the user's
+config must not be overwritten. However, DO continue with the `db_path` check further below
+(it is especially relevant here: the existing config may already contain a dangerous path). Then
+continue to Step 5b.
+
+If the output is `COPIED`: tell the user: "Die Config wurde nach `~/.project-hub/config.yaml` kopiert.
 Du kannst folgende Einstellungen anpassen:
 - `docs_root` — Wo Projekt-Dokumente gespeichert werden (Standard: `~/Documents/project-hub`)
 - `db_path` — SQLite-Datenbankpfad (Standard: lokal; für Team-Nutzung: Netzwerk-Share eintragen)

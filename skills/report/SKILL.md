@@ -77,7 +77,7 @@ xdg-open "<path>" 2>/dev/null || open "<path>" 2>/dev/null || true
 ### 5. Show Result
 
 ```
-Bericht erstellt: /home/user/.project-hub/reports/acme-gmbh-20260504.html
+Bericht erstellt: /home/user/.project-hub/reports/acme-gmbh-full-20260504.html
 
 Öffne den Bericht im Browser. Für PDF: Drucken → Als PDF speichern.
 ```

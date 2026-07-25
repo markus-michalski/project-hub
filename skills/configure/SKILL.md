@@ -79,12 +79,12 @@ Neuer Wert:
 - `user.email`: must contain `@`
 - `docs_root`: accept `~`-paths, do NOT expand them (keep as-is in YAML)
 - `db_path`: accept any path including `~` and network paths; do NOT expand `~` in YAML.
-  The two categories below are reference material for Step 6, which runs the actual check once
-  the value has been saved (Step 5) — do NOT run this check here in Step 4, and do NOT treat the
-  two categories the same:
+  **Before writing**, check the new path against two categories (do NOT treat them the same).
+  Run this check immediately after the user enters the value — before proceeding to Step 5:
   - **Cloud-sync folder** (contains `Dropbox`, `OneDrive`, `Google Drive`, `My Drive`,
     `iCloud`, `Mobile Documents` — the latter two catch macOS iCloud Drive's real path,
     `~/Library/Mobile Documents/...`, which doesn't contain the literal word "iCloud"):
+    Show this warning and ask for explicit confirmation via `AskUserQuestion` before writing:
     ```
     🛑  Cloud-Sync-Pfad erkannt.
     Dropbox/OneDrive/Google Drive & Co. synchronisieren per Datei-Kopie, nicht per
@@ -94,7 +94,15 @@ Neuer Wert:
     hilft hier nicht, der Schaden ist bereits passiert.
     Empfehlung: lokalen Pfad oder einen echten Netzwerk-Share (NFS/Samba) nutzen.
     ```
+    `AskUserQuestion` options:
+    - **Trotzdem speichern** — Ich verstehe das Risiko und möchte diesen Pfad verwenden
+    - **Anderen Pfad eingeben** — Pfad ändern (back to step 4)
+    - **Abbrechen** — Einstellung nicht ändern (end skill)
+    If the user selects "Anderen Pfad eingeben" → go back to step 4.
+    If the user selects "Abbrechen" → end skill without writing.
+    Only proceed to Step 5 if the user selected "Trotzdem speichern".
   - **Real network share** (contains `/mnt/`, `/media/`, `/Volumes/`, `/net/`):
+    Show this info and ask for explicit confirmation via `AskUserQuestion` before writing:
     ```
     ⚠️  Netzwerk-Pfad erkannt. Hinweise für Team-Nutzung:
     - WAL-Modus ist aktiv (unterstützt mehrere gleichzeitige Leser).
@@ -102,6 +110,11 @@ Neuer Wert:
     - Alle Team-Mitglieder müssen denselben Pfad in ihrer config.yaml eintragen.
     - Echtzeit-Synchronisation und Konflikt-Erkennung sind in Phase 1 NICHT enthalten.
     ```
+    `AskUserQuestion` options:
+    - **Speichern** — Netzwerk-Pfad verwenden
+    - **Anderen Pfad eingeben** — Pfad ändern (back to step 4)
+    - **Abbrechen** — Einstellung nicht ändern (end skill)
+    Only proceed to Step 5 if the user selected "Speichern".
 - `default_language`: only `de` or `en` are valid
 - `communication.default_tone`: only `professional`, `friendly`, or `formal`
 
