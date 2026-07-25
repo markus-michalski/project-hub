@@ -18,15 +18,30 @@ Create a structured summary of emails, meeting notes, or any content — in the 
 
 ### 1. Check Active Project
 
-Use MCP `tool_get_session()` to load project context (name, type, phase, contacts).
-Project context makes the summary smarter — it knows who the stakeholders are, what phase we're in, etc.
+Use MCP `tool_get_session()` to load project context. `tool_get_session()` **always returns a
+dict**, even with no active project — the underlying session row always exists — so never treat
+the dict's truthiness as "a project is active". Check the `project_id` field instead: `project_id`
+being `null`/absent means no active project.
 
-If no active project → still proceed, but note that context is limited.
+If `project_id` is set, also call `tool_list_contacts(project_id)` (and
+`tool_list_shared_contacts()` for cross-project shared contacts) to actually load who the
+stakeholders are, needed for the Context Usage section below — `tool_get_session()` does **not**
+return contacts. Both tools return a paginated `{"items": [...], "total": N, "limit": L, "offset":
+O}` shape (default `limit=50`), not a bare list — read `result["items"]` and, if `total` exceeds
+`limit`, page through with `offset` so contacts past the first page aren't silently dropped.
+Project context makes the summary smarter — it knows who the stakeholders are, what phase we're
+in, etc.
+
+If `project_id` is `null` (no active project) → still proceed, but explicitly tell the user in
+your response that no project is loaded and context is limited (e.g. "Hinweis: Kein aktives
+Projekt geladen, Kontext eingeschränkt."). Do not silently proceed as if nothing were missing.
 
 ### 2. Get Content to Summarize
 
 **Option A — Note ID provided as argument:**
-Use MCP `tool_get_note(note_id)` to load the saved note (content + agenda).
+Use MCP `tool_get_note(note_id)` to load the saved note (content + agenda). If it returns `None`
+(invalid or stale `note_id`), tell the user the note wasn't found and ask for a valid id, or for
+the content to be pasted directly instead — do not summarize nothing or invent content.
 
 **Option B — Direct input:**
 The user pastes the content directly in the message.
@@ -75,7 +90,7 @@ Detect from content or note type:
 
 **Datum:** [Date if available]
 **Teilnehmer:** [Participants if mentioned]
-**Projekt:** [Active project name]
+**Projekt:** [Active project name, if any]
 
 ### Kernaussagen
 [2–3 bullet points: the most important outcomes]
@@ -104,11 +119,57 @@ Detect from content or note type:
 - [Item not addressed or requiring follow-up]
 ```
 
+**If no agenda was provided or loaded:** omit the entire Agenda-Abgleich section, heading
+included — do not leave it in with an empty or placeholder table. The section only belongs in the
+output when an agenda actually exists to compare against.
+
+#### General Summary Format
+
+Use this when content doesn't clearly match Email or Meeting Notes (Step 3's "Mixed / unknown"
+case) — e.g. a freeform note, status update, or fragment with no sender/subject header and no
+participant list or decisions.
+
+```
+## Summary: [Short descriptive title]
+
+**Datum:** [Date if available]
+**Projekt:** [Active project name, if any]
+
+### Kernpunkte
+- [Point 1]
+- [Point 2]
+
+### Action Items (if any)
+- [ ] [Action] — [Owner if mentioned] — [Deadline if mentioned]
+
+### Sonstiges
+[Anything else worth noting]
+```
+
 ### 5. Offer to Save
 
-After generating the summary, ask:
+**If `project_id` is `null`** (no active project, per Step 1): do not ask the save question at
+all — saving is impossible without a real `project_id` for `tool_add_note`, and asking first only
+to walk it back afterward is confusing. Tell the user directly instead, e.g. "Kein aktives Projekt
+geladen, daher kann ich das nicht als Notiz speichern — lade zuerst ein Projekt mit
+`/project-hub:resume`."
+
+**If a project is active:** after generating the summary, ask:
 "Möchtest du dieses Summary als Notiz im Projekt speichern?"
-If yes → use MCP `tool_add_note(project_id, title, content=summary, note_type="note")`.
+
+If yes:
+- Derive `title` from the summary's own subject/topic line (the Betreff/Thema value for an Email
+  Summary, the Title/Topic value for a Meeting Summary, the title for a General Summary) — do not
+  ask the user a separate title question. Only ask the user directly for a title if the summary
+  genuinely has nothing to draw from.
+- Call MCP `tool_add_note(project_id, title, content=summary, note_type="note")`. Always pass the
+  literal `note_type="note"` for this save — regardless of the summarized content's own type
+  (Email/Meeting/General), this saved note records the *summary itself*, not a re-classification
+  of the original content. Do not substitute a more specific type like `"meeting-notes"` or
+  `"email"`: `note_type` also decides which docs subfolder the note file lands in (`misc/` for
+  `"note"` vs. `meeting-notes/` / `emails/` for the others), what report label it gets ("Notiz" vs.
+  "Meeting"/"E-Mail"), and whether `tool_list_notes(project_id, note_type=...)` filtering will find
+  it — `"note"` here is a deliberate choice, not an oversight to "fix" later.
 
 ## Context Usage
 
