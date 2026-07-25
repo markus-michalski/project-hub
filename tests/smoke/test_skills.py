@@ -105,6 +105,53 @@ def test_add_contact_checks_for_duplicates_before_creating():
     )
 
 
+def test_edit_note_guards_against_missing_note_and_cross_project_note():
+    """Regression test: edit-note's Step 2 not-found guard must stop before Step 3, and
+    tool_get_note is not project-scoped server-side (SELECT * FROM notes WHERE id = ?,
+    no project_id filter — servers/project-hub-server/tools/notes.py), so the skill itself
+    must reject a note that doesn't belong to the active project rather than silently
+    editing it.
+    """
+    body = (SKILLS_DIR / "edit-note" / "SKILL.md").read_text(encoding="utf-8")
+
+    not_found_pos = body.find("nicht gefunden")
+    get_note_pos = body.find("tool_get_note(note_id)")
+    project_scope_pos = body.find("project_id")
+    step3_pos = body.find("### 3. Show Current Content")
+
+    assert get_note_pos != -1, "edit-note must call tool_get_note(note_id)"
+    assert not_found_pos != -1, "edit-note must document a 'nicht gefunden' guard"
+    assert project_scope_pos != -1, (
+        "edit-note must check the loaded note's project_id against the active project"
+    )
+    assert get_note_pos < not_found_pos < step3_pos, (
+        "the not-found guard must be documented between the tool_get_note call and Step 3"
+    )
+    assert get_note_pos < project_scope_pos < step3_pos, (
+        "the cross-project scoping check must be documented between the tool_get_note call "
+        "and Step 3, so a note from another project is rejected before it is ever displayed"
+    )
+
+
+def test_edit_note_type_whitelist_matches_server_subfolders():
+    """Regression test: the server never validates note_type (no CHECK constraint on
+    notes.type — servers/project-hub-server/tools/db.py), so the skill's whitelist in Step 4
+    is the only thing preventing garbage types from being written. It must keep listing
+    exactly the five types docs_writer.py knows how to file (_TYPE_TO_SUBFOLDER).
+    """
+    body = (SKILLS_DIR / "edit-note" / "SKILL.md").read_text(encoding="utf-8")
+    expected_types = {"note", "meeting-notes", "email", "decision", "action-item"}
+
+    whitelist_pos = body.find("exact match to one of the five documented types")
+    assert whitelist_pos != -1, (
+        "edit-note must document that type changes are restricted to an exact match "
+        "against the supported types"
+    )
+    window = body[whitelist_pos:whitelist_pos + 200]
+    for note_type in expected_types:
+        assert note_type in window, f"edit-note type whitelist is missing '{note_type}'"
+
+
 def test_delete_testdata_prefix_gate_precedes_any_tool_call():
     """Regression guard (project-hub#82): delete-testdata's zz-sandbox- prefix refusal
     must be documented as step 1, before any MCP tool call — this is the exact ordering
