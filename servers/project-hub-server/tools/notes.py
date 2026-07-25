@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 from .db import db_connection
@@ -64,8 +65,9 @@ def add_note(
     with db_connection() as conn:
         with conn:
             cursor = conn.execute(
-                "INSERT INTO notes (project_id, title, type, content, agenda) VALUES (?, ?, ?, ?, ?)",
-                (project_id, title, note_type, content, agenda),
+                "INSERT INTO notes (project_id, title, type, content, agenda, file_path)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (project_id, title, note_type, content, agenda, file_path or ""),
             )
             note_id = cursor.lastrowid
         row = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
@@ -100,7 +102,24 @@ def update_note(
 
 
 def delete_note(note_id: int) -> bool:
+    note = get_note(note_id)
+    if not note:
+        return False
+
     with db_connection() as conn:
         with conn:
             result = conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
-        return result.rowcount > 0
+        deleted = result.rowcount > 0
+
+    # Remove the companion .md file — skip action-items (shared todo.md, not per-note)
+    if deleted and note.get("type") != "action-item":
+        fp = note.get("file_path", "")
+        if fp:
+            try:
+                path = Path(fp)
+                if path.exists():
+                    path.unlink()
+            except OSError:
+                pass  # best-effort: don't fail the delete if disk cleanup fails
+
+    return deleted

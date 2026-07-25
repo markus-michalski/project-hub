@@ -1,7 +1,7 @@
 """Smoke: add_note auto-exports markdown files to docs_path subfolders."""
 from pathlib import Path
 
-from tools.notes import add_note
+from tools.notes import add_note, delete_note
 from tools.projects import create_project
 
 
@@ -99,3 +99,44 @@ def test_note_file_path_is_none_when_docs_path_empty(monkeypatch):
 
     assert note["id"] is not None
     assert note.get("file_path") is None
+
+
+def test_delete_note_removes_companion_file():
+    """delete_note must remove the .md file it wrote at creation time."""
+    p = create_project("Delete Cleanup Project")
+    note = add_note(p["id"], "Cleanup Note", "Will be deleted", "note")
+
+    file_path = Path(note["file_path"])
+    assert file_path.exists(), "file should exist before delete"
+
+    deleted = delete_note(note["id"])
+    assert deleted is True
+    assert not file_path.exists(), "file should be removed after delete_note"
+
+
+def test_delete_note_action_item_leaves_todo_md():
+    """delete_note must NOT remove the shared todo.md for action-item notes."""
+    p = create_project("Action Delete Project")
+    note1 = add_note(p["id"], "Task A", "Do this", "action-item")
+    note2 = add_note(p["id"], "Task B", "Do that", "action-item")
+
+    todo_path = Path(note1["file_path"])
+    assert note1["file_path"] == note2["file_path"], "both should share todo.md"
+    assert todo_path.exists()
+
+    # Deleting one action-item must not destroy the shared todo.md
+    delete_note(note1["id"])
+    assert todo_path.exists(), "todo.md must survive deletion of a single action-item note"
+
+
+def test_file_path_stored_in_db():
+    """add_note stores file_path in the DB so delete_note can find it later."""
+    from tools.notes import get_note
+
+    p = create_project("File Path DB Project")
+    note = add_note(p["id"], "Persisted Path", "Body", "email")
+
+    fetched = get_note(note["id"])
+    assert fetched is not None
+    assert fetched.get("file_path"), "file_path must be persisted in DB row"
+    assert fetched["file_path"] == note["file_path"]
