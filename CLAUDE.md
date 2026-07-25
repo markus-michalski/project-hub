@@ -85,15 +85,46 @@ Anti-Patterns section below.
 ## Session Pattern (`/resume`)
 
 ```
-1. tool_get_session()                          → check active project
-2. if no project: tool_list_projects("active") → ask user which to load
-3. tool_get_project(identifier)                → load full project
-4. tool_list_contacts(project_id)              → project-specific contacts
-5. tool_list_shared_contacts()                 → shared contacts (cross-project)
-6. tool_get_all_knowledge(project_type)        → load domain knowledge
-7. tool_list_notes(project_id)                 → all notes (default limit=50; check total for overflow)
-8. Present project summary to user
+1. Find project
+   - With argument: tool_get_project(identifier)
+   - Without argument: tool_list_projects()  ← no status filter; returns all statuses
+     Show numbered list, ask user to pick.
+     The returned rows already have full project data — no second fetch needed.
+
+2. Load context in parallel (use the project object from step 1 directly, do NOT re-fetch):
+   - tool_list_contacts(project_id)       → project-specific contacts
+   - tool_list_shared_contacts()          → shared contacts (cross-project)
+   - tool_list_notes(project_id)          → all notes (default limit=50; check total for overflow)
+   - tool_get_all_knowledge(project_type=<type>) → only when project["type"] != "generic"
+
+3. Set session: tool_set_session(identifier, last_skill="resume")
+
+4. Present project summary to user
 ```
 
 On explicit project name (e.g. `/project-hub:resume Acme`):
-- Skip step 2, go directly to `tool_get_project("Acme")`.
+- Go directly to `tool_get_project("Acme")`, skip the list step.
+
+## MCP Tool API Notes
+
+**`type` vs `project_type`/`contact_type`/`note_type` asymmetry:**
+
+Read-back (GET/LIST responses) uses the bare field name `type`:
+```json
+{"id": 1, "type": "generic", ...}           ← project
+{"id": 1, "type": "internal", ...}          ← contact
+{"id": 1, "type": "note", ...}              ← note
+```
+
+Create/filter parameters use the verbose form:
+```
+tool_create_project(project_type=...)
+tool_list_projects(project_type=...)
+tool_list_contacts(contact_type=...)
+tool_list_notes(note_type=...)
+tool_get_all_knowledge(project_type=...)
+```
+
+When reading a project object and branching on its type (e.g. for knowledge loading), use
+`project["type"]` — **not** `project["project_type"]` (that key does not exist).
+Pass the value to tools as their `project_type` parameter.
