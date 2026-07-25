@@ -52,8 +52,11 @@ when `links` is empty.
 ### Abgeschlossene Projekte
 [same table format or "Keine"]
 
+### Abgebrochene Projekte
+[same table format or "Keine"]
+
 ---
-**[N] Projekte gesamt** — Aktiv: [N] | Pausiert: [N] | Abgeschlossen: [N]
+**[N] Projekte gesamt** — Aktiv: [N] | Pausiert: [N] | Abgeschlossen: [N] | Abgebrochen: [N]
 
 Tipp: `/resume [Projektname]` um ein Projekt zu laden
 ```
