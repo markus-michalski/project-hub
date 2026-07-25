@@ -33,7 +33,17 @@ If no active project → "Kein aktives Projekt. Bitte zuerst `/resume`."
 ### 2. Determine Type
 
 If argument provided: use it as note type.
-If not: ask the user which type fits, or infer from context.
+If not, and the user's invoking message already contains the content to log (e.g. they pasted
+an email or meeting notes along with the command): infer the type directly from that content
+when it is unambiguous, instead of asking:
+- Clear email headers/quoting (`Von:`/`From:`/`Betreff:`/`Subject:`, or a forwarded-message
+  marker) → infer `email`.
+- An explicit attendee/Teilnehmer list **and** explicit meeting/agenda framing together → infer
+  `meeting-notes`. A bare date or timestamp alone is not sufficient — most emails and decisions
+  carry one too — so require both signals before inferring.
+- Otherwise: ask which type fits.
+If not, and no content has been pasted yet: ask the user which type fits now, then proceed to
+Step 3 to collect the content.
 
 ### 3. Collect Content
 
@@ -50,7 +60,11 @@ Use MCP `tool_add_note(project_id, title, content, note_type, agenda)`.
 
 After saving, ask: "Möchtest du eine Datei anhängen?" (skip if user is clearly in a hurry)
 
-If yes: ask for the absolute file path.
+If yes: ask for the file path. It must be a fully expanded absolute path under the user's home
+directory (e.g. `/home/<user>/Documents/spec.pdf`), not a relative path — `tool_attach_file`
+does **not** expand `~`, so a literal `~/Documents/spec.pdf` will fail with a misleading "File
+not found" error instead of a path-traversal error. If the user gives a relative or `~`-prefixed
+path, expand it yourself (or ask them for the full path) before calling the tool.
 Use MCP `tool_attach_file(note_id, file_path)`.
 Repeat until the user is done.
 
@@ -66,11 +80,14 @@ Repeat until the user is done.
 Notiz-ID: [id] (für späteres Abrufen)
 [Anhänge: [name1], [name2]] (nur wenn Dateien angehängt wurden)
 
-Tipp: `/summarize [note-id]` erstellt ein strukturiertes Summary dieser Notiz.
+Tipp: `/summarize [note-id]` erstellt ein strukturiertes Summary dieser Notiz[, bei `meeting-notes`
+mit Agenda direkt im Abgleich gegen die Agenda].
 ```
 
 ## Notes
 
 - For `meeting-notes` with an agenda: remind the user they can run `/summarize` to get a structured summary with agenda comparison
 - For `email`: the raw email can be used later with `/summarize` or `/compose` as reference
-- Attachment paths must be absolute and within `~/` (path traversal protection)
+- Attachment paths must be fully expanded absolute paths under the user's home directory (path
+  traversal protection) — `~` is not expanded by `tool_attach_file`, expand it before passing the
+  path in
