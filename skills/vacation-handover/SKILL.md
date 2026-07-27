@@ -69,9 +69,18 @@ Store as `VACATION_START` and `VACATION_END` strings as entered by the user (kee
 
 Call `tool_list_projects()` → iterate `result["items"]`.
 
+`tool_list_projects()` defaults to `limit=50`. If `result["total"]` is greater than the number
+of items actually returned, fetch the remaining pages with `offset=<items loaded so far>` until
+all projects are loaded — never filter and build the handover from a partial first page. The
+server sorts by `updated_at` with no tiebreaker, so pages can overlap or gap when projects share
+the same timestamp; after fetching, de-duplicate the merged list by `id` before filtering.
+
 Filter for:
 - `type == project_type`
-- `status` is NOT one of: `"closed"`, `"archived"`, `"completed"`, `"done"`
+- `status` is NOT one of: `"closed"`, `"archived"`, `"completed"`, `"done"`, `"cancelled"` — the
+  real system's only supported status values are `active`/`paused`/`completed`/`cancelled` (per
+  `tool_list_projects`'s own docstring); `"closed"`/`"archived"`/`"done"` don't currently occur
+  but stay excluded defensively in case of legacy data.
 
 If no open projects match:
 
@@ -90,8 +99,11 @@ For each project in `OPEN_PROJECTS`, load in parallel:
 - `tool_list_contacts(project_id=project.id)` → `result["items"]`
 - `tool_list_notes(project_id=project.id, limit=100)` → `result["items"]`
 
-If any project has `result["total"] > 100` for notes, page with `offset=100` etc. until all
-notes are loaded.
+Both calls are paginated server-side (`tool_list_contacts` defaults to `limit=50`). If either
+call's `result["total"]` exceeds the number of items already loaded, page with
+`offset=<items loaded so far>` etc. until every contact and every note for that project has
+been loaded — never derive Step 6's contact tables or note-based fields from a partial first
+page.
 
 ### Step 6: Generate the Handover Document
 
@@ -135,7 +147,7 @@ Pull from **contacts**:
 
 | Field | How to derive |
 |---|---|
-| **Internal contacts** | Filter `type == "internal"`. Map each contact's `role` field to the table row: look for role keywords — "commercial", "kaz", "account" → Commercial; "technical", "tech", "integration", "engineer" → Technical Integration; "partner" → Partner Manager; "support" → Technical Support; "growth" → Growth. If role is empty: add to the table with a `[?]` role label. |
+| **Internal contacts** | Filter `type == "internal"`. Map each contact's `role` field to the table row: look for role keywords — "commercial", "kaz", "account" → Commercial; "technical", "tech", "integration", "engineer" → Technical Integration; "partner" → Partner Manager; "support" → Technical Support; "growth" → Growth. If role is empty, or non-empty but matches none of the keyword buckets above: add the contact to the table with a `[?]` role label — if the role text is non-empty (just unmatched), show it alongside in parentheses, e.g. `[?] (Office Manager)`; if the role is genuinely empty, the `[?]` label stands alone. Never silently drop a real contact just because their role text doesn't match a bucket. |
 | **External contacts (Partner)** | Filter `type == "external"` whose `role` contains "partner" (e.g. "Partner Manager") OR whose `company` is a payment partner ("Adyen", "Mollie", "Stripe", "Tink"). Format: Name, Role, Email. |
 | **External contacts (Merchant)** | All remaining `type == "external"` contacts (i.e. not classified as Partner above). Format: Name, Role, Email, Phone. |
 
@@ -146,6 +158,10 @@ If a contacts section has no entries at all: output `none` for that row.
   original Riverty handover format.
 - Keep bullet lists concise (1 line each).
 - Dates stay in the format found in the notes (do not convert formats).
+- Before filling placeholders, strip the template's own internal scaffolding from the output:
+  HTML comments (`<!-- ... -->`) and any line starting with `> **Template` (these are authoring
+  notes for whoever maintains the template in the knowledge base — they must never reach the
+  delivered document, not only the Confluence export copy produced on request in Step 8).
 - Output clean Markdown — no HTML, no `{{}}` placeholders remaining.
 
 ### Step 7: Output the Document
