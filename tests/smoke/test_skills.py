@@ -5,6 +5,10 @@ from pathlib import Path
 import yaml
 
 SKILLS_DIR = Path(__file__).parent.parent.parent / "skills"
+REQUIREMENTS_TXT = SKILLS_DIR.parent / "requirements.txt"
+
+# Import name -> PyPI distribution name, for modules where they differ.
+_IMPORT_TO_DISTRIBUTION = {"yaml": "pyyaml"}
 
 # Skills that call tool_list_contacts/tool_list_shared_contacts but are exempt from the
 # project-hub#122 "search before declaring unknown" rule, with why:
@@ -329,4 +333,40 @@ def test_resume_and_status_note_shared_contacts_pagination_overflow():
         assert "total" in bullet and "limit" in bullet, (
             f"{skill_name}/SKILL.md must note when tool_list_shared_contacts() is truncated "
             "(result['total'] > result['limit']), not just when tool_list_contacts() is"
+        )
+
+
+def test_session_start_dependency_probe_matches_requirements():
+    """Regression guard (project-hub#123): the setup-check probe in session-start hard-codes
+    an `import ...` line to verify the venv is ready. When `fastmcp` was dropped from
+    requirements.txt during the mcp 2.x migration, this probe still imported it — bricking
+    every fresh install behind a permanent "Setup unvollständig" wall, since /project-hub:setup
+    installs from that same requirements.txt and could never satisfy the stale import. Pin
+    every module the probe imports against a distribution actually declared in
+    requirements.txt, so a future dependency change fails CI instead of silently
+    reintroducing this.
+    """
+    body = (SKILLS_DIR / "session-start" / "SKILL.md").read_text(encoding="utf-8")
+    requirements = REQUIREMENTS_TXT.read_text(encoding="utf-8")
+
+    probe_marker = "print('deps: OK')"
+    probe_pos = body.find(probe_marker)
+    assert probe_pos != -1, "session-start must document the dependency probe's 'deps: OK' print"
+    probe_block = body[max(0, probe_pos - 300):probe_pos]
+
+    matches = re.findall(r"^\s*import ([\w, ]+)$", probe_block, re.MULTILINE)
+    assert matches, "session-start must document a bare `import ...` line right before the probe result"
+
+    declared = {
+        re.split(r"[\[<>=]", line.strip())[0].lower()
+        for line in requirements.splitlines()
+        if line.strip()
+    }
+
+    imported = [name.strip() for line in matches for name in line.split(",")]
+    for module in imported:
+        distribution = _IMPORT_TO_DISTRIBUTION.get(module, module)
+        assert distribution in declared, (
+            f"session-start probes `import {module}`, but '{distribution}' is not declared "
+            f"in requirements.txt ({sorted(declared)}) — a fresh install can never satisfy it"
         )

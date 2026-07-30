@@ -55,7 +55,8 @@ base = Path.home() / '.project-hub'
 print('venv:', 'OK' if (base / 'venv').is_dir() else 'MISSING')
 print('config:', 'OK' if (base / 'config.yaml').is_file() else 'MISSING')
 try:
-    import mcp, fastmcp, yaml
+    import mcp, jinja2, yaml
+    from mcp.server.mcpserver import MCPServer  # noqa: F401 — detects a stale mcp 1.x venv (project-hub#123): `mcp` itself imports under both 1.x and 2.x, this submodule only exists from 2.x on
     print('deps: OK')
 except ImportError:
     print('deps: MISSING')

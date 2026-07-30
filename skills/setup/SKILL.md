@@ -127,6 +127,22 @@ Step 0 just worked around.
 Always run this, even if venv already existed. `pip` is idempotent and fast on a warm
 cache (~1s). This ensures new deps added in later releases are never silently skipped.
 
+First, remove the `fastmcp` package if a venv from before the `mcp` 2.x migration
+(project-hub#123) left it installed. It's no longer imported anywhere in this repo, and its
+metadata pins `mcp<2.0` (extras-gated, so neither pip's resolver nor `pip check` will flag
+the mismatch against this repo's `mcp[cli]>=2.0.0,<3.0.0` — the venv stays functionally fine
+without this step, but keeping it removes ~30 MB of dead dependency tree and a package that's
+half-incompatible with the `mcp` version actually in use). `pip install -r` never uninstalls
+packages dropped from `requirements.txt`, so this step is needed even on a synced venv.
+`pip uninstall -y` on an absent package is a no-op (exit 0) — safe to run unconditionally,
+including on a brand-new venv, where it prints two harmless
+`WARNING: Skipping ... as it is not installed` lines (expected, not a setup failure):
+
+- POSIX: `~/.project-hub/venv/bin/pip uninstall -y fastmcp fastmcp-slim -q`
+- Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\pip.exe" uninstall -y fastmcp fastmcp-slim -q`
+
+Then sync the declared dependencies:
+
 - POSIX: `~/.project-hub/venv/bin/pip install -r ${CLAUDE_PLUGIN_ROOT}/requirements.txt -q`
 - Windows: `& "$env:USERPROFILE\.project-hub\venv\Scripts\pip.exe" install -r ${CLAUDE_PLUGIN_ROOT}/requirements.txt -q`
 

@@ -114,10 +114,10 @@ On explicit project name (e.g. `/project-hub:resume Acme`):
 
 **Response wrapping — unwrap before indexing:**
 
-FastMCP wraps a tool's return value in `{"result": ...}` whenever its Python return annotation is
+MCPServer wraps a tool's return value in `{"result": ...}` whenever its Python return annotation is
 anything other than a plain `dict` — that covers `list[dict]`, `dict | None`, and `bool` alike. A
 bare `dict` return type is passed through as-is (it's already a valid top-level JSON object, so
-FastMCP doesn't add another envelope). The rule tracks the *annotation*, not the runtime shape, so
+MCPServer doesn't add another envelope). The rule tracks the *annotation*, not the runtime shape, so
 it can silently change if a signature changes — when in doubt, check the `-> ...` annotation on
 the tool's `def` in `server.py` rather than assume from a past call.
 
