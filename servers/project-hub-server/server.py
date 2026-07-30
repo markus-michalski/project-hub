@@ -4,7 +4,7 @@ Provides persistent project management: projects, contacts, notes, and session t
 """
 from __future__ import annotations
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from tools.attachments import attach_file, list_attachments, remove_attachment
 from tools.contacts import add_contact, delete_contact, list_contacts, list_shared_contacts, update_contact
 from tools.db import init_db
@@ -43,7 +43,7 @@ from tools.transfer import export_project, import_project
 # Initialize DB on startup
 init_db()
 
-mcp = FastMCP("project-hub-mcp")
+mcp = MCPServer("project-hub-mcp")
 
 
 # ---------------------------------------------------------------------------

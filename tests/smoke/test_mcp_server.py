@@ -67,6 +67,20 @@ def test_all_tools_defined():
     assert not missing, f"Missing tool functions: {sorted(missing)}"
 
 
+def test_server_module_actually_imports_and_registers_tools():
+    """Regression guard (project-hub#123): the tests above only `ast.parse` server.py, which
+    would accept an import of a removed class (e.g. `mcp.server.fastmcp.FastMCP`, gone in mcp
+    2.0.0) without ever executing it. This test performs the real import, independent of the
+    response-wrapping contract tests in test_project_types.py that happen to import `server`
+    only as a side effect of testing something else.
+    """
+    from server import mcp
+
+    tool_names = {tool.name for tool in mcp._tool_manager.list_tools()}
+    missing = EXPECTED_TOOLS - tool_names
+    assert not missing, f"Registered tools missing at runtime: {sorted(missing)}"
+
+
 def test_claude_md_has_skill_routing_heading():
     """CLAUDE.md must exist and contain the ## Skill Routing heading."""
     claude_md = Path(__file__).parent.parent.parent / "CLAUDE.md"
