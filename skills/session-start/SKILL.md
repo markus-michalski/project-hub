@@ -109,7 +109,13 @@ If the project was resolved via Step 2's argument branch, reuse that `tool_get_p
 ...).
 
 Load the rest in parallel:
-- MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — all contacts
+- MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — all contacts. This is a
+  paginated display snapshot, not a complete lookup source
+  ([project-hub#122](https://github.com/markus-michalski/project-hub/issues/122)) — if a name
+  surfaces later in the session that isn't in this list, call
+  `tool_search_contacts(query=<most distinctive part of the name>, project_id=0)` (returns a
+  bare list, not an `{"items": ...}` dict) before concluding the contact doesn't exist or
+  offering to create one
 - MCP `tool_list_notes(project_id, limit=5)` → iterate `result["items"]` — most recent 5 notes
 - If the project object's `type` field (from the project object resolved above, either reused
   from Step 2 or freshly fetched here) is NOT `generic`: MCP
