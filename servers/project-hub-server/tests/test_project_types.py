@@ -247,7 +247,7 @@ def test_create_project_from_template_duplicate_name_returns_structured_error(tm
 # ---------------------------------------------------------------------------
 # MCP response wrapping contract (see CLAUDE.md "Response wrapping")
 #
-# FastMCP wraps a tool's return value in {"result": ...} for any return
+# MCPServer wraps a tool's return value in {"result": ...} for any return
 # annotation other than a plain `dict` (list[dict], dict | None, bool, ...).
 # skills/configure/SKILL.md hard-codes this per-tool for the three
 # project-type tools it calls: tool_list_project_types and

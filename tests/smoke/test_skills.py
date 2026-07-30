@@ -1,9 +1,14 @@
 """Smoke: skill frontmatter has required fields, valid model IDs, no duplicates."""
+import re
 from pathlib import Path
 
 import yaml
 
 SKILLS_DIR = Path(__file__).parent.parent.parent / "skills"
+REQUIREMENTS_TXT = SKILLS_DIR.parent / "requirements.txt"
+
+# Import name -> PyPI distribution name, for modules where they differ.
+_IMPORT_TO_DISTRIBUTION = {"yaml": "pyyaml"}
 
 REQUIRED_FIELDS = {"name", "description", "model", "user-invocable"}
 VALID_MODELS = {
@@ -243,3 +248,39 @@ def test_search_treats_whitespace_only_argument_as_no_argument():
         "search step 1 must explicitly treat a whitespace-only argument as no argument"
     )
     assert "Wonach suchst du?" in step1
+
+
+def test_session_start_dependency_probe_matches_requirements():
+    """Regression guard (project-hub#123): the setup-check probe in session-start hard-codes
+    an `import ...` line to verify the venv is ready. When `fastmcp` was dropped from
+    requirements.txt during the mcp 2.x migration, this probe still imported it — bricking
+    every fresh install behind a permanent "Setup unvollständig" wall, since /project-hub:setup
+    installs from that same requirements.txt and could never satisfy the stale import. Pin
+    every module the probe imports against a distribution actually declared in
+    requirements.txt, so a future dependency change fails CI instead of silently
+    reintroducing this.
+    """
+    body = (SKILLS_DIR / "session-start" / "SKILL.md").read_text(encoding="utf-8")
+    requirements = REQUIREMENTS_TXT.read_text(encoding="utf-8")
+
+    probe_marker = "print('deps: OK')"
+    probe_pos = body.find(probe_marker)
+    assert probe_pos != -1, "session-start must document the dependency probe's 'deps: OK' print"
+    probe_block = body[max(0, probe_pos - 300):probe_pos]
+
+    matches = re.findall(r"^\s*import ([\w, ]+)$", probe_block, re.MULTILINE)
+    assert matches, "session-start must document a bare `import ...` line right before the probe result"
+
+    declared = {
+        re.split(r"[\[<>=]", line.strip())[0].lower()
+        for line in requirements.splitlines()
+        if line.strip()
+    }
+
+    imported = [name.strip() for line in matches for name in line.split(",")]
+    for module in imported:
+        distribution = _IMPORT_TO_DISTRIBUTION.get(module, module)
+        assert distribution in declared, (
+            f"session-start probes `import {module}`, but '{distribution}' is not declared "
+            f"in requirements.txt ({sorted(declared)}) — a fresh install can never satisfy it"
+        )
