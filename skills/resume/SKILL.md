@@ -38,13 +38,30 @@ NOT re-fetch it via `tool_get_project_by_id`. Load the rest in parallel:
   only under "Geteilte Kontakte" below, not here); split the remainder by `type` — `external` →
   "Externe Kontakte", everything else (including the DB default `internal`) → "Interne Kontakte", so
   an unexpected `type` value never silently drops a contact
-- MCP `tool_list_shared_contacts()` → iterate `result["items"]` — shared/global contacts available across all projects
+- MCP `tool_list_shared_contacts()` → iterate `result["items"]`; if `result["total"] >
+  result["limit"]`, page with `offset=<items loaded so far>` etc. until every shared contact is
+  loaded — never render this section from a partial first page. The shared directory grows
+  across every project, so it crosses the default `limit=50` sooner than any single project's
+  own contact list (project-hub#122: a shared contact past the first page was reported as
+  unknown, risking a duplicate — see the rule below)
 - MCP `tool_list_notes(project_id)` → iterate `result["items"]` — all notes (default limit=50); if `result["total"] > 50`, note that older entries exist and suggest `/search` for deep history
 - If `type` is NOT `generic`: MCP `tool_get_all_knowledge(project_type=<that type value>)` — loads
   the full content of every knowledge file for that type in one call
 
 Note: the project object's field is called `type` — there is no `project_type` key on it.
 `project_type` is only the *parameter name* the knowledge tools expect; pass the `type` value there.
+
+**Before saying a contact is unknown**
+([project-hub#122](https://github.com/markus-michalski/project-hub/issues/122))**:** even with
+the paging above, the loaded lists are still a display snapshot at the moment of loading — a
+contact could be added mid-session by another skill/user, or these tools may not have been
+called at all in some other skill. If a name surfaces later in the session (e.g. in a meeting
+recap or note) that doesn't appear in the loaded lists, call `tool_search_contacts(query=<most
+distinctive part of the name, usually the surname>, project_id=0)` before concluding the
+contact doesn't exist or offering to create one — it searches across all projects and shared
+contacts in one call and returns a bare list (not an `{"items": ...}` dict). Prefer a partial
+name over the exact spelling — the same person may be stored as "Jan Kalle Wulf" or
+"Jan-Kalle Wulf" depending on source.
 
 ### 3. Set Session
 

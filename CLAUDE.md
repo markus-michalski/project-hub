@@ -96,7 +96,9 @@ Anti-Patterns section below.
 
 2. Load context in parallel (use the unwrapped project object from step 1 directly, do NOT re-fetch):
    - tool_list_contacts(project_id)       → project-specific contacts
-   - tool_list_shared_contacts()          → shared contacts (cross-project)
+   - tool_list_shared_contacts()          → shared contacts (cross-project); page to completion
+     via offset if total > limit — see skills/resume/SKILL.md Step 2 for the full loading rules
+     and the project-hub#122 "search before declaring a contact unknown" safety net
    - tool_list_notes(project_id)          → all notes (default limit=50; check total for overflow)
    - tool_get_all_knowledge(project_type=<type>) → only when project["type"] != "generic"
 

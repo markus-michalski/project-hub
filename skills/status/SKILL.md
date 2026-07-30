@@ -37,10 +37,25 @@ In parallel:
 - MCP `tool_list_shared_contacts()` → iterate `result["items"]` — contacts shared across all
   projects (`is_shared=1`), owned by other projects but explicitly cross-project-visible, same as
   `/resume` (skills/resume/SKILL.md) — without this call, shared contacts silently disappear here.
+  If `result["total"] > result["limit"]` (default `limit=50`), page with
+  `offset=<items loaded so far>` etc. until every shared contact is loaded — never render the
+  "Geteilte Kontakte" section below from a partial first page. The shared directory grows across
+  every project and can exceed this limit even when the project's own contact list (above) still
+  fits on one page (project-hub#122: this is exactly how a shared contact past the first page
+  was reported as unknown — see the rule below).
 - MCP `tool_list_notes(project_id)` → iterate `result["items"]` — recent notes (latest 3, newest
   first). If `result["total"] > result["limit"]` (default `limit=50`), older notes exist — mention
   `/search` for deep history.
 - MCP `tool_list_docs(project_id)` — documents
+
+**Before saying a contact is unknown**
+([project-hub#122](https://github.com/markus-michalski/project-hub/issues/122))**:** even with
+the paging above, the loaded lists are still a snapshot at the moment of loading. If a name
+surfaces later in the session that doesn't appear in them, call `tool_search_contacts(query=
+<most distinctive part of the name, usually the surname>, project_id=0)` before concluding the
+contact doesn't exist or offering to create one — it returns a bare list (not an `{"items": ...}`
+dict). Prefer a partial name over the exact spelling — the same person may be stored with a
+differently punctuated name.
 
 ### 3. Display Status
 

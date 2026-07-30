@@ -1,9 +1,23 @@
 """Smoke: skill frontmatter has required fields, valid model IDs, no duplicates."""
+import re
 from pathlib import Path
 
 import yaml
 
 SKILLS_DIR = Path(__file__).parent.parent.parent / "skills"
+
+# Skills that call tool_list_contacts/tool_list_shared_contacts but are exempt from the
+# project-hub#122 "search before declaring unknown" rule, with why:
+CONTACT_LOADING_EXEMPT = {
+    "add-contact": "already carries the canonical duplicate-check rule (project-hub#56), which "
+    "supersedes this one — it searches unconditionally before every save, not just before "
+    "declaring a name unknown",
+    "create-testdata": "sandbox-only, disable-model-invocation: true — only verifies known "
+    "zz-sandbox- fixture rows, never reasons about unknown real-world contacts",
+    "reset-testdata": "sandbox-only, disable-model-invocation: true — same as create-testdata",
+    "vacation-handover": "pages tool_list_contacts to completion and never declares a contact "
+    "unknown — it renders whatever exists, so the #122 failure mode doesn't apply here",
+}
 
 REQUIRED_FIELDS = {"name", "description", "model", "user-invocable"}
 VALID_MODELS = {
@@ -243,3 +257,76 @@ def test_search_treats_whitespace_only_argument_as_no_argument():
         "search step 1 must explicitly treat a whitespace-only argument as no argument"
     )
     assert "Wonach suchst du?" in step1
+
+
+def _skills_loading_contacts() -> set[str]:
+    """Every skill that references tool_list_contacts/tool_list_shared_contacts, discovered by
+    scanning skills/ rather than a hardcoded list — so a future skill that starts loading
+    contacts is automatically required to carry the project-hub#122 rule instead of silently
+    slipping through unguarded.
+
+    Known blind spot: this keys on the two tool-name substrings, not on "any code path that
+    surfaces raw contact rows" — a future skill/tool reading contacts through some other
+    mechanism (e.g. an exported project JSON's `contacts` array) would not be caught here.
+    Confirmed non-issue today (tool_export_project/tool_import_project hit SQLite directly with
+    no LIMIT and never reason about "is this contact known"), but worth knowing before assuming
+    this scanner has full coverage of anything contact-related.
+    """
+    found = set()
+    for skill_md in SKILLS_DIR.glob("*/SKILL.md"):
+        body = skill_md.read_text(encoding="utf-8")
+        if "tool_list_contacts" in body or "tool_list_shared_contacts" in body:
+            found.add(skill_md.parent.name)
+    return found
+
+
+def test_contact_loading_skills_require_search_before_declaring_unknown():
+    """Regression guard (project-hub#122): tool_list_contacts/tool_list_shared_contacts are
+    paginated display snapshots (limit=50) — treating them as a complete lookup source caused a
+    real incident where an existing shared contact ("Rishu", entry 51+ of 84) was reported as
+    unknown, risking a duplicate contact. Every skill that loads contacts into context must
+    document calling tool_search_contacts before concluding a mentioned name is unknown or
+    offering to create it — except the explicitly exempted ones in CONTACT_LOADING_EXEMPT, each
+    with its own reason on record.
+    """
+    skills = _skills_loading_contacts()
+    # every non-exempt contact-loading skill must carry the rule
+    for skill_name in skills - CONTACT_LOADING_EXEMPT.keys():
+        body = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
+        assert "project-hub#122" in body, (
+            f"{skill_name}/SKILL.md loads contacts but is missing the project-hub#122 "
+            "search-before-declaring-unknown rule (or add it to CONTACT_LOADING_EXEMPT with a reason)"
+        )
+        assert "tool_search_contacts" in body, (
+            f"{skill_name}/SKILL.md must document calling tool_search_contacts as the safety "
+            "net before declaring a contact unknown"
+        )
+    # exemptions must still exist as skills — a stale exemption for a deleted/renamed skill
+    # would silently stop meaning anything
+    stale_exemptions = CONTACT_LOADING_EXEMPT.keys() - {
+        p.parent.name for p in SKILLS_DIR.glob("*/SKILL.md")
+    }
+    assert not stale_exemptions, f"CONTACT_LOADING_EXEMPT references skills that no longer exist: {stale_exemptions}"
+
+
+def test_resume_and_status_note_shared_contacts_pagination_overflow():
+    """Regression guard (project-hub#122): tool_list_shared_contacts grows across every project
+    and was the specific call missing a `total > limit` overflow note — resume documented it for
+    tool_list_contacts but not for shared contacts, status didn't document it for either. Both
+    skills must now tell the user when the shared-contact list was truncated.
+
+    The check is scoped to the single bullet describing tool_list_shared_contacts() (up to the
+    next top-level `- ` bullet or a blank line), not a fixed character window — a fixed window
+    previously bled into the next bullet's text and passed even when this bullet's own overflow
+    note was missing (caught by reverting the fix and confirming the old window-based version
+    stayed green for `resume`).
+    """
+    for skill_name in ("resume", "status"):
+        body = (SKILLS_DIR / skill_name / "SKILL.md").read_text(encoding="utf-8")
+        match = re.search(r"tool_list_shared_contacts\(\).*?(?=\n- |\n\n)", body, re.DOTALL)
+        assert match is not None, f"{skill_name}/SKILL.md must call tool_list_shared_contacts()"
+        bullet = match.group(0)
+        assert "total" in bullet and "limit" in bullet, (
+            f"{skill_name}/SKILL.md must note when tool_list_shared_contacts() is truncated "
+            "(result['total'] > result['limit']), not just when tool_list_contacts() is"
+        )

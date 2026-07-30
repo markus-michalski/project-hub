@@ -32,6 +32,16 @@ O}` shape (default `limit=50`), not a bare list — read `result["items"]` and, 
 Project context makes the summary smarter — it knows who the stakeholders are, what phase we're
 in, etc.
 
+**Before saying a contact is unknown**
+([project-hub#122](https://github.com/markus-michalski/project-hub/issues/122))**:** even with
+full pagination above, a name in the summarized content might genuinely not be in this
+project's/shared contact set yet. Before concluding a mentioned name is unknown or offering to
+add it as a new contact, call `tool_search_contacts(query=<most distinctive part of the name>,
+project_id=0)` — it searches across all projects and shared contacts in one call, catching a
+contact that exists but was created elsewhere. Unlike `tool_list_contacts`/
+`tool_list_shared_contacts` above, this tool returns a **bare list**, not an `{"items": ...}`
+dict — iterate the result directly.
+
 If `project_id` is `null` (no active project) → still proceed, but explicitly tell the user in
 your response that no project is loaded and context is limited (e.g. "Hinweis: Kein aktives
 Projekt geladen, Kontext eingeschränkt."). Do not silently proceed as if nothing were missing.

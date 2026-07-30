@@ -43,7 +43,12 @@ Load in parallel:
   oldest-first ("most overdue at top"), so this list must never be silently truncated.
 - MCP `tool_list_notes(project_id, limit=20)` → iterate `result["items"]` — recent notes (all
   types) for Analyses B/C/D (phase progress, stale notes, communication gaps)
-- MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — contacts for communication suggestions
+- MCP `tool_list_contacts(project_id)` → iterate `result["items"]` — contacts for communication
+  suggestions. This is a paginated display snapshot, not a complete lookup source
+  ([project-hub#122](https://github.com/markus-michalski/project-hub/issues/122)) — if a name
+  surfaces that isn't in this list, call `tool_search_contacts(query=<most distinctive part of
+  the name>, project_id=0)` (returns a bare list, not an `{"items": ...}` dict) before
+  concluding the contact doesn't exist or offering to create one
 
 ### 3. Analyze
 

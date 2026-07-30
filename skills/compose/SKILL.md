@@ -36,6 +36,16 @@ importieren**, Step 9, needs no active project either — it creates one — so 
 way.) **Step 7 (Offer to Save Reference)** also needs an active project — it is skipped, not offered,
 when there is none; see its own handling there.
 
+**Before saying a contact is unknown**
+([project-hub#122](https://github.com/markus-michalski/project-hub/issues/122))**:** applies
+whether or not a project is active — with an active project, `tool_list_contacts` above is only
+a paginated display snapshot, not a complete lookup source; with no active project, there is no
+loaded contact list at all, so this check matters even more. If the message mentions a
+recipient/name that isn't in the loaded list (or none was loaded), call
+`tool_search_contacts(query=<most distinctive part of the name>, project_id=0)` — it needs no
+active project and searches across all projects and shared contacts, returning a bare list (not
+an `{"items": ...}` dict) — before concluding the contact doesn't exist or offering to create one.
+
 ### 2. Determine Channel
 
 If argument provided: use it (email / slack / teams / export / import).
