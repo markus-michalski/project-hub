@@ -8,14 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- `meeting-prep` skill: prepare a structured meeting agenda before a meeting, distinguishing
-  recurring/one-off and internal/external meetings, with each agenda item anchored to its
-  relevant file(s)/source(s) and a short context description (#133)
+- Nothing yet
 
 ### Changed
-- `tool_attach_file`/`tool_attach_files` now refuse hidden/dotfile paths (anything under a
-  `.`-prefixed folder, e.g. `~/.ssh/`, `~/.config/`) that previously succeeded, as a precaution
-  now that preserving originals is mandatory and often folder-shaped (#134)
+- Nothing yet
 
 ### Deprecated
 - Nothing yet
@@ -24,15 +20,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Fixed
-- Original files are now preserved when imported/converted to Markdown: `tool_add_note(...,
-  source_paths=[...])` attaches originals in the same call as note creation, a new
-  `tool_attach_files(note_id, file_paths)` batch-attaches several files/a folder at once, and
-  preserving originals is now mandatory (not an optional follow-up question) whenever a note is
-  created or edited from a real local file/folder referenced in chat. Fixes real data loss where
-  a referenced folder was analyzed and summarized without any of it being preserved (#134)
+- Nothing yet
 
 ### Security
 - Nothing yet
+
+## [2.7.0] - 2026-09-15
+
+### Added
+- add meeting agenda preparation skill (#135)
+
+### Changed
+- bump the pip-all group with 2 updates (#130)
+- bump the pip-all group with 3 updates (#129)
+- update ruff requirement in the pip-all group (#128)
+- bump the pip-all group with 2 updates (#127)
+
+### Fixed
+- preserve source files on note import (#136)
 
 ## [2.6.1] - 2026-07-30
 
@@ -265,7 +270,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MIT License
 - Comprehensive README with installation instructions
 
-[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.6.1...HEAD
+[Unreleased]: https://github.com/markus-michalski/project-hub/compare/v2.7.0...HEAD
 [1.0.0]: https://github.com/markus-michalski/claude-agents-project-management/releases/tag/v1.0.0
 [1.1.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.1.0
 [1.3.0]: https://github.com/markus-michalski/project-hub/releases/tag/v1.3.0
@@ -286,3 +291,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.5.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.5.1
 [2.6.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.6.0
 [2.6.1]: https://github.com/markus-michalski/project-hub/releases/tag/v2.6.1
+[2.7.0]: https://github.com/markus-michalski/project-hub/releases/tag/v2.7.0
