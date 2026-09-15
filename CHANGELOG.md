@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Nothing yet
+- `meeting-prep` skill: prepare a structured meeting agenda before a meeting, distinguishing
+  recurring/one-off and internal/external meetings, with each agenda item anchored to its
+  relevant file(s)/source(s) and a short context description (#133)
 
 ### Changed
 - Nothing yet

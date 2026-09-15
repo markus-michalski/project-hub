@@ -35,6 +35,7 @@ Never read the SQLite file directly — always go through MCP tools.
 | "Kontakt hinzufügen" / "Person anlegen" / "Stakeholder eintragen" / "add contact" / `/project-hub:add-contact` | `/project-hub:add-contact` |
 | "Notiz hinzufügen" / "Meeting-Protokoll" / "E-Mail einfügen" / "Entscheidung dokumentieren" / "add note" / `/project-hub:add-note` | `/project-hub:add-note` |
 | "Notiz bearbeiten" / "edit note" / "korrigiere Notiz" / "update note" / `/project-hub:edit-note` | `/project-hub:edit-note` |
+| "Meeting vorbereiten" / "Agenda erstellen" / "prepare for meeting" / "meeting prep" / `/project-hub:meeting-prep` | `/project-hub:meeting-prep [Titel]` |
 | "E-Mail schreiben" / "Slack-Nachricht" / "Teams-Nachricht" / "Draft email" / "compose" / "Projekt exportieren" / "Projekt importieren" / `/project-hub:compose` | `/project-hub:compose` |
 | "fasse zusammen" / "Summary erstellen" / "summarize" / "Meeting zusammenfassen" / `/project-hub:summarize` | `/project-hub:summarize` |
 | "suche" / "finde" / "search" / "wo steht" / "wer ist zuständig für" / "gibt es eine Notiz" / `/project-hub:search` | `/project-hub:search` |
@@ -72,6 +73,9 @@ Anti-Patterns section below.
   or direct invocation.
 - **NEVER** activate `/project-hub:setup` on bare "setup" / "einrichten" — only when target is
   explicitly project-hub.
+- **NEVER** activate `/project-hub:meeting-prep` on a bare "Meeting" mention without explicit
+  prep/agenda intent — could just be logging notes (`add-note`) or summarizing one after the
+  fact (`summarize`).
 - **NEVER** modify the database directly — all state changes go through MCP tools.
 - **NEVER** confuse hub projects (client/contact tracking) with dev projects (mm-dev-toolkit),
   books (storyforge), or videos (vidcraft).

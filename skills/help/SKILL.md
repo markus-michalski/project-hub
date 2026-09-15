@@ -52,6 +52,7 @@ custom, e.g. created via `/project-hub:type-creator`) for the "Projekttypen" sec
 | `/project-hub:add-contact` | Kontakt hinzufügen (intern oder extern) |
 | `/project-hub:add-note [type]` | Notiz, Meeting-Protokoll, E-Mail oder Entscheidung speichern |
 | `/project-hub:edit-note [note-id]` | Bestehende Notiz korrigieren oder aktualisieren |
+| `/project-hub:meeting-prep [Titel]` | Agenda für ein bevorstehendes Meeting vorbereiten (Quellen + Kontext pro Punkt) |
 
 ### Kommunikation
 | Skill | Beschreibung |
