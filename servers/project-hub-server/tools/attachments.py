@@ -90,6 +90,36 @@ def _get_attachments_dir(note: dict) -> Path:
     return Path(project["docs_path"]) / "attachments"
 
 
+def _resolve_source(file_path: str, home: Path) -> Path:
+    """Resolve `file_path` and confirm it exists, is a regular file, lives under
+    `home`, and isn't hidden.
+
+    Shared validation for attach_file() and attach_files(). The existence/traversal
+    checks are unchanged from attach_file()'s pre-extraction behavior. Two checks
+    were added when attach_files() made batch/folder-shaped imports mandatory
+    (project-hub#134 review):
+    - is_file(): exists() is also true for directories and FIFOs — a directory makes
+      shutil.copy2() raise immediately, but a FIFO makes it block forever waiting for
+      a writer. Reject anything that isn't a regular file up front.
+    - hidden-path guard: with preservation now mandatory and often folder-shaped,
+      silently sweeping up a dotfile like ~/.ssh/id_rsa or ~/.aws/credentials is a
+      real risk a single "under $HOME" boundary doesn't cover. Any dotfile path
+      component between `home` and the file is refused.
+    """
+    source = Path(file_path).resolve()
+    if not source.exists():
+        raise FileNotFoundError(f"File not found: {file_path}")
+    try:
+        rel = source.relative_to(home)
+    except ValueError:
+        raise ValueError(f"Path traversal blocked: {file_path} is not under {home}") from None
+    if not source.is_file():
+        raise ValueError(f"Not a regular file: {file_path}")
+    if any(part.startswith(".") for part in rel.parts):
+        raise ValueError(f"Refusing to attach a hidden/dotfile path: {file_path}")
+    return source
+
+
 def _copy_with_disambiguation(source: Path, dest_dir: Path, dest_name: str) -> Path:
     """Copy `source` into `dest_dir` as `dest_name`, never silently overwriting an
     existing file that happens to share that name — disambiguates with a counter
@@ -124,18 +154,11 @@ def attach_file(
     if note is None:
         raise ValueError(f"Note not found: {note_id}")
 
-    source = Path(file_path).resolve()
-    if not source.exists():
-        raise FileNotFoundError(f"File not found: {file_path}")
-
     # .resolve() matters on Windows: home_override/Path.home() can be an 8.3
     # short path (e.g. RUNNER~1) that won't compare equal to the resolved
     # long-form `source` below even for genuinely identical directories.
     home = (home_override or Path.home()).resolve()
-    try:
-        source.relative_to(home)
-    except ValueError:
-        raise ValueError(f"Path traversal blocked: {file_path} is not under {home}")
+    source = _resolve_source(file_path, home)
 
     size = source.stat().st_size
     if size > _SIZE_WARN_BYTES:
@@ -160,6 +183,67 @@ def attach_file(
             )
 
     return attachment
+
+
+def attach_files(
+    note_id: int,
+    file_paths: list[str],
+    *,
+    home_override: Optional[Path] = None,
+) -> dict:
+    """Copy multiple local files into the note's attachments folder in one call.
+
+    Unlike attach_file(), a bad individual path (missing file, not a regular file,
+    hidden/dotfile, path-traversal violation) is collected instead of raised, so
+    one bad entry in a batch (e.g. someone pointed Claude at a whole folder) never
+    loses the rest — see project-hub#134. Note-level problems still raise ValueError
+    immediately, since there is nothing per-file to isolate them from: the note not
+    existing, or (via _get_attachments_dir) the project having no docs_path. Callers
+    that create a note and attach in the same step (see add_note()'s source_paths)
+    must catch this — the note row may already be committed by the time it's raised.
+
+    Returns {"attached": [{"name", "path", "size"}, ...], "failed": [{"path", "error"}, ...]}.
+    """
+    note = get_note(note_id)
+    if note is None:
+        raise ValueError(f"Note not found: {note_id}")
+
+    home = (home_override or Path.home()).resolve()
+    dest_dir = _get_attachments_dir(note)
+
+    attached: list[dict] = []
+    failed: list[dict] = []
+    seen: set[Path] = set()
+
+    for file_path in file_paths:
+        try:
+            source = _resolve_source(file_path, home)
+            if source in seen:
+                continue  # same resolved file passed twice in this batch — skip silently
+            seen.add(source)
+            size = source.stat().st_size
+            if size > _SIZE_WARN_BYTES:
+                print(
+                    f"[project-hub] WARNING: Attachment {source.name} is "
+                    f"{size / 1024 / 1024:.1f} MB (> 10 MB)",
+                    file=sys.stderr,
+                )
+            dest = _copy_with_disambiguation(source, dest_dir, source.name)
+            attached.append({"name": dest.name, "path": str(dest), "size": size})
+        except (ValueError, OSError) as exc:  # FileNotFoundError is an OSError subclass
+            failed.append({"path": file_path, "error": str(exc)})
+
+    if attached:
+        current = json.loads(note["attachments"])
+        current.extend(attached)
+        with db_connection() as conn:
+            with conn:
+                conn.execute(
+                    "UPDATE notes SET attachments = ? WHERE id = ?",
+                    (json.dumps(current), note_id),
+                )
+
+    return {"attached": attached, "failed": failed}
 
 
 def list_attachments(note_id: int) -> list[dict]:

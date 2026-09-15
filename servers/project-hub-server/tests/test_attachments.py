@@ -8,7 +8,13 @@ from pathlib import Path
 
 import pytest
 from tools import attachments as attachments_module
-from tools.attachments import _convert_to_markdown_sibling, attach_file, list_attachments, remove_attachment
+from tools.attachments import (
+    _convert_to_markdown_sibling,
+    attach_file,
+    attach_files,
+    list_attachments,
+    remove_attachment,
+)
 from tools.notes import add_note, get_note
 from tools.projects import create_project
 
@@ -162,6 +168,202 @@ def test_attach_file_warns_large_file(project, note, tmp_path, capsys):
 
     captured = capsys.readouterr()
     assert "10" in captured.err or "10" in captured.out or "MB" in captured.err or "MB" in captured.out
+
+
+# --- attach_files (batch, project-hub#134) ---
+
+def test_attach_files_copies_all(project, note, tmp_path):
+    f1 = tmp_path / "doc1.txt"
+    f2 = tmp_path / "doc2.txt"
+    f1.write_text("first")
+    f2.write_text("second")
+
+    result = attach_files(note["id"], [str(f1), str(f2)], home_override=_HOME)
+
+    assert result["failed"] == []
+    assert {a["name"] for a in result["attached"]} == {"doc1.txt", "doc2.txt"}
+    for a in result["attached"]:
+        assert Path(a["path"]).exists()
+
+    updated = get_note(note["id"])
+    assert len(json.loads(updated["attachments"])) == 2
+
+
+def test_attach_files_creates_markdown_siblings(project, note, tmp_path):
+    f1 = tmp_path / "report.txt"
+    f1.write_text("important content")
+
+    result = attach_files(note["id"], [str(f1)], home_override=_HOME)
+
+    sibling = Path(result["attached"][0]["path"]).with_name("report.txt.md")
+    assert sibling.exists()
+
+
+def test_attach_files_disambiguates_same_basename_within_batch(project, note, tmp_path):
+    dir_a = tmp_path / "a"
+    dir_b = tmp_path / "b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+    (dir_a / "same.txt").write_text("first")
+    (dir_b / "same.txt").write_text("second")
+
+    result = attach_files(
+        note["id"], [str(dir_a / "same.txt"), str(dir_b / "same.txt")], home_override=_HOME
+    )
+
+    assert result["failed"] == []
+    names = {a["name"] for a in result["attached"]}
+    assert names == {"same.txt", "same-2.txt"}
+
+
+def test_attach_files_one_missing_path_does_not_abort_batch(project, note, tmp_path):
+    good = tmp_path / "good.txt"
+    good.write_text("ok")
+
+    result = attach_files(
+        note["id"], [str(good), "/nonexistent/missing.txt"], home_override=_HOME
+    )
+
+    assert len(result["attached"]) == 1
+    assert result["attached"][0]["name"] == "good.txt"
+    assert len(result["failed"]) == 1
+    assert result["failed"][0]["path"] == "/nonexistent/missing.txt"
+    assert "not found" in result["failed"][0]["error"].lower()
+
+    # the good file must still be reflected in the DB despite the other failure
+    updated = get_note(note["id"])
+    assert len(json.loads(updated["attachments"])) == 1
+
+
+def test_attach_files_path_traversal_on_one_file_does_not_abort_batch(project, note, tmp_path):
+    home = tmp_path / "home"
+    home.mkdir()
+    good = home / "good.txt"
+    good.write_text("ok")
+    evil = tmp_path / "evil.sh"  # outside `home`
+    evil.write_text("rm -rf /")
+
+    result = attach_files(note["id"], [str(good), str(evil)], home_override=home)
+
+    assert len(result["attached"]) == 1
+    assert result["attached"][0]["name"] == "good.txt"
+    assert len(result["failed"]) == 1
+    assert result["failed"][0]["path"] == str(evil)
+    assert "path" in result["failed"][0]["error"].lower()
+
+
+def test_attach_files_empty_list(project, note):
+    result = attach_files(note["id"], [], home_override=_HOME)
+
+    assert result == {"attached": [], "failed": []}
+    updated = get_note(note["id"])
+    assert json.loads(updated["attachments"]) == []
+
+
+def test_attach_files_note_not_found(tmp_path):
+    f = tmp_path / "x.txt"
+    f.write_text("x")
+
+    with pytest.raises(ValueError, match="Note not found"):
+        attach_files(99999, [str(f)], home_override=_HOME)
+
+
+def test_attach_files_rejects_directory_input(project, note, tmp_path):
+    # Regression: exists() is true for directories too, and #134 was specifically about
+    # someone handing over a *folder*. Without an is_file() check, shutil.copy2() would
+    # raise an ugly "[Errno 21] Is a directory" — or, on a FIFO, hang forever.
+    a_dir = tmp_path / "some_folder"
+    a_dir.mkdir()
+
+    result = attach_files(note["id"], [str(a_dir)], home_override=_HOME)
+
+    assert result["attached"] == []
+    assert len(result["failed"]) == 1
+    assert result["failed"][0]["path"] == str(a_dir)
+
+
+def test_attach_files_deduplicates_same_resolved_path(project, note, tmp_path):
+    f = tmp_path / "dup.txt"
+    f.write_text("once")
+
+    result = attach_files(note["id"], [str(f), str(f)], home_override=_HOME)
+
+    assert result["failed"] == []
+    assert len(result["attached"]) == 1
+    assert result["attached"][0]["name"] == "dup.txt"
+
+
+def test_attach_files_deduplicates_path_equivalent_but_different_strings(project, note, tmp_path):
+    # Dedup must compare *resolved* paths, not raw input strings — prove it with two
+    # differently-spelled paths that resolve to the same file.
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    f = sub / "dup.txt"
+    f.write_text("once")
+
+    literal = str(f)
+    via_dotdot = str(tmp_path / "sub" / ".." / "sub" / "dup.txt")
+    assert literal != via_dotdot  # sanity: genuinely different strings
+
+    result = attach_files(note["id"], [literal, via_dotdot], home_override=_HOME)
+
+    assert result["failed"] == []
+    assert len(result["attached"]) == 1
+
+
+def test_attach_files_rejects_hidden_dotfile_path(project, note, tmp_path):
+    # Defense in depth: preservation is now mandatory and folder-shaped (project-hub#134
+    # follow-up), so guard against sweeping up dotfiles like ~/.ssh/id_rsa or
+    # ~/.aws/credentials when a broad path gets passed through.
+    hidden_dir = tmp_path / ".secret"
+    hidden_dir.mkdir()
+    secret = hidden_dir / "id_rsa"
+    secret.write_text("private key material")
+
+    result = attach_files(note["id"], [str(secret)], home_override=_HOME)
+
+    assert result["attached"] == []
+    assert len(result["failed"]) == 1
+    assert result["failed"][0]["path"] == str(secret)
+
+
+def test_attach_files_rejects_hidden_target_via_visible_symlink(project, note, tmp_path):
+    # Symlink-laundering: an innocuous-looking, non-hidden path must not bypass the
+    # hidden-dotfile guard just because the *symlink itself* isn't hidden — the check
+    # must apply to the resolved target, not the input string.
+    hidden_dir = tmp_path / ".secret"
+    hidden_dir.mkdir()
+    target = hidden_dir / "id_rsa"
+    target.write_text("private key material")
+    link = tmp_path / "innocuous_link.txt"
+    link.symlink_to(target)
+
+    result = attach_files(note["id"], [str(link)], home_override=_HOME)
+
+    assert result["attached"] == []
+    assert len(result["failed"]) == 1
+
+
+def test_attach_files_rejects_symlink_escaping_home(project, note, tmp_path):
+    home = tmp_path / "home"
+    home.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("not under home")
+    link = home / "link.txt"
+    link.symlink_to(outside)
+
+    result = attach_files(note["id"], [str(link)], home_override=home)
+
+    assert result["attached"] == []
+    assert len(result["failed"]) == 1
+
+
+def test_attach_file_rejects_directory_input(project, note, tmp_path):
+    a_dir = tmp_path / "some_folder"
+    a_dir.mkdir()
+
+    with pytest.raises(ValueError, match="[Dd]irectory|regular file"):
+        attach_file(note["id"], str(a_dir), home_override=_HOME)
 
 
 # --- list_attachments ---

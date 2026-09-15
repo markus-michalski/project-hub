@@ -30,6 +30,11 @@ EXPECTED_TOOLS = {
     "tool_add_note",
     "tool_update_note",
     "tool_delete_note",
+    # Attachments
+    "tool_attach_file",
+    "tool_attach_files",
+    "tool_list_attachments",
+    "tool_remove_attachment",
     # Search
     "tool_search_notes",
     "tool_search_contacts",

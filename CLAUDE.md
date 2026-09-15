@@ -79,6 +79,14 @@ Anti-Patterns section below.
 - **NEVER** modify the database directly — all state changes go through MCP tools.
 - **NEVER** confuse hub projects (client/contact tracking) with dev projects (mm-dev-toolkit),
   books (storyforge), or videos (vidcraft).
+- **NEVER** read/analyze a local file or folder the user references for a project — a path
+  pasted in chat, a folder named mid-conversation ("hier liegen die Dokumente..."), documents
+  handed over for summarizing — without preserving the originals in the same turn via
+  `tool_add_note(..., source_paths=[...])` or `tool_attach_file(s)`. This is not an optional
+  follow-up question and applies regardless of which skill (if any) is active — it must catch
+  casual mid-conversation imports too, not just structured `/project-hub:add-note` runs. Real,
+  unrecoverable data loss already happened this way (project-hub#134): a referenced folder was
+  analyzed, summarized, and then deleted before any of it was attached.
 - **NEVER** treat `/project-hub:create-testdata`, `/project-hub:reset-testdata`, or
   `/project-hub:delete-testdata` as conversational skills — they exist solely for
   skill-rollout's live-tier sandbox testing (project-hub#82), gated by

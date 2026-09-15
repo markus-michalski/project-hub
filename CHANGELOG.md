@@ -13,7 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   relevant file(s)/source(s) and a short context description (#133)
 
 ### Changed
-- Nothing yet
+- `tool_attach_file`/`tool_attach_files` now refuse hidden/dotfile paths (anything under a
+  `.`-prefixed folder, e.g. `~/.ssh/`, `~/.config/`) that previously succeeded, as a precaution
+  now that preserving originals is mandatory and often folder-shaped (#134)
 
 ### Deprecated
 - Nothing yet
@@ -22,7 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 ### Fixed
-- Nothing yet
+- Original files are now preserved when imported/converted to Markdown: `tool_add_note(...,
+  source_paths=[...])` attaches originals in the same call as note creation, a new
+  `tool_attach_files(note_id, file_paths)` batch-attaches several files/a folder at once, and
+  preserving originals is now mandatory (not an optional follow-up question) whenever a note is
+  created or edited from a real local file/folder referenced in chat. Fixes real data loss where
+  a referenced folder was analyzed and summarized without any of it being preserved (#134)
 
 ### Security
 - Nothing yet

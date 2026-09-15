@@ -5,7 +5,7 @@ Provides persistent project management: projects, contacts, notes, and session t
 from __future__ import annotations
 
 from mcp.server.mcpserver import MCPServer
-from tools.attachments import attach_file, list_attachments, remove_attachment
+from tools.attachments import attach_file, attach_files, list_attachments, remove_attachment
 from tools.contacts import add_contact, delete_contact, list_contacts, list_shared_contacts, update_contact
 from tools.db import init_db
 from tools.knowledge import (
@@ -325,14 +325,23 @@ def tool_add_note(
     content: str,
     note_type: str = "note",
     agenda: str = "",
+    source_paths: list[str] | None = None,
 ) -> dict:
     """Add a note to a project.
 
     note_type: note | meeting-notes | email | decision | action-item
     agenda: optional agenda to compare against (used by /summarize for meeting-notes)
     content: the raw text (email body, meeting transcript, free-form notes, etc.)
+    source_paths: absolute paths of local files `content` was extracted/imported from.
+        Preserves each original under the project's attachments folder in the same
+        call — always pass this when content came from a real file/folder the user
+        referenced, not just when they explicitly ask to attach something
+        (project-hub#134). A bad individual path never fails the note creation;
+        check the returned "attachment_failures" field for per-file errors.
+        Returns {"attachments_added": [...]} and, if any path failed,
+        {"attachment_failures": [{"path": str, "error": str}, ...]}.
     """
-    return add_note(project_id, title, content, note_type, agenda)
+    return add_note(project_id, title, content, note_type, agenda, source_paths)
 
 
 @mcp.tool()
@@ -370,6 +379,24 @@ def tool_attach_file(note_id: int, file_path: str) -> dict:
     Prints a warning to stderr if file is larger than 10 MB.
     """
     return attach_file(note_id, file_path)
+
+
+@mcp.tool()
+def tool_attach_files(note_id: int, file_paths: list[str]) -> dict:
+    """Copy multiple local files to the note's attachments folder in one call.
+
+    Use this whenever a user references several files or a whole folder in
+    chat for analysis/import — list the folder first (ls/Glob), then pass
+    every resulting path here so the originals are preserved, not just the
+    extracted text (project-hub#134). A bad individual path never aborts the
+    rest of the batch.
+
+    file_paths: absolute paths to the source files (originals are not moved/deleted).
+    Returns {"attached": [{"name", "path", "size"}, ...], "failed": [{"path", "error"}, ...]}.
+    Raises ValueError if the note itself is not found, or if its project has no
+    docs_path configured — both note-level problems, unlike a per-file bad path.
+    """
+    return attach_files(note_id, file_paths)
 
 
 @mcp.tool()
