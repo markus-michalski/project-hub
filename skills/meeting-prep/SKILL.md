@@ -172,7 +172,11 @@ Tipp: Nach dem Meeting `/project-hub:edit-note [id]` für die tatsächlichen Not
   it (see Step 6) — `agenda` alone is not enough for either.
 - Sources are path mentions inside the agenda text, not `tool_attach_file` copies by default —
   attaching is for the rare case a document must be preserved verbatim, not the standard way to
-  say "this is what the item refers to."
+  say "this is what the item refers to." This default applies only while sources stay *mentioned*
+  (named/pointed at, not opened). The moment their content is actually read to build an agenda
+  item — not just referenced — CLAUDE.md's mandatory-preservation rule (project-hub#134) applies
+  exactly as it would in `add-note`: attach via `source_paths` or `tool_attach_file(s)` in the
+  same turn, not as an optional follow-up.
 - The external-meeting confidentiality checkpoint in Step 4 is conversational, not a technical
   filter — project-hub has no file- or note-level confidentiality flag today. A real structural
   flag would be future work, not part of this skill.

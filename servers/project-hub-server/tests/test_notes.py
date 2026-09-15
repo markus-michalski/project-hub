@@ -1,9 +1,15 @@
 """Tests for notes CRUD operations."""
+import json
+import tempfile
 from pathlib import Path
 
 import pytest
+from tools.attachments import list_attachments
 from tools.notes import add_note, delete_note, get_note, list_notes, update_note
 from tools.projects import create_project
+
+# See tests/test_attachments.py for the .resolve() / OS-temp-root rationale.
+_HOME = Path(tempfile.gettempdir()).resolve()
 
 
 @pytest.fixture
@@ -283,3 +289,104 @@ def test_migration_adds_updated_at_to_legacy_db(tmp_path, monkeypatch):
     result = list_notes(1)
     assert result["total"] == 1
     assert "updated_at" in result["items"][0]
+
+
+# --- add_note source_paths: preserve originals on import (project-hub#134) ---
+
+
+def test_add_note_with_source_paths_attaches_originals(project_with_docs, tmp_path):
+    f1 = tmp_path / "doc1.txt"
+    f2 = tmp_path / "doc2.txt"
+    f1.write_text("first")
+    f2.write_text("second")
+
+    note = add_note(
+        project_with_docs["id"],
+        "Imported",
+        "extracted text",
+        source_paths=[str(f1), str(f2)],
+        home_override=_HOME,
+    )
+
+    assert {a["name"] for a in note["attachments_added"]} == {"doc1.txt", "doc2.txt"}
+    assert "attachment_failures" not in note
+
+    assert len(list_attachments(note["id"])) == 2
+    # the returned note itself must reflect the attach, not the pre-attach DB snapshot
+    assert len(json.loads(note["attachments"])) == 2
+
+
+def test_add_note_source_paths_surfaces_partial_failures(project_with_docs, tmp_path):
+    good = tmp_path / "good.txt"
+    good.write_text("ok")
+
+    note = add_note(
+        project_with_docs["id"],
+        "Imported",
+        "extracted text",
+        source_paths=[str(good), "/nonexistent/missing.txt"],
+        home_override=_HOME,
+    )
+
+    assert len(note["attachments_added"]) == 1
+    assert note["attachments_added"][0]["name"] == "good.txt"
+    assert len(note["attachment_failures"]) == 1
+    assert note["attachment_failures"][0]["path"] == "/nonexistent/missing.txt"
+
+
+def test_add_note_without_source_paths_unchanged(project_with_docs):
+    note = add_note(project_with_docs["id"], "Plain", "just text")
+
+    assert "attachments_added" not in note
+    assert "attachment_failures" not in note
+
+
+def test_add_note_source_paths_empty_list_unchanged(project_with_docs):
+    note = add_note(project_with_docs["id"], "Plain", "just text", source_paths=[])
+
+    assert "attachments_added" not in note
+
+
+def test_add_note_source_paths_with_no_docs_path_does_not_raise(project_with_docs, tmp_path):
+    # Regression: attach_files() raises ValueError when the project has no docs_path
+    # (e.g. a legacy/edge-case row — notes.py itself already guards write_note_to_disk
+    # against this). That raise must never propagate past add_note(): the note row is
+    # already committed by this point, so an uncaught exception here would recreate
+    # #134's failure mode — a hard tool error that looks like "nothing was saved" when
+    # the note in fact exists, just without its attachment.
+    import tools.db as db_module
+
+    with db_module.db_connection() as conn:
+        with conn:
+            conn.execute(
+                "UPDATE projects SET docs_path = '' WHERE id = ?", (project_with_docs["id"],)
+            )
+
+    f = tmp_path / "doc.txt"
+    f.write_text("content")
+
+    note = add_note(
+        project_with_docs["id"], "No Docs Path", "text",
+        source_paths=[str(f)], home_override=_HOME,
+    )
+
+    assert note["title"] == "No Docs Path"
+    assert note["attachments_added"] == []
+    assert len(note["attachment_failures"]) == 1
+    assert note["attachment_failures"][0]["path"] == str(f)
+
+
+def test_add_note_source_paths_all_fail_without_raising(project_with_docs):
+    # Distinct from the no-docs_path case above: here the note-level attach_files()
+    # call succeeds normally (valid docs_path) but every individual path fails inside
+    # its per-file loop — must surface as attachment_failures, not raise.
+    note = add_note(
+        project_with_docs["id"],
+        "Imported",
+        "extracted text",
+        source_paths=["/nonexistent/a.txt", "/nonexistent/b.txt"],
+        home_override=_HOME,
+    )
+
+    assert note["attachments_added"] == []
+    assert len(note["attachment_failures"]) == 2

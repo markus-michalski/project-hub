@@ -52,20 +52,39 @@ Ask for:
 - **Content** (the actual text — user can paste raw email, meeting notes, etc.)
 - **Agenda** (optional, only for `meeting-notes`) — paste the original agenda if available, used by `/summarize` for comparison
 
-### 4. Save Note
+**Mandatory: identify real source files.** If `content` came from, or references, one or more
+real local files — the user gave a file path, named a folder ("hier liegen die Dokumente der
+letzten Woche"), or handed over documents to read and summarize — collect every relevant absolute
+file path now (list the folder first via `ls`/Glob if a directory was given). This is not an
+optional follow-up question: skipping it has already caused real, unrecoverable data loss
+(project-hub#134 — a referenced folder was deleted before its documents were ever preserved).
+Content that is genuinely freeform/dictated text with no backing file has nothing to collect here.
 
-Use MCP `tool_add_note(project_id, title, content, note_type, agenda)`.
+### 4. Save Note (+ Preserve Originals)
 
-### 5. Optional: Attach Files
+Use MCP `tool_add_note(project_id, title, content, note_type, agenda, source_paths)` — pass every
+absolute path collected in Step 3 as `source_paths` so the originals are copied into the project's
+attachments folder in the same call, not as a separate step someone might forget. Omit
+`source_paths` only when Step 3 found no real backing file.
 
-After saving, ask: "Möchtest du eine Datei anhängen?" (skip if user is clearly in a hurry)
+If the result contains `attachment_failures`, surface each one to the user (e.g. "Diese Datei(en)
+konnten nicht gesichert werden: [path] — [error]") instead of silently dropping it — note creation
+still succeeded, but the original for that specific path was not preserved and the user needs to
+know.
 
-If yes: ask for the file path. It must be a fully expanded absolute path under the user's home
-directory (e.g. `/home/<user>/Documents/spec.pdf`), not a relative path — `tool_attach_file`
-does **not** expand `~`, so a literal `~/Documents/spec.pdf` will fail with a misleading "File
-not found" error instead of a path-traversal error. If the user gives a relative or `~`-prefixed
-path, expand it yourself (or ask them for the full path) before calling the tool.
-Use MCP `tool_attach_file(note_id, file_path)`.
+### 5. Optional: Attach Additional Files
+
+After saving, ask: "Möchtest du eine weitere Datei anhängen?" (skip if user is clearly in a hurry)
+— for files not already covered by Step 3/4.
+
+If yes: ask for the file path(s). Each must be a fully expanded absolute path under the user's home
+directory (e.g. `/home/<user>/Documents/spec.pdf`), not a relative path — neither `tool_attach_file`
+nor `tool_attach_files` expand `~`, so a literal `~/Documents/spec.pdf` will fail with a misleading
+"File not found" error instead of a path-traversal error. If the user gives a relative or
+`~`-prefixed path, expand it yourself (or ask them for the full path) before calling the tool.
+Use MCP `tool_attach_file(note_id, file_path)` for a single file, or
+`tool_attach_files(note_id, file_paths)` for several at once — same partial-failure surfacing as
+Step 4 applies (check `failed` in the result).
 Repeat until the user is done.
 
 ### 6. Output
@@ -79,6 +98,7 @@ Repeat until the user is done.
 
 Notiz-ID: [id] (für späteres Abrufen)
 [Anhänge: [name1], [name2]] (nur wenn Dateien angehängt wurden)
+[Nicht gesichert: [path1] ([error1]), ...] (nur wenn attachment_failures/failed vorhanden)
 
 Tipp: `/summarize [note-id]` erstellt ein strukturiertes Summary dieser Notiz[, bei `meeting-notes`
 mit Agenda direkt im Abgleich gegen die Agenda].
@@ -89,5 +109,11 @@ mit Agenda direkt im Abgleich gegen die Agenda].
 - For `meeting-notes` with an agenda: remind the user they can run `/summarize` to get a structured summary with agenda comparison
 - For `email`: the raw email can be used later with `/summarize` or `/compose` as reference
 - Attachment paths must be fully expanded absolute paths under the user's home directory (path
-  traversal protection) — `~` is not expanded by `tool_attach_file`, expand it before passing the
-  path in
+  traversal protection) — `~` is not expanded by `tool_attach_file`/`tool_attach_files`, expand it
+  before passing the path in. Hidden/dotfile paths (anything under a `.`-prefixed folder, e.g.
+  `~/.ssh/`, `~/.config/`) are refused too, as a precaution against sweeping up credentials —
+  don't conflate this with the path-traversal error; it's a different, narrower block on a path
+  that IS under the home directory.
+- Preserving originals (`source_paths` on `tool_add_note`, or `tool_attach_file(s)`) is mandatory
+  whenever real files are involved — never treat it as skippable just because the user didn't
+  explicitly ask to "attach" something (project-hub#134)
