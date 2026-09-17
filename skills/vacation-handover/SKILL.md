@@ -105,6 +105,16 @@ call's `result["total"]` exceeds the number of items already loaded, page with
 been loaded — never derive Step 6's contact tables or note-based fields from a partial first
 page.
 
+Additionally — **once** for the whole handover run, not inside the per-project loop above — call
+`tool_list_shared_contacts()`. If `result["total"] > result["limit"]`, page with
+`offset=<items loaded so far>` until the number loaded equals `result["total"]`, same as Step 4.
+A shared contact can be homed on any single project (including one outside `OPEN_PROJECTS`, or
+none of them specifically) but still be relevant to several — e.g. an Implementation Manager who
+covers multiple merchants. `tool_list_contacts(project_id)` only returns contacts homed on that
+exact project, so a shared contact homed elsewhere is invisible to it and needs this separate
+call to be found. (A shared contact that happens to be homed on the *current* project IS returned
+by both calls — see the de-duplication rule in Step 6, "Internal contact derivation".)
+
 ### Step 6: Generate the Handover Document
 
 Use the template from Step 2 as the structural blueprint. Replace all `{{PLACEHOLDER}}`
@@ -147,9 +157,42 @@ Pull from **contacts**:
 
 | Field | How to derive |
 |---|---|
-| **Internal contacts** | Filter `type == "internal"`. Map each contact's `role` field to the table row: look for role keywords — "commercial", "kaz", "account" → Commercial; "technical", "tech", "integration", "engineer" → Technical Integration; "partner" → Partner Manager; "support" → Technical Support; "growth" → Growth. If role is empty, or non-empty but matches none of the keyword buckets above: add the contact to the table with a `[?]` role label — if the role text is non-empty (just unmatched), show it alongside in parentheses, e.g. `[?] (Office Manager)`; if the role is genuinely empty, the `[?]` label stands alone. Never silently drop a real contact just because their role text doesn't match a bucket. |
+| **Internal contacts** | Combine project-scoped and relevant shared contacts into the template's fixed bucket table — see "Internal contact derivation" below. |
 | **External contacts (Partner)** | Filter `type == "external"` whose `role` contains "partner" (e.g. "Partner Manager") OR whose `company` is a payment partner ("Adyen", "Mollie", "Stripe", "Tink"). Format: Name, Role, Email. |
 | **External contacts (Merchant)** | All remaining `type == "external"` contacts (i.e. not classified as Partner above). Format: Name, Role, Email, Phone. |
+
+**Internal contact derivation:**
+
+1. Start from `type == "internal"` contacts loaded via `tool_list_contacts(project_id)` (Step 5).
+2. Add every contact from the `tool_list_shared_contacts()` list (Step 5 addendum) whose surname
+   — case-insensitive, also accepting `Lastname, Firstname` order and hyphen/umlaut spelling
+   variants — is mentioned in this project's note titles, note content, or `project.description`.
+   Do not add a shared contact just because they exist; do not dump the whole shared-contact
+   directory into every project block. If two different shared contacts both match a mention,
+   include both rather than guessing which one is meant.
+3. De-duplicate by contact `id` — a shared contact homed on *this* project is returned by both
+   calls in step 1 and 2 above.
+4. Never print a shared contact's `project_name`/`project_slug` fields (they show which project
+   the contact was originally created under) anywhere in the rendered document — this is another
+   client's project name and must not leak into a different client's handover.
+5. If `tool_list_shared_contacts()` itself fails, say so explicitly in the generated document
+   (e.g. under Internal contacts: "shared contacts could not be loaded") instead of silently
+   proceeding as if the project-scoped list were complete.
+
+For each contact from steps 1–4, match role keywords against the template's five fixed bucket
+rows: "commercial", "kaz", "account" → Commercial; "technical", "tech", "integration",
+"engineer" → Technical Integration; "partner" → Partner Manager; "support" → Technical Support;
+"growth" → Growth. Put the contact's Name (and Slack handle if known) into that bucket row's
+cell — if several contacts match the same bucket, list them all in that cell. Keep all five rows
+in the table in order; if a bucket has no matching contact, its cell reads `none` — never leave
+the template's own placeholder text (`[name / @slack-handle]`) in the delivered document.
+
+For a contact whose role matches none of the five buckets but is non-empty, append one extra row
+below the five, using their real role text as-is as the Role cell (e.g. "Sales Manager",
+"Operations Lead", "Implementation Manager") — do NOT replace it with `[?]`; a known role is not
+unknown just because it doesn't fit one of the five bucket names, and hiding it behind `[?]`
+defeats the point of a contact table. Reserve `[?]` for a contact whose role field is genuinely
+empty. Never silently drop a real contact just because their role doesn't match a bucket.
 
 If a contacts section has no entries at all: output `none` for that row.
 
