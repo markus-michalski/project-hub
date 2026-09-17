@@ -19,8 +19,11 @@ CONTACT_LOADING_EXEMPT = {
     "create-testdata": "sandbox-only, disable-model-invocation: true — only verifies known "
     "zz-sandbox- fixture rows, never reasons about unknown real-world contacts",
     "reset-testdata": "sandbox-only, disable-model-invocation: true — same as create-testdata",
-    "vacation-handover": "pages tool_list_contacts to completion and never declares a contact "
-    "unknown — it renders whatever exists, so the #122 failure mode doesn't apply here",
+    "vacation-handover": "pages tool_list_contacts and tool_list_shared_contacts to completion "
+    "and never declares a contact unknown or offers to create one — a shared contact not "
+    "mentioned in a project's notes is simply left out of that project's table, not asserted "
+    "not to exist, so the #122 failure mode (declaring an existing contact unknown, risking a "
+    "duplicate) doesn't apply here",
 }
 
 REQUIRED_FIELDS = {"name", "description", "model", "user-invocable"}
